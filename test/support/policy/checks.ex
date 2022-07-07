@@ -1,3 +1,3 @@
-defmodule Expel.TestChecks do
+defmodule MyApp.Policy.Checks do
   @moduledoc false
 end

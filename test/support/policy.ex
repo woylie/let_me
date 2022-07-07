@@ -1,4 +1,4 @@
-defmodule Expel.TestPolicy do
+defmodule MyApp.Policy do
   @moduledoc false
 
   use Expel.Policy

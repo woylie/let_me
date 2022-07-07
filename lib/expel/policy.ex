@@ -32,11 +32,11 @@ defmodule Expel.Policy do
 
   ## Example
 
-      iex> MyApp.Policy.list_rules()
+      iex> MyApp.PolicyShort.list_rules()
       [
         %Expel.Rule{
           action: :article_create,
-          allow: [[role: :writer], [role: :editor]],
+          allow: [[role: :admin], [role: :writer]],
           disallow: [],
           pre_hooks: []
         },
@@ -49,6 +49,60 @@ defmodule Expel.Policy do
       ]
   """
   @callback list_rules :: [Expel.Rule.t()]
+
+  @doc """
+  Returns the rule for the given action name. Returns an `:ok` tuple or
+  `:error`.
+
+  ## Example
+
+      iex> MyApp.Policy.fetch_rule(:article_create)
+      {:ok,
+       %Expel.Rule{
+         action: :article_create,
+         allow: [[role: :admin], [role: :writer]],
+         disallow: [],
+         pre_hooks: []
+       }}
+
+       iex> MyApp.Policy.fetch_rule(:cookie_eat)
+       :error
+  """
+  @callback fetch_rule(atom) :: {:ok, Expel.Rule.t()} | :error
+
+  @doc """
+  Returns the rule for the given action name. Raises if the rule is not found.
+
+  ## Example
+
+      iex> MyApp.Policy.fetch_rule!(:article_create)
+      %Expel.Rule{
+        action: :article_create,
+        allow: [[role: :admin], [role: :writer]],
+        disallow: [],
+        pre_hooks: []
+      }
+  """
+  @callback fetch_rule!(atom) :: Expel.Rule.t()
+
+  @doc """
+  Returns the rule for the given action name. Returns `nil` if the rule is not
+  found.
+
+  ## Example
+
+      iex> MyApp.Policy.get_rule(:article_create)
+      %Expel.Rule{
+        action: :article_create,
+        allow: [[role: :admin], [role: :writer]],
+        disallow: [],
+        pre_hooks: []
+      }
+
+      iex> MyApp.Policy.get_rule(:cookie_eat)
+      nil
+  """
+  @callback get_rule(atom) :: Expel.Rule.t() | nil
 
   defmacro __using__(_) do
     quote do
@@ -79,6 +133,18 @@ defmodule Expel.Policy do
 
       @impl Expel.Policy
       def list_rules, do: Map.values(__rules__())
+
+      @impl Expel.Policy
+      def fetch_rule(action) when is_atom(action),
+        do: Map.fetch(__rules__(), action)
+
+      @impl Expel.Policy
+      def fetch_rule!(action) when is_atom(action),
+        do: Map.fetch!(__rules__(), action)
+
+      @impl Expel.Policy
+      def get_rule(action) when is_atom(action),
+        do: Map.get(__rules__(), action)
     end
   end
 
