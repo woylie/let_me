@@ -48,7 +48,7 @@ defmodule MyApp.Policy do
       # A user can be deleted if the user is an admin,
       # BUT NOT if the current user is the same user as the subject.
       allow [role: :admin]
-      disallow :same_user
+      deny :same_user
     end
 
   end
@@ -58,7 +58,7 @@ defmodule MyApp.Policy do
       # An article can be viewed by anybody without conditions,
       # UNLESS the user is banned.
       allow true
-      disallow :banned
+      deny :banned
     end
   end
 end
@@ -266,7 +266,7 @@ iex> MyApp.Policy.list_rules()
       [:own_resource]
     ],
     object: :post,
-    disallow: []
+    deny: []
   }
 ]
 ```
@@ -282,7 +282,7 @@ iex> MyApp.Policy.get_rule()
     [:own_resource]
   ],
   object: :post,
-  disallow: []
+  deny: []
 }
 ```
 
@@ -298,7 +298,7 @@ iex> MyApp.Policy.list_rules(role: :admin)
       [:own_resource]
     ],
     object: :post,
-    disallow: []
+    deny: []
   }
 ]
 ```

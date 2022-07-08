@@ -9,15 +9,15 @@ defmodule Expel.Rule do
   - `action` - The action (verb) to be performed on the object, e.g. `:update`.
   - `allow` - A lists of checks to run to determine whether the action is
     allowed.
-  - `disallow` - A lists of checks to run to determine whether the action is
-    explicitly disallowed. If any of these checks returns `true`, the end
+  - `deny` - A lists of checks to run to determine whether the action is
+    explicitly denied. If any of these checks returns `true`, the end
     result of the permission checks is immediately `false`, even if any of the
     checks in the `allow` field would return `true`.
   - `object` - The object that the action is performed on, e.g. `:article`.
   - `pre_hooks` - Functions to run in order to hydrate the subject and/or object
-    before running the allow and disallow checks.
+    before running the allow and deny checks.
 
-  The list entries in the outer list of the `allow` and `disallow` fields are
+  The list entries in the outer list of the `allow` and `deny` fields are
   combined with a logical `OR`. If one of the entries is a list of checks, those
   checks are combined with a logical `AND`.
 
@@ -31,7 +31,7 @@ defmodule Expel.Rule do
   @type t :: %__MODULE__{
           action: atom,
           allow: [check | [check]],
-          disallow: [check | [check]],
+          deny: [check | [check]],
           object: atom,
           pre_hooks: [hook]
         }
@@ -71,7 +71,7 @@ defmodule Expel.Rule do
 
   defstruct action: nil,
             allow: [],
-            disallow: [],
+            deny: [],
             object: nil,
             pre_hooks: []
 end

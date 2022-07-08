@@ -35,14 +35,14 @@ defmodule Expel.Policy do
         %Expel.Rule{
           action: :create,
           allow: [[role: :admin], [role: :writer]],
-          disallow: [],
+          deny: [],
           object: :article,
           pre_hooks: []
         },
         %Expel.Rule{
           action: :update,
           allow: [:own_resource],
-          disallow: [],
+          deny: [],
           object: :article,
           pre_hooks: [:preload_groups]
         }
@@ -63,7 +63,7 @@ defmodule Expel.Policy do
        %Expel.Rule{
          action: :create,
          allow: [[role: :admin], [role: :writer]],
-         disallow: [],
+         deny: [],
          object: :article,
          pre_hooks: []
        }}
@@ -85,7 +85,7 @@ defmodule Expel.Policy do
       %Expel.Rule{
         action: :create,
         allow: [[role: :admin], [role: :writer]],
-        disallow: [],
+        deny: [],
         object: :article,
         pre_hooks: []
       }
@@ -104,7 +104,7 @@ defmodule Expel.Policy do
       %Expel.Rule{
         action: :create,
         allow: [[role: :admin], [role: :writer]],
-        disallow: [],
+        deny: [],
         object: :article,
         pre_hooks: []
       }
@@ -119,7 +119,7 @@ defmodule Expel.Policy do
       Module.register_attribute(__MODULE__, :rules, accumulate: true)
       Module.register_attribute(__MODULE__, :actions, accumulate: true)
       Module.register_attribute(__MODULE__, :allow_checks, accumulate: true)
-      Module.register_attribute(__MODULE__, :disallow_checks, accumulate: true)
+      Module.register_attribute(__MODULE__, :deny_checks, accumulate: true)
       Module.register_attribute(__MODULE__, :pre_hooks, accumulate: true)
 
       @behaviour Expel.Policy
@@ -162,7 +162,7 @@ defmodule Expel.Policy do
   @doc """
   Defines an action that needs to be authorized.
 
-  Within the do-block, you can use the `allow/1`, `disallow/1` and `pre_hooks/1`
+  Within the do-block, you can use the `allow/1`, `deny/1` and `pre_hooks/1`
   macros to define the checks to be run.
 
   This macro must be used within the do-block of `object/2`.
@@ -188,7 +188,7 @@ defmodule Expel.Policy do
     quote do
       # reset attributes from previous `action/2` calls
       Module.delete_attribute(__MODULE__, :allow_checks)
-      Module.delete_attribute(__MODULE__, :disallow_checks)
+      Module.delete_attribute(__MODULE__, :deny_checks)
       Module.delete_attribute(__MODULE__, :pre_hooks)
 
       # compile inner block
@@ -197,7 +197,7 @@ defmodule Expel.Policy do
       Module.put_attribute(__MODULE__, :actions, %{
         name: unquote(name),
         allow: get_acc_attribute(__MODULE__, :allow_checks),
-        disallow: get_acc_attribute(__MODULE__, :disallow_checks),
+        deny: get_acc_attribute(__MODULE__, :deny_checks),
         pre_hooks: get_acc_attribute(__MODULE__, :pre_hooks)
       })
     end
@@ -212,7 +212,7 @@ defmodule Expel.Policy do
   - a tuple with the function name and an additional argument
   - a list of function names or function/argument tuples
   - `true` - Always allows an action. This is useful in combination with the
-    `disallow/1` macro.
+    `deny/1` macro.
 
   The function must be defined in the configured Checks module and take the
   subject (current user), object as arguments, and if given, the additional
@@ -288,7 +288,7 @@ defmodule Expel.Policy do
   end
 
   @doc """
-  Defines the checks to be run to determine if an action is disallowed.
+  Defines the checks to be run to determine if an action is denied.
 
   If any of the checks evaluates to `true`, the `allow` checks are overridden
   and the permission request is automatically denied.
@@ -321,7 +321,7 @@ defmodule Expel.Policy do
       object :user do
         action :delete do
           allow true
-          disallow :same_user
+          deny :same_user
         end
       end
 
@@ -331,7 +331,7 @@ defmodule Expel.Policy do
       object :user do
         action :delete do
           allow role: :admin
-          disallow :same_user
+          deny :same_user
         end
       end
 
@@ -341,7 +341,7 @@ defmodule Expel.Policy do
       object :user do
         action :delete do
           allow true
-          disallow [:same_user, role: :admin]
+          deny [:same_user, role: :admin]
         end
       end
 
@@ -351,14 +351,14 @@ defmodule Expel.Policy do
       object :user do
         action :delete do
           allow true
-          disallow :same_user
-          disallow role: :peasant
+          deny :same_user
+          deny role: :peasant
         end
       end
   """
-  defmacro disallow(checks) do
+  defmacro deny(checks) do
     quote do
-      Module.put_attribute(__MODULE__, :disallow_checks, unquote(checks))
+      Module.put_attribute(__MODULE__, :deny_checks, unquote(checks))
     end
   end
 
@@ -392,7 +392,7 @@ defmodule Expel.Policy do
         Module.put_attribute(__MODULE__, :rules, %Rule{
           action: action.name,
           allow: action.allow,
-          disallow: action.disallow,
+          deny: action.deny,
           object: unquote(name),
           pre_hooks: action.pre_hooks
         })

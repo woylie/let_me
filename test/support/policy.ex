@@ -22,7 +22,7 @@ defmodule MyApp.Policy do
   object :user do
     action :delete do
       allow role: :admin
-      disallow :same_user
+      deny :same_user
     end
 
     action :list do
