@@ -24,22 +24,19 @@ Define a policy module:
 
 ```elixir
 defmodule MyApp.Policy do
-  import Expel
+  use Expel
 
-  # The functions in the `Policy.Checks` module will be used for
-  # permission checks.
-  rules MyApp.Policy.Checks do
-    action :user_list do
-      # The action `:user_list` is allowed for users with the role
-      # :admin and client.
-      # The checks passed to `allow` point to the functions in the
-      # Checks module.
+  object :user do
+    action :list do
+      # Listing users is allowed for users with the role :admin and client.
+      # The checks passed to `allow` point to the functions in the Checks
+      # module (by default `__MODULE__.Checks`).
       allow [role: :admin]
       allow [role: :client]
     end
 
-    action :user_view do
-      # The action `:user_view` is allowed if the user is an admin
+    action :view do
+      # A user can be viewed if the user is an admin
       # OR if the current user is a client and belongs to the same company as the object
       # OR if the current user is the same as the object.
       allow [role: :admin]
@@ -47,26 +44,36 @@ defmodule MyApp.Policy do
       allow :same_user
     end
 
-    action :user_delete do
-      # The action :user_delete is allowed if the user is an admin,
+    action :delete do
+      # A user can be deleted if the user is an admin,
       # BUT NOT if the current user is the same user as the subject.
       allow [role: :admin]
       disallow :same_user
     end
 
-    action :article_view do
-      # The action :article_view is allowed to anybody without conditions.
+  end
+
+  object :article do
+    action :view do
+      # An article can be viewed by anybody without conditions,
+      # UNLESS the user is banned.
       allow true
+      disallow :banned
     end
   end
 end
 ```
 
-Every check has to be implemented in the module passed to the `rules` macro. Each function takes the subject (current user), object (on which to perform the action), and additional options as arguments; they must return a boolean.
+Every check has to be implemented in the Checks module (default:
+`__MODULE__.Checks`). Each function takes the subject (current user), object (on
+which to perform the action), and additional options as arguments; they must
+return a boolean.
 
 ```elixir
 defmodule MyApp.Policy.Checks do
   alias MyApp.Accounts.User
+
+  def banned(%User{banned: banned}, _, _), do: banned
 
   def role(%User{role: role}, _object, role), do: true
   def role(_, _, _), do: false
@@ -197,10 +204,10 @@ We can translate the Canada and Bodyguard example from above to the DSL as follo
 
 ```elixir
 defmodule MyApp.Policy do
-  import Expel
+  use Expel
 
-  rules MyApp.Policy.Checks do
-    action :update_post do
+  object :post do
+    action :update do
       allow [role: :admin]
       allow [:own_resource]
     end
@@ -224,9 +231,13 @@ defmodule MyApp.Policy.Checks do
 end
 ```
 
-This way, the rule expressions are separate from the check implementations, allowing you to reuse checks in your rules, and increasing the readability of your authorization rules.
+This way, the rule expressions are separate from the check implementations,
+allowing you to reuse checks in your rules, and increasing the readability of
+your authorization rules.
 
-The `rules` macro will define two sets of functions: _permit_ functions and _introspection_ functions. You can use the `permit` functions in your context module:
+The `rules` macro will define two sets of functions: _permit_ functions and
+_introspection_ functions. You can use the `permit` functions in your context
+module:
 
 ```elixir
 defmodule MyApp.Blog do
@@ -249,11 +260,12 @@ With the introspection functions, you can get the complete list of authorization
 iex> MyApp.Policy.list_rules()
 [
   %Expel.Rule{
-    action: :update_post,
+    action: :update,
     allow: [
       [role: :admin],
       [:own_resource]
     ],
+    object: :post,
     disallow: []
   }
 ]
@@ -264,11 +276,12 @@ You can also get the conditions for a certain action:
 ```elixir
 iex> MyApp.Policy.get_rule()
 %Expel.Rule{
-  action: :update_post,
+  action: :update,
   allow: [
     [role: :admin],
     [:own_resource]
   ],
+  object: :post,
   disallow: []
 }
 ```
@@ -279,11 +292,12 @@ Or you can list all actions for a certain role (or any other check):
 iex> MyApp.Policy.list_rules(role: :admin)
 [
   %Expel.Rule{
-    action: :update_post,
+    action: :update,
     allow: [
       [role: :admin],
       [:own_resource]
     ],
+    object: :post,
     disallow: []
   }
 ]
@@ -294,8 +308,8 @@ iex> MyApp.Policy.list_rules(role: :admin)
 Sometimes you might need to load additional data from the database or process the data that is passed to the check functions in other ways. If the same enhanced data is needed for multiple checks of the same action, it would be less than ideal to do the processing in each check function. Instead, you can define a pre-hook.
 
 ```elixir
-rules MyApp.Policy.Checks do
-  action :update_post do
+object :post do
+  action :update do
     pre_hook :preload_groups
 
     allow [:active_group]

@@ -6,13 +6,14 @@ defmodule Expel.Rule do
   @typedoc """
   Struct for an authorization rule.
 
-  - `action` - The action name, e.g. `article_update` (or `update_article`).
+  - `action` - The action (verb) to be performed on the object, e.g. `:update`.
   - `allow` - A lists of checks to run to determine whether the action is
     allowed.
   - `disallow` - A lists of checks to run to determine whether the action is
     explicitly disallowed. If any of these checks returns `true`, the end
     result of the permission checks is immediately `false`, even if any of the
     checks in the `allow` field would return `true`.
+  - `object` - The object that the action is performed on, e.g. `:article`.
   - `pre_hooks` - Functions to run in order to hydrate the subject and/or object
     before running the allow and disallow checks.
 
@@ -31,6 +32,7 @@ defmodule Expel.Rule do
           action: atom,
           allow: [check | [check]],
           disallow: [check | [check]],
+          object: atom,
           pre_hooks: [hook]
         }
 
@@ -65,10 +67,11 @@ defmodule Expel.Rule do
   """
   @type hook :: atom | {module, atom} | {module, atom, any}
 
-  @enforce_keys [:action]
+  @enforce_keys [:action, :object]
 
   defstruct action: nil,
             allow: [],
             disallow: [],
+            object: nil,
             pre_hooks: []
 end

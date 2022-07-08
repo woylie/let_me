@@ -3,33 +3,34 @@ defmodule MyApp.Policy do
 
   use Expel.Policy
 
-  rules TestChecks do
-    action :article_create do
+  object :article do
+    action :create do
       allow role: :admin
       allow role: :writer
     end
 
-    action :article_update do
+    action :update do
       pre_hooks :preload_groups
-
       allow :own_resource
     end
 
-    action :article_view do
+    action :view do
       allow true
     end
+  end
 
-    action :user_delete do
+  object :user do
+    action :delete do
       allow role: :admin
       disallow :same_user
     end
 
-    action :user_list do
+    action :list do
       allow {:role, :admin}
       allow {:role, :client}
     end
 
-    action :user_view do
+    action :view do
       allow {:role, :admin}
       allow [{:role, :client}, :same_company]
       allow :same_user

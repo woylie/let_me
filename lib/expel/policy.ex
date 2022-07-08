@@ -7,19 +7,17 @@ defmodule Expel.Policy do
       defmodule MyApp.Policy do
         use Expel.Policy
 
-        alias MyApp.Policy.Checks
-
-        rules Checks do
-          action :article_create do
+        object :article do
+          action :create do
             allow role: :admin
             allow role: :writer
           end
 
-          action :article_update do
+          action :update do
             allow :own_resource
           end
 
-          action :article_view do
+          action :view do
             allow true
           end
         end
@@ -35,15 +33,17 @@ defmodule Expel.Policy do
       iex> MyApp.PolicyShort.list_rules()
       [
         %Expel.Rule{
-          action: :article_create,
+          action: :create,
           allow: [[role: :admin], [role: :writer]],
           disallow: [],
+          object: :article,
           pre_hooks: []
         },
         %Expel.Rule{
-          action: :article_update,
+          action: :update,
           allow: [:own_resource],
           disallow: [],
+          object: :article,
           pre_hooks: [:preload_groups]
         }
       ]
@@ -51,17 +51,20 @@ defmodule Expel.Policy do
   @callback list_rules :: [Expel.Rule.t()]
 
   @doc """
-  Returns the rule for the given action name. Returns an `:ok` tuple or
+  Returns the rule for the given rule identifier. Returns an `:ok` tuple or
   `:error`.
+
+  The rule identifier is an atom with the format `{object}_{action}`.
 
   ## Example
 
       iex> MyApp.Policy.fetch_rule(:article_create)
       {:ok,
        %Expel.Rule{
-         action: :article_create,
+         action: :create,
          allow: [[role: :admin], [role: :writer]],
          disallow: [],
+         object: :article,
          pre_hooks: []
        }}
 
@@ -71,31 +74,38 @@ defmodule Expel.Policy do
   @callback fetch_rule(atom) :: {:ok, Expel.Rule.t()} | :error
 
   @doc """
-  Returns the rule for the given action name. Raises if the rule is not found.
+  Returns the rule for the given rule identifier. Raises if the rule is not
+  found.
+
+  The rule identifier is an atom with the format `{object}_{action}`.
 
   ## Example
 
       iex> MyApp.Policy.fetch_rule!(:article_create)
       %Expel.Rule{
-        action: :article_create,
+        action: :create,
         allow: [[role: :admin], [role: :writer]],
         disallow: [],
+        object: :article,
         pre_hooks: []
       }
   """
   @callback fetch_rule!(atom) :: Expel.Rule.t()
 
   @doc """
-  Returns the rule for the given action name. Returns `nil` if the rule is not
-  found.
+  Returns the rule for the given rule identifier. Returns `nil` if the rule is
+  not found.
+
+  The rule identifier is an atom with the format `{object}_{action}`.
 
   ## Example
 
       iex> MyApp.Policy.get_rule(:article_create)
       %Expel.Rule{
-        action: :article_create,
+        action: :create,
         allow: [[role: :admin], [role: :writer]],
         disallow: [],
+        object: :article,
         pre_hooks: []
       }
 
@@ -107,6 +117,7 @@ defmodule Expel.Policy do
   defmacro __using__(_) do
     quote do
       Module.register_attribute(__MODULE__, :rules, accumulate: true)
+      Module.register_attribute(__MODULE__, :actions, accumulate: true)
       Module.register_attribute(__MODULE__, :allow_checks, accumulate: true)
       Module.register_attribute(__MODULE__, :disallow_checks, accumulate: true)
       Module.register_attribute(__MODULE__, :pre_hooks, accumulate: true)
@@ -125,7 +136,7 @@ defmodule Expel.Policy do
       env.module
       |> Module.get_attribute(:rules)
       |> Enum.reverse()
-      |> Enum.into(%{}, &{&1.action, &1})
+      |> Enum.into(%{}, &{:"#{&1.object}_#{&1.action}", &1})
 
     quote do
       @doc false
@@ -148,28 +159,29 @@ defmodule Expel.Policy do
     end
   end
 
-  defmacro rules(_checks_module, do: block) do
-    quote do
-      unquote(block)
-    end
-  end
-
   @doc """
   Defines an action that needs to be authorized.
 
   Within the do-block, you can use the `allow/1`, `disallow/1` and `pre_hooks/1`
   macros to define the checks to be run.
 
+  This macro must be used within the do-block of `object/2`.
+
+  Each `action` block will be compiled to a rule. The identifier for the rule
+  is an atom with the format `{object}_{action}`.
+
   ## Example
 
-      action :article_create do
-        allow role: :admin
-        allow role: :writer
-      end
+      object :article do
+        action :create do
+          allow role: :admin
+          allow role: :writer
+        end
 
-      action :article_update do
-        allow role: :admin
-        allow [:own_resource, role: :writer]
+        action :update do
+          allow role: :admin
+          allow [:own_resource, role: :writer]
+        end
       end
   """
   defmacro action(name, do: block) do
@@ -182,8 +194,8 @@ defmodule Expel.Policy do
       # compile inner block
       unquote(block)
 
-      Module.put_attribute(__MODULE__, :rules, %Rule{
-        action: unquote(name),
+      Module.put_attribute(__MODULE__, :actions, %{
+        name: unquote(name),
         allow: get_acc_attribute(__MODULE__, :allow_checks),
         disallow: get_acc_attribute(__MODULE__, :disallow_checks),
         pre_hooks: get_acc_attribute(__MODULE__, :pre_hooks)
@@ -227,36 +239,46 @@ defmodule Expel.Policy do
   This would allow the `:article_update` action only if the current user has
   the role `:admin`:
 
-      action :article_update do
-        allow role: :admin
+      object :article do
+        action :update do
+          allow role: :admin
+        end
       end
 
   This is equivalent to:
 
-      action :article_update do
-        allow {:role, :admin}
+      object :article do
+        action :update do
+          allow {:role, :admin}
+        end
       end
 
   This would allow the `:article_update` action if the user has the role
   `:writer` _and_ the article belongs to the user:
 
-      action :article_update do
-        allow [:own_resource, role: :writer]
+      object :article do
+        action :update do
+          allow [:own_resource, role: :writer]
+        end
       end
 
   This is equivalent to:
 
-      action :article_update do
-        allow [:own_resource, {:role, :writer}]
+      object :article do
+        action :update do
+          allow [:own_resource, {:role, :writer}]
+        end
       end
 
   This would allow the `:article_update` action if
   (the user has the role `:admin` _or_ (the user has the role `:writer` _and_
   the article belongs to the user)):
 
-      action :article_update do
-        allow role: :admin
-        allow [:own_resource, role: :writer]
+      object :article do
+        action :update do
+          allow role: :admin
+          allow [:own_resource, role: :writer]
+        end
       end
   """
   defmacro allow(checks) do
@@ -296,39 +318,85 @@ defmodule Expel.Policy do
   This would allow the `:user_delete` by default, _unless_ the object is the
   current user:
 
-      action :message do
-        allow true
-        disallow :same_user
+      object :user do
+        action :delete do
+          allow true
+          disallow :same_user
+        end
       end
 
   This would allow the `:article_update` action only if the current user has
   the role `:admin`, _unless_ the object is the current user:
 
-      action :user_delete do
-        allow role: :admin
-        disallow :same_user
+      object :user do
+        action :delete do
+          allow role: :admin
+          disallow :same_user
+        end
       end
 
   This would allow the `:user_delete` by default, _unless_ the object is the
   current user _and_ the current user is an admin:
 
-      action :message do
-        allow true
-        disallow [:same_user, role: :admin]
+      object :user do
+        action :delete do
+          allow true
+          disallow [:same_user, role: :admin]
+        end
       end
 
   This would allow the `:user_delete` by default, _unless_ the object is the
   current user _or_ the current user is a peasant:
 
-      action :user_delete do
-        allow true
-        disallow :same_user
-        disallow role: :peasant
+      object :user do
+        action :delete do
+          allow true
+          disallow :same_user
+          disallow role: :peasant
+        end
       end
   """
   defmacro disallow(checks) do
     quote do
       Module.put_attribute(__MODULE__, :disallow_checks, unquote(checks))
+    end
+  end
+
+  @doc """
+  Defines an object on which actions can be performed.
+
+  Within the do-block, you can use the `action/2` macro to define the actions
+  and checks.
+
+  ## Example
+
+      object :article do
+        action :create do
+          allow role: :writer
+        end
+
+        action :delete do
+          allow role: :editor
+        end
+      end
+  """
+  defmacro object(name, do: block) do
+    quote do
+      # reset attributes from previous `object/2` calls
+      Module.delete_attribute(__MODULE__, :actions)
+
+      # compile inner block
+      unquote(block)
+
+      for action <- Module.get_attribute(__MODULE__, :actions, []) do
+        Module.put_attribute(__MODULE__, :rules, %Rule{
+          action: action.name,
+          allow: action.allow,
+          disallow: action.disallow,
+          object: unquote(name),
+          pre_hooks: action.pre_hooks
+        })
+      end
     end
   end
 

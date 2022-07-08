@@ -3,13 +3,13 @@ defmodule MyApp.PolicyShort do
 
   use Expel.Policy
 
-  rules TestChecks do
-    action :article_create do
+  object :article do
+    action :create do
       allow role: :admin
       allow role: :writer
     end
 
-    action :article_update do
+    action :update do
       pre_hooks :preload_groups
       allow :own_resource
     end

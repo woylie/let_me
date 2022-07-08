@@ -9,43 +9,49 @@ defmodule Expel.PolicyTest do
     test "list_rules/0 returns all rules" do
       assert Policy.list_rules() == [
                %Rule{
-                 action: :article_create,
+                 action: :create,
                  allow: [[role: :admin], [role: :writer]],
                  disallow: [],
+                 object: :article,
                  pre_hooks: []
                },
                %Rule{
-                 action: :article_update,
+                 action: :update,
                  allow: [:own_resource],
                  disallow: [],
+                 object: :article,
                  pre_hooks: [:preload_groups]
                },
                %Rule{
-                 action: :article_view,
+                 action: :view,
                  allow: [true],
                  disallow: [],
+                 object: :article,
                  pre_hooks: []
                },
                %Rule{
-                 action: :user_delete,
+                 action: :delete,
                  allow: [[role: :admin]],
                  disallow: [:same_user],
+                 object: :user,
                  pre_hooks: []
                },
                %Rule{
-                 action: :user_list,
+                 action: :list,
                  allow: [role: :admin, role: :client],
                  disallow: [],
+                 object: :user,
                  pre_hooks: []
                },
                %Rule{
-                 action: :user_view,
+                 action: :view,
                  allow: [
                    {:role, :admin},
                    [{:role, :client}, :same_company],
                    :same_user
                  ],
                  disallow: [],
+                 object: :user,
                  pre_hooks: []
                }
              ]
@@ -55,9 +61,10 @@ defmodule Expel.PolicyTest do
   describe "get_rule/1" do
     test "returns rule" do
       assert Policy.get_rule(:article_create) == %Rule{
-               action: :article_create,
+               action: :create,
                allow: [[role: :admin], [role: :writer]],
                disallow: [],
+               object: :article,
                pre_hooks: []
              }
     end
@@ -72,9 +79,10 @@ defmodule Expel.PolicyTest do
       assert Policy.fetch_rule(:article_create) ==
                {:ok,
                 %Rule{
-                  action: :article_create,
+                  action: :create,
                   allow: [[role: :admin], [role: :writer]],
                   disallow: [],
+                  object: :article,
                   pre_hooks: []
                 }}
     end
@@ -87,9 +95,10 @@ defmodule Expel.PolicyTest do
   describe "fetch_rule!/1" do
     test "returns rule" do
       assert Policy.fetch_rule!(:article_create) == %Rule{
-               action: :article_create,
+               action: :create,
                allow: [[role: :admin], [role: :writer]],
                disallow: [],
+               object: :article,
                pre_hooks: []
              }
     end
