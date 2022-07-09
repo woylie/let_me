@@ -1,0 +1,99 @@
+defmodule Expel.Schema do
+  @moduledoc """
+  Defines a behaviour with callbacks for scoping and redactions.
+
+  Using this module will define overridable default implementations for the
+  `scope/2` and `redacted_fields/2` callbacks.
+
+  ## Example
+
+      defmodule MyApp.Blog.Post do
+        use Expel.Schema
+        import Ecto.Schema
+
+        @impl Expel.Schema
+        def scope(query_params, %User{role: :admin}), do: query_params
+        def scope(q, %User{}), do: where(q, published: true)
+
+        @impl Expel.Schema
+        def redacted_fields(_, %User{role: :admin}), do: []
+        def redacted_fields(_, %User{}), do: [:view_count]
+      end
+  """
+
+  defmacro __using__(_opts) do
+    quote do
+      @behaviour Expel.Schema
+
+      def scope(q, _), do: q
+      def redacted_fields(_, _), do: []
+
+      defoverridable Expel.Schema
+    end
+  end
+
+  @doc """
+  Takes a queryable (usually an `Ecto.Queryable`) and a subject (usually the
+  current user) and returns an updated queryable.
+
+  This allows you to add `WHERE` clauses to a query depending on the user. For
+  example, you may want to add a `WHERE` clause to only return posts that are
+  published, unless the user is an admin. Or you may want to only return
+  objects that belong to the user.
+
+      defmodule MyApp.Blog.Article do
+        use Ecto.Schema
+        use Expel.Schema
+
+        import Ecto.Schema
+
+        alias MyApp.Accounts.User
+
+        # schema
+
+        @impl Expel.Schema
+        def scope(q, %User{role: :admin}), do: q
+        def scope(q, %User{}), do: where(q, published: true)
+      end
+
+  Since Expel does not depend on Ecto and does not make any assumptions on the
+  queryable passed to the callback function, you are not constrained to use this
+  mechanism for Ecto queries only. For example, you could use the function to
+  add filter parameters before passing them to a filter function or making an
+  API call.
+
+      @impl Expel.Schema
+      def scope(query_params, %User{role: :admin}), do: query_params
+
+      def scope(query_params, %User{}) do
+        Keyword.put(query_params, :published, true)
+      end
+  """
+  @callback scope(queryable, subject) :: queryable
+            when queryable: any, subject: any
+
+  @doc """
+  Returns the fields that need to be removed from the given object for the given
+  subject.
+
+  This function can be used to hide certain fields depending on the current
+  user.
+
+      defmodule MyApp.Blog.Post do
+        use Expel.Schema
+        alias MyApp.Accounts.User
+
+        @impl Expel.Schema
+        # hide view count unless the user is an admin or the post was written
+        # by the user
+        def redacted_fields(_, %User{role: :admin}), do: []
+
+        def redacted_fields(%__MODULE__{user_id: id}, %User{id: id}),
+          do: [:view_count]
+
+        def redacted_fields(_, %User{}), do: [:view_count]
+      end
+  """
+  @callback redacted_fields(object, subject) :: [atom]
+            when object: any, subject: any
+end
