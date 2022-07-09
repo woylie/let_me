@@ -146,6 +146,14 @@ defmodule Expel.Policy do
         deny false
         deny true
       end
+
+  ## Pre-hooks
+
+  You can use pre-hooks to process or gather additional data about the subject
+  and/or object before running the checks. This can be useful if you need to
+  preload associations or make external requests. Pre-hooks run once per
+  authorization request before running the checks. See the documentation for
+  `pre_hooks/1`.
   """
   alias Expel.Rule
 

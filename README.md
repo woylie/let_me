@@ -500,11 +500,43 @@ def update_changeset(%Article{} = article, attrs, %User{} = current_user) do
 end
 ```
 
+## Why would I want to use this library?
+
+- You want an easy-to-read DSL for authorization rules that still allows you
+  to implement your authorization checks in any way you want.
+- You prefer to put your authorization rules into your business layer and
+  decouple them from your interfaces.
+- You prefer to keep your authorization rules in one place (or one place per
+  context).
+- You want to generate a list of authorization rules.
+- You want to filter your authorization rules, e.g. to find out which actions
+  are available to a certain user role.
+- You want a library that can also help you with query scopes and field
+  redactions.
+- You want a library with zero dependencies.
+
+## Why wouldn't I want to use this library?
+
+- You prefer to couple authorization checks to your interfaces.
+- You prefer to use plugs or middlewares for authorization checks and want the
+  necessary plumbing ready for use (you can of course build your own plugs and
+  middlewares around the functions of this library).
+- You don't like DSLs and prefer to write functions (note that the DSL only
+  describes _which_ checks to run and _how_ to apply them, though; you still
+  write the actual checks as regular functions).
+- You want to return details on _why_ an authorization request fails. Checks
+  in Expel must currently return a boolean value, which means you'll only be
+  able to give your users a generic error, without telling them which exact
+  check failed.
+
 ## Alternatives
 
-If you don't want to use a DSL and you don't need introspection, or if you prefer a ready-made solution to handle your authorization with plugs or resolvers instead of adding checks to your context functions, have a look at these Elixir libraries:
+For comparison, please have a look at these Elixir libraries:
 
 - [Canada](https://hex.pm/packages/canada)
 - [Canary](https://hex.pm/packages/canary)
 - [Bodyguard](https://hex.pm/packages/bodyguard)
 - [Speakeasy](https://hex.pm/packages/speakeasy)
+
+You might also find the article
+[Authorization for Phoenix Contexts](https://dockyard.com/blog/2017/08/01/authorization-for-phoenix-contexts) helpful.
