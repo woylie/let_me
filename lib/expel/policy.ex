@@ -71,6 +71,13 @@ defmodule Expel.Policy do
   @callback list_rules :: [Expel.Rule.t()]
 
   @doc """
+  Same as `c:list_rules/0`, but take a keyword list with filter options.
+
+  See `Expel.filter_rules/2` for a list of available filter options.
+  """
+  @callback list_rules(keyword) :: [Expel.Rule.t()]
+
+  @doc """
   Returns the rule for the given rule identifier. Returns an `:ok` tuple or
   `:error`.
 

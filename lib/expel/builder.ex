@@ -16,6 +16,9 @@ defmodule Expel.Builder do
       def list_rules, do: Map.values(__rules__())
 
       @impl Expel.Policy
+      def list_rules(opts), do: Expel.filter_rules(list_rules(), opts)
+
+      @impl Expel.Policy
       def fetch_rule(action) when is_atom(action),
         do: Map.fetch(__rules__(), action)
 

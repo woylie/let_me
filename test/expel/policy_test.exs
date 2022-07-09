@@ -9,8 +9,8 @@ defmodule Expel.PolicyTest do
   alias MyApp.PolicyCombinations
   alias MyApp.PolicyShort
 
-  describe "introspection" do
-    test "list_rules/0 returns all rules" do
+  describe "list_rules" do
+    test "returns all rules" do
       assert Policy.list_rules() == [
                %Rule{
                  action: :create,
@@ -61,6 +61,19 @@ defmodule Expel.PolicyTest do
                  pre_hooks: []
                }
              ]
+    end
+
+    test "filters by object" do
+      rules = Policy.list_rules(object: :article)
+      assert Enum.all?(rules, &(&1.object == :article))
+
+      rules = Policy.list_rules(object: :user)
+      assert Enum.all?(rules, &(&1.object == :user))
+    end
+
+    test "filters by action" do
+      rules = Policy.list_rules(action: :view)
+      assert Enum.all?(rules, &(&1.action == :view))
     end
   end
 
