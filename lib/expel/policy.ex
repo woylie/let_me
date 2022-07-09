@@ -474,6 +474,7 @@ defmodule Expel.Policy do
         end
       end
   """
+  @spec action(atom, Macro.t()) :: Macro.t()
   defmacro action(name, do: block) do
     quote do
       # reset attributes from previous `action/2` calls
@@ -573,6 +574,7 @@ defmodule Expel.Policy do
         end
       end
   """
+  @spec allow(check | [check]) :: Macro.t() when check: atom | {atom, any}
   defmacro allow(checks) do
     quote do
       Module.put_attribute(__MODULE__, :allow_checks, unquote(checks))
@@ -594,6 +596,7 @@ defmodule Expel.Policy do
         end
       end
   """
+  @spec desc(String.t()) :: Macro.t()
   defmacro desc(text) do
     quote do
       Module.put_attribute(__MODULE__, :description, unquote(text))
@@ -669,6 +672,7 @@ defmodule Expel.Policy do
         end
       end
   """
+  @spec deny(check | [check]) :: Macro.t() when check: atom | {atom, any}
   defmacro deny(checks) do
     quote do
       Module.put_attribute(__MODULE__, :deny_checks, unquote(checks))
@@ -693,6 +697,7 @@ defmodule Expel.Policy do
         end
       end
   """
+  @spec object(atom, Macro.t()) :: Macro.t()
   defmacro object(name, do: block) do
     quote do
       # reset attributes from previous `object/2` calls
