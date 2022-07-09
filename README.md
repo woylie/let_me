@@ -18,6 +18,14 @@ def deps do
 end
 ```
 
+Add Expel to `.formatter.exs`:
+
+```elixir
+[
+  import_deps: [:expel]
+]
+```
+
 ## Quickstart
 
 Define a policy module:
