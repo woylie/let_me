@@ -2,7 +2,7 @@
 
 Expel is an Elixir library that aims to solve three aspects of authorization:
 
-1. Permissions: Determine whether the user is allowed to execute an action.
+1. Authorization rules: Determine whether the user is allowed to execute an action.
 2. Scopes: Manipulate queries, so that no resources are returned that the user is not allowed to see.
 3. Redactions: Hide certain fields on a resource depending on the user.
 
@@ -128,7 +128,7 @@ defmodule MyApp.Accounts do
   alias MyApp.Policy
 
   def list_users(%User{} = current_user) do
-    with :ok <- Policy.permit(:user_list, current_user) do
+    with :ok <- Policy.authorize(:user_list, current_user) do
       result =
         User
         |> Expel.scope(current_user)
@@ -140,7 +140,7 @@ defmodule MyApp.Accounts do
   end
 
   def fetch_user(id, %User{} = current_user) do
-    with :ok <- Policy.permit(:user_view, current_user, id) do
+    with :ok <- Policy.authorize(:user_view, current_user, id) do
       result =
         User
         |> Expel.scope(current_user)
@@ -155,7 +155,7 @@ defmodule MyApp.Accounts do
   end
 
   def delete_user(%User{} = object, %User{} = current_user) do
-    with :ok <- Policy.permit(:user_delete, current_user, object) do
+    with :ok <- Policy.authorize(:user_delete, current_user, object) do
       Repo.delete(subject)
     end
   end
@@ -243,8 +243,8 @@ This way, the rule expressions are separate from the check implementations,
 allowing you to reuse checks in your rules, and increasing the readability of
 your authorization rules.
 
-The `rules` macro will define two sets of functions: _permit_ functions and
-_introspection_ functions. You can use the `permit` functions in your context
+The `rules` macro will define two sets of functions: _authorize_ functions and
+_introspection_ functions. You can use the `authorize` functions in your context
 module:
 
 ```elixir
@@ -253,7 +253,7 @@ defmodule MyApp.Blog do
   alias MyApp.Policy
 
   def update_post(%Post{} = post, %{} = params, %User{} = current_user) do
-    with :ok <- Policy.permit(:update_post, current_user, post) do
+    with :ok <- Policy.authorize(:update_post, current_user, post) do
       post
       |> Post.changeset(params)
       |> Repo.update()

@@ -1,8 +1,9 @@
 defmodule Expel.Policy do
   @moduledoc """
-  Defines a DSL for writing authorization rules.
+  Expel defines a DSL with authorize and introspection functions for
+  authorization rules.
 
-  ## Example
+  ## Usage
 
       defmodule MyApp.Policy do
         use Expel.Policy
@@ -23,7 +24,7 @@ defmodule Expel.Policy do
         end
       end
 
-  ## Options
+  ### Options
 
   These options can be passed when using this module:
 
