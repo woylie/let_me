@@ -234,6 +234,20 @@ defmodule Expel.Policy do
   @callback fetch_rule!(atom) :: Expel.Rule.t()
 
   @doc """
+  Returns the schema module for the given object name, if it was registered
+  using `object/3`.
+
+  ## Examples
+
+      iex> MyApp.Policy.get_schema(:article)
+      MyApp.Article
+
+      iex> MyApp.Policy.get_schema(:user)
+      nil
+  """
+  @callback get_schema(atom) :: module | nil
+
+  @doc """
   Authorizes a request defined by the action, subject and object.
 
   ## Example
@@ -353,6 +367,7 @@ defmodule Expel.Policy do
 
     quote do
       Module.put_attribute(__MODULE__, :opts, unquote(opts))
+      Module.register_attribute(__MODULE__, :schemas, accumulate: true)
       Module.register_attribute(__MODULE__, :rules, accumulate: true)
       Module.register_attribute(__MODULE__, :actions, accumulate: true)
       Module.register_attribute(__MODULE__, :allow_checks, accumulate: true)
@@ -373,6 +388,7 @@ defmodule Expel.Policy do
 
   defmacro __before_compile__(env) do
     opts = Module.get_attribute(env.module, :opts)
+    schemas = Module.get_attribute(env.module, :schemas)
 
     rules =
       env.module
@@ -382,10 +398,12 @@ defmodule Expel.Policy do
 
     introspection_functions = Expel.Builder.introspection_functions(rules)
     authorize_functions = Expel.Builder.authorize_functions(rules, opts)
+    schema_functions = Expel.Builder.schema_functions(schemas)
 
     quote do
       unquote(introspection_functions)
       unquote(authorize_functions)
+      unquote(schema_functions)
     end
   end
 
@@ -693,7 +711,7 @@ defmodule Expel.Policy do
   Within the do-block, you can use the `action/2` macro to define the actions
   and checks.
 
-  ## Example
+  ## Examples
 
       object :article do
         action :create do
@@ -704,10 +722,27 @@ defmodule Expel.Policy do
           allow role: :editor
         end
       end
+
+  You can optionally pass the schema module as the second argument. The schema
+  module should implement the `Expel.Schema` behaviour.
+
+      object :article, MyApp.Blog.Article do
+        action :create do
+          allow role: :writer
+        end
+      end
   """
-  @spec object(atom, Macro.t()) :: Macro.t()
-  defmacro object(name, do: block) do
+  @spec object(atom, module | nil, Macro.t()) :: Macro.t()
+  defmacro object(name, module \\ nil, do: block) do
     quote do
+      if unquote(module) do
+        Module.put_attribute(
+          __MODULE__,
+          :schemas,
+          {unquote(name), unquote(module)}
+        )
+      end
+
       # reset attributes from previous `object/2` calls
       Module.delete_attribute(__MODULE__, :actions)
 

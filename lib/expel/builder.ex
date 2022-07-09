@@ -9,8 +9,7 @@ defmodule Expel.Builder do
 
   def introspection_functions(%{} = rules) do
     quote do
-      @doc false
-      def __rules__, do: unquote(Macro.escape(rules))
+      defp __rules__, do: unquote(Macro.escape(rules))
 
       @impl Expel.Policy
       def list_rules, do: Map.values(__rules__())
@@ -29,6 +28,18 @@ defmodule Expel.Builder do
       @impl Expel.Policy
       def get_rule(action) when is_atom(action),
         do: Map.get(__rules__(), action)
+    end
+  end
+
+  def schema_functions(schemas) when is_list(schemas) do
+    schemas = Enum.into(schemas, %{})
+
+    quote do
+      defp __schemas__, do: unquote(Macro.escape(schemas))
+
+      @impl Expel.Policy
+      def get_schema(object_name) when is_atom(object_name),
+        do: Map.get(__schemas__(), object_name)
     end
   end
 
