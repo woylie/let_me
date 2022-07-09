@@ -600,7 +600,7 @@ defmodule Expel.Policy do
         end
       end
   """
-  @spec allow(check | [check]) :: Macro.t() when check: atom | {atom, any}
+  @spec allow(Expel.Rule.check() | [Expel.Rule.check()]) :: Macro.t()
   defmacro allow(checks) do
     quote do
       Module.put_attribute(__MODULE__, :allow_checks, unquote(checks))
@@ -698,7 +698,7 @@ defmodule Expel.Policy do
         end
       end
   """
-  @spec deny(check | [check]) :: Macro.t() when check: atom | {atom, any}
+  @spec deny(Expel.Rule.check() | [Expel.Rule.check()]) :: Macro.t()
   defmacro deny(checks) do
     quote do
       Module.put_attribute(__MODULE__, :deny_checks, unquote(checks))
@@ -847,8 +847,7 @@ defmodule Expel.Policy do
       MyApp.Policy.authorize!(:article_view, %{age: 10})
       # => true
   """
-  @spec pre_hooks(hook | [hook]) :: Macro.t()
-        when hook: atom | {module, atom} | {module, atom, any}
+  @spec pre_hooks(Expel.Rule.hook() | [Expel.Rule.hook()]) :: Macro.t()
   defmacro pre_hooks(hooks) do
     quote do
       Module.put_attribute(__MODULE__, :pre_hooks, unquote(hooks))
