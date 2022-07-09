@@ -28,6 +28,8 @@ defmodule Expel.PolicyTest do
                %Rule{
                  action: :view,
                  allow: [true],
+                 description:
+                   "allows to view an article and the list of articles",
                  deny: [],
                  object: :article,
                  pre_hooks: []

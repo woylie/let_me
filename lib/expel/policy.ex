@@ -209,6 +209,7 @@ defmodule Expel.Policy do
     quote do
       # reset attributes from previous `action/2` calls
       Module.delete_attribute(__MODULE__, :allow_checks)
+      Module.delete_attribute(__MODULE__, :description)
       Module.delete_attribute(__MODULE__, :deny_checks)
       Module.delete_attribute(__MODULE__, :pre_hooks)
 
@@ -218,6 +219,7 @@ defmodule Expel.Policy do
       Module.put_attribute(__MODULE__, :actions, %{
         name: unquote(name),
         allow: get_acc_attribute(__MODULE__, :allow_checks),
+        description: Module.get_attribute(__MODULE__, :description),
         deny: get_acc_attribute(__MODULE__, :deny_checks),
         pre_hooks: get_acc_attribute(__MODULE__, :pre_hooks)
       })
@@ -305,6 +307,25 @@ defmodule Expel.Policy do
   defmacro allow(checks) do
     quote do
       Module.put_attribute(__MODULE__, :allow_checks, unquote(checks))
+    end
+  end
+
+  @doc """
+  Allows you to add a description to an action, which you could use when
+  generating help texts and documentation.
+
+  ## Example
+
+      object :article do
+        action :create do
+          desc "allows a user to create a new article"
+          allow role: :writer
+        end
+      end
+  """
+  defmacro desc(text) do
+    quote do
+      Module.put_attribute(__MODULE__, :description, unquote(text))
     end
   end
 
@@ -414,6 +435,7 @@ defmodule Expel.Policy do
           action: action.name,
           allow: action.allow,
           deny: action.deny,
+          description: action.description,
           object: unquote(name),
           pre_hooks: action.pre_hooks
         })

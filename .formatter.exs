@@ -4,6 +4,7 @@
   line_length: 80,
   locals_without_parens: [
     allow: 1,
+    desc: 1,
     deny: 1,
     pre_hooks: 1
   ]

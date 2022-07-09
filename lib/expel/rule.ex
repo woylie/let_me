@@ -32,6 +32,7 @@ defmodule Expel.Rule do
           action: atom,
           allow: [check | [check]],
           deny: [check | [check]],
+          description: String.t() | nil,
           object: atom,
           pre_hooks: [hook]
         }
@@ -72,6 +73,7 @@ defmodule Expel.Rule do
   defstruct action: nil,
             allow: [],
             deny: [],
+            description: nil,
             object: nil,
             pre_hooks: []
 end

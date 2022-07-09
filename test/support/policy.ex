@@ -15,6 +15,7 @@ defmodule MyApp.Policy do
     end
 
     action :view do
+      desc "allows to view an article and the list of articles"
       allow true
     end
   end
