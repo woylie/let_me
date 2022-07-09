@@ -580,8 +580,10 @@ defmodule Expel.Policy do
   end
 
   @doc """
-  Allows you to add a description to an action, which you could use when
-  generating help texts and documentation.
+  Allows you to add a description to a rule.
+
+  The description can be accessed from the `Expel.Rule` struct. You can use it
+  to generate help texts or documentation.
 
   ## Example
 
