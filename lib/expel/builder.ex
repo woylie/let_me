@@ -59,7 +59,7 @@ defmodule Expel.Builder do
       def authorize!(action, subject, object \\ nil) do
         if authorized?(action, subject, object),
           do: :ok,
-          else: raise(Expel.UnauthorizedError, message: "Unauthorized")
+          else: raise(Expel.UnauthorizedError)
       end
     end
   end

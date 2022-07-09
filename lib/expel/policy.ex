@@ -99,8 +99,89 @@ defmodule Expel.Policy do
   """
   @callback fetch_rule!(atom) :: Expel.Rule.t()
 
+  @doc """
+  Authorizes a request defined by the action, subject and object.
+
+  ## Example
+
+  Assume we defined this authorization rule:
+
+      object :article do
+        action :update do
+          allow :own_resource
+        end
+      end
+
+  And the `:own_resource` check is defined as:
+
+      def own_resource(%{id: user_id}, %{user_id: user_id}), do: true
+      def own_resource(_, _), do: false
+
+  The identifier for the action consists of the object and the action name, in
+  this case `:article_create`. To authorize the action, we need to pass this
+  identifier, the subject (current user) and the object (the article to be
+  updated).
+
+      iex> article = %{id: 80, user_id: 1}
+      iex> user_1 = %{id: 1}
+      iex> user_2 = %{id: 2}
+      iex> MyApp.Policy.authorize(:article_update, user_1, article)
+      :ok
+      iex> MyApp.Policy.authorize(:article_update, user_2, article)
+      {:error, :unauthorized}
+
+  If the checks don't require the object, it can be omitted.
+
+      object :user do
+        action :list do
+          allow {:role, :admin}
+          allow {:role, :client}
+        end
+      end
+
+      iex> user = %{id: 1, role: :admin}
+      iex> MyApp.Policy.authorize(:user_list, user)
+      :ok
+      iex> user = %{id: 2, role: :user}
+      iex> MyApp.Policy.authorize(:user_list, user)
+      {:error, :unauthorized}
+  """
   @callback authorize(atom, any, any) :: :ok | {:error, any}
+
+  @doc """
+  Same as `c:authorize/3`, but raises an error if unauthorized.
+
+  ## Example
+
+  With the same authorization rules as defined in the `c:authorize/3`
+  documentation, we get this:
+
+      iex> article = %{id: 80, user_id: 1}
+      iex> user_1 = %{id: 1}
+      iex> user_2 = %{id: 2}
+      iex> MyApp.Policy.authorize!(:article_update, user_1, article)
+      :ok
+      iex> MyApp.Policy.authorize!(:article_update, user_2, article)
+      ** (Expel.UnauthorizedError) unauthorized
+  """
   @callback authorize!(atom, any, any) :: :ok
+
+  @doc """
+  Same as `c:authorize/3`, but returns a boolean.
+
+  ## Example
+
+  With the same authorization rules as defined in the `c:authorize/3`
+  documentation, we get this:
+
+      iex> article = %{id: 80, user_id: 1}
+      iex> user_1 = %{id: 1}
+      iex> user_2 = %{id: 2}
+      iex> MyApp.Policy.authorized?(:article_update, user_1, article)
+      true
+      iex> MyApp.Policy.authorized?(:article_update, user_2, article)
+      false
+  """
   @callback authorized?(atom, any, any) :: boolean
 
   @doc """

@@ -347,7 +347,7 @@ defmodule Expel.PolicyTest do
                %{user_id: 1}
              ) == :ok
 
-      assert_raise Expel.UnauthorizedError, "Unauthorized", fn ->
+      assert_raise Expel.UnauthorizedError, "unauthorized", fn ->
         PolicyCombinations.authorize!(
           :simple_allow_without_options,
           %{id: 1},
