@@ -359,6 +359,7 @@ defmodule Expel.Policy do
       require Logger
 
       @before_compile unquote(__MODULE__)
+      @after_compile unquote(__MODULE__)
     end
   end
 
@@ -378,6 +379,39 @@ defmodule Expel.Policy do
       unquote(introspection_functions)
       unquote(authorize_functions)
     end
+  end
+
+  defmacro __after_compile__(env, _) do
+    rules = Module.get_attribute(env.module, :rules)
+    validate_no_duplicate_rules!(rules, env.module)
+  end
+
+  defp validate_no_duplicate_rules!(rules, module) do
+    duplicate_rules =
+      rules
+      |> Enum.frequencies_by(&{&1.object, &1.action})
+      |> Enum.filter(fn {_, count} -> count > 1 end)
+
+    if duplicate_rules != [] do
+      rules_as_string =
+        duplicate_rules
+        |> Enum.map(fn {{object, action}, _} ->
+          "object: #{inspect(object)}, action: #{inspect(action)}"
+        end)
+        |> Enum.join("\n    ")
+
+      raise """
+      found duplicate rules
+
+      The policy module #{module} has duplicate authorization rules.
+
+          #{rules_as_string}
+
+      Look out for actions that are defined twice for the same object.
+      """
+    end
+
+    :ok
   end
 
   @doc """
