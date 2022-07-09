@@ -260,6 +260,7 @@ defmodule Expel.PolicyTest do
 
     test "evaluates a list of deny checks with AND" do
       # deny [:same_user, role: :writer]
+
       assert PolicyCombinations.authorized?(
                :complex_multiple_deny_checks,
                %{id: 1, role: :writer},
@@ -319,6 +320,40 @@ defmodule Expel.PolicyTest do
       refute Policy.authorized?(:user_delete, %{role: :admin, id: 1}, %{id: 1})
       refute Policy.authorized?(:user_delete, %{role: :user, id: 1}, %{id: 2})
       refute Policy.authorized?(:user_delete, %{role: :user, id: 1}, %{id: 1})
+    end
+  end
+
+  describe "authorize/3" do
+    test "evaluates a single allow check without options" do
+      assert PolicyCombinations.authorize(
+               :simple_allow_without_options,
+               %{id: 1},
+               %{user_id: 1}
+             ) == :ok
+
+      assert PolicyCombinations.authorize(
+               :simple_allow_without_options,
+               %{id: 1},
+               %{user_id: 2}
+             ) == {:error, :unauthorized}
+    end
+  end
+
+  describe "authorize!/3" do
+    test "evaluates a single allow check without options" do
+      assert PolicyCombinations.authorize!(
+               :simple_allow_without_options,
+               %{id: 1},
+               %{user_id: 1}
+             ) == :ok
+
+      assert_raise Expel.UnauthorizedError, "Unauthorized", fn ->
+        PolicyCombinations.authorize!(
+          :simple_allow_without_options,
+          %{id: 1},
+          %{user_id: 2}
+        )
+      end
     end
   end
 end

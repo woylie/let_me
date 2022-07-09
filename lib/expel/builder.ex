@@ -7,7 +7,29 @@ defmodule Expel.Builder do
     |> Enum.reverse()
   end
 
-  def permit_function(%{} = rules, check_module) do
+  def introspection_functions(%{} = rules) do
+    quote do
+      @doc false
+      def __rules__, do: unquote(Macro.escape(rules))
+
+      @impl Expel.Policy
+      def list_rules, do: Map.values(__rules__())
+
+      @impl Expel.Policy
+      def fetch_rule(action) when is_atom(action),
+        do: Map.fetch(__rules__(), action)
+
+      @impl Expel.Policy
+      def fetch_rule!(action) when is_atom(action),
+        do: Map.fetch!(__rules__(), action)
+
+      @impl Expel.Policy
+      def get_rule(action) when is_atom(action),
+        do: Map.get(__rules__(), action)
+    end
+  end
+
+  def authorize_functions(%{} = rules, check_module) do
     rule_clauses = Enum.map(rules, &permit_function_clause(&1, check_module))
 
     quote do
@@ -24,6 +46,20 @@ defmodule Expel.Builder do
         )
 
         false
+      end
+
+      @impl Expel.Policy
+      def authorize(action, subject, object \\ nil) do
+        if authorized?(action, subject, object),
+          do: :ok,
+          else: {:error, :unauthorized}
+      end
+
+      @impl Expel.Policy
+      def authorize!(action, subject, object \\ nil) do
+        if authorized?(action, subject, object),
+          do: :ok,
+          else: raise(Expel.UnauthorizedError, message: "Unauthorized")
       end
     end
   end

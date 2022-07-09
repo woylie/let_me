@@ -99,6 +99,8 @@ defmodule Expel.Policy do
   """
   @callback fetch_rule!(atom) :: Expel.Rule.t()
 
+  @callback authorize(atom, any, any) :: :ok | {:error, any}
+  @callback authorize!(atom, any, any) :: :ok
   @callback authorized?(atom, any, any) :: boolean
 
   @doc """
@@ -155,28 +157,12 @@ defmodule Expel.Policy do
       |> Enum.reverse()
       |> Enum.into(%{}, &{:"#{&1.object}_#{&1.action}", &1})
 
-    permit_function = Expel.Builder.permit_function(rules, check_module)
+    introspection_functions = Expel.Builder.introspection_functions(rules)
+    authorize_functions = Expel.Builder.authorize_functions(rules, check_module)
 
     quote do
-      @doc false
-      def __rules__, do: unquote(Macro.escape(rules))
-
-      @impl Expel.Policy
-      def list_rules, do: Map.values(__rules__())
-
-      @impl Expel.Policy
-      def fetch_rule(action) when is_atom(action),
-        do: Map.fetch(__rules__(), action)
-
-      @impl Expel.Policy
-      def fetch_rule!(action) when is_atom(action),
-        do: Map.fetch!(__rules__(), action)
-
-      @impl Expel.Policy
-      def get_rule(action) when is_atom(action),
-        do: Map.get(__rules__(), action)
-
-      unquote(permit_function)
+      unquote(introspection_functions)
+      unquote(authorize_functions)
     end
   end
 
