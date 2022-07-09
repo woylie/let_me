@@ -22,6 +22,13 @@ defmodule Expel.Policy do
           end
         end
       end
+
+  The checks passed to `allow/1` and `allow/2` reference the names of functions
+  in the checks module. By default, Expel tries to find the functions in
+  `__MODULE__.Checks` (in the example, this would be `MyApp.Policy.Checks`).
+  However, you can override the default check module:
+
+      use Expel.Policy, check_module: MyApp.AuthChecks
   """
   alias Expel.Rule
 
@@ -116,8 +123,12 @@ defmodule Expel.Policy do
   """
   @callback get_rule(atom) :: Expel.Rule.t() | nil
 
-  defmacro __using__(_) do
+  defmacro __using__(opts \\ []) do
+    check_module =
+      Keyword.get(opts, :check_module, Module.concat(__CALLER__.module, Checks))
+
     quote do
+      Module.put_attribute(__MODULE__, :check_module, unquote(check_module))
       Module.register_attribute(__MODULE__, :rules, accumulate: true)
       Module.register_attribute(__MODULE__, :actions, accumulate: true)
       Module.register_attribute(__MODULE__, :allow_checks, accumulate: true)
@@ -136,7 +147,7 @@ defmodule Expel.Policy do
   end
 
   defmacro __before_compile__(env) do
-    check_module = Module.concat(env.module, Checks)
+    check_module = Module.get_attribute(env.module, :check_module)
 
     rules =
       env.module

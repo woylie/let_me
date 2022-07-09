@@ -310,5 +310,13 @@ defmodule Expel.PolicyTest do
                %{id: 2}
              ) == false
     end
+
+    test "can configure check module with use option" do
+      # Policy module is configured to use PolicyCombinations.Checks
+      assert Policy.authorized?(:user_delete, %{role: :admin, id: 1}, %{id: 2})
+      refute Policy.authorized?(:user_delete, %{role: :admin, id: 1}, %{id: 1})
+      refute Policy.authorized?(:user_delete, %{role: :user, id: 1}, %{id: 2})
+      refute Policy.authorized?(:user_delete, %{role: :user, id: 1}, %{id: 1})
+    end
   end
 end

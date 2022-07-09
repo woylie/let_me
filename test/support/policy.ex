@@ -1,7 +1,7 @@
 defmodule MyApp.Policy do
   @moduledoc false
 
-  use Expel.Policy
+  use Expel.Policy, check_module: MyApp.PolicyCombinations.Checks
 
   object :article do
     action :create do
