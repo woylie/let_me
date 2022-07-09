@@ -384,6 +384,7 @@ defmodule Expel.Policy do
   defmacro __after_compile__(env, _) do
     rules = Module.get_attribute(env.module, :rules)
     validate_no_duplicate_rules!(rules, env.module)
+    validate_no_duplicate_checks!(rules, env.module)
   end
 
   defp validate_no_duplicate_rules!(rules, module) do
@@ -401,7 +402,7 @@ defmodule Expel.Policy do
         |> Enum.join("\n    ")
 
       raise """
-      found duplicate rules
+      duplicate authorization rules
 
       The policy module #{module} has duplicate authorization rules.
 
@@ -412,6 +413,42 @@ defmodule Expel.Policy do
     end
 
     :ok
+  end
+
+  defp validate_no_duplicate_checks!(rules, module) do
+    Enum.each(rules, fn rule ->
+      do_validate_no_duplicate_checks!(rule, :allow, module)
+      do_validate_no_duplicate_checks!(rule, :deny, module)
+    end)
+  end
+
+  defp do_validate_no_duplicate_checks!(rule, field, module) do
+    rule
+    |> Map.fetch!(field)
+    |> Enum.each(fn
+      checks when is_list(checks) ->
+        duplicate_checks =
+          checks
+          |> Enum.frequencies()
+          |> Enum.filter(fn {_, count} -> count > 1 end)
+          |> Enum.map(&elem(&1, 0))
+
+        if duplicate_checks != [] do
+          raise """
+          duplicate authorization checks
+
+          The policy module #{module} has duplicate authorization checks.
+
+              object: #{rule.object}
+              action: #{rule.action}
+              macro: #{field}/1
+              #{inspect(duplicate_checks)}
+          """
+        end
+
+      _ ->
+        :ok
+    end)
   end
 
   @doc """
