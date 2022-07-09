@@ -484,11 +484,11 @@ The `redact` function can handle structs, lists of structs, and `nil` values.
 
 #### Changesets
 
-You might have a situation where a user can update a resource, but may not see all the fields, which of course means that the redacted fields should not be cast. While you should probably implement your changeset so that it takes the current user into consideration, you can use `Expel.filter_redacted_fields/2` to retrieve the redacted fields and add a safeguard to prevent accidentally casting and nilifying them.
+You might have a situation where a user can update a resource, but may not see all the fields, which of course means that the redacted fields should not be cast. While you should probably implement your changeset so that it takes the current user into consideration, you can use `Expel.reject_redacted_fields/3` to retrieve the redacted fields and add a safeguard to prevent accidentally casting and nilifying them.
 
 ```elixir
 def update_changeset(%Article{} = article, attrs, %User{} = current_user) do
-  fields = Expel.filter_redacted_fields(
+  fields = Expel.reject_redacted_fields(
     [:title, :body, :internal_reference],
     article,
     current_user

@@ -162,4 +162,44 @@ defmodule Expel do
   defp replace_keys([key | rest], value, acc) do
     replace_keys(rest, value, Map.put(acc, key, value))
   end
+
+  @doc """
+  Removes redacted fields from a given list of fields.
+
+  Uses the `c:Expel.Schema.redacted_fields/2` callback implementation of the
+  struct module to determine the fields to remove.
+
+  ## Examples
+
+      iex> fields = [:like_count, :title, :user_id, :view_count]
+      iex> user = %{id: 1, role: :user}
+      iex> article = %MyApp.Article{}
+      iex> reject_redacted_fields(fields, article, user)
+      [:title, :user_id]
+
+  This can be useful as a safeguard to prevent accidentally casting fields the
+  user may not see and thereby nilifying or replacing them with the redacted
+  value.
+
+      def update_changeset(%Article{} = article, attrs, %User{} = user) do
+        fields = Expel.reject_redacted_fields(
+          [:title, :body, :internal_reference],
+          article,
+          user
+        )
+
+        article
+        |> cast(attrs, fields)
+        |> validate_required([:title, :body])
+      end
+  """
+  @spec reject_redacted_fields([atom], struct, any) :: [atom]
+  def reject_redacted_fields(fields, %schema{} = object, subject) do
+    redacted_fields = subject |> schema.redacted_fields(object) |> MapSet.new()
+
+    fields
+    |> MapSet.new()
+    |> MapSet.difference(redacted_fields)
+    |> MapSet.to_list()
+  end
 end
