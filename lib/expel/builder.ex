@@ -29,7 +29,8 @@ defmodule Expel.Builder do
     end
   end
 
-  def authorize_functions(%{} = rules, check_module) do
+  def authorize_functions(%{} = rules, check_module, opts) do
+    error_reason = Keyword.fetch!(opts, :error_reason)
     rule_clauses = Enum.map(rules, &permit_function_clause(&1, check_module))
 
     quote do
@@ -52,7 +53,7 @@ defmodule Expel.Builder do
       def authorize(action, subject, object \\ nil) do
         if authorized?(action, subject, object),
           do: :ok,
-          else: {:error, :unauthorized}
+          else: {:error, unquote(error_reason)}
       end
 
       @impl Expel.Policy

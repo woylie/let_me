@@ -1,7 +1,9 @@
 defmodule MyApp.PolicyShort do
   @moduledoc false
 
-  use Expel.Policy
+  use Expel.Policy,
+    check_module: MyApp.PolicyCombinations.Checks,
+    error_reason: :forbidden
 
   object :article do
     action :create do

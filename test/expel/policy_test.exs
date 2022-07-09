@@ -7,6 +7,7 @@ defmodule Expel.PolicyTest do
   alias Expel.Rule
   alias MyApp.Policy
   alias MyApp.PolicyCombinations
+  alias MyApp.PolicyShort
 
   describe "introspection" do
     test "list_rules/0 returns all rules" do
@@ -336,6 +337,12 @@ defmodule Expel.PolicyTest do
                %{id: 1},
                %{user_id: 2}
              ) == {:error, :unauthorized}
+    end
+
+    test "can configure error reason" do
+      # PolicyShort module is configured to use :forbidden
+      assert PolicyShort.authorize(:article_create, %{role: :nobody}) ==
+               {:error, :forbidden}
     end
   end
 

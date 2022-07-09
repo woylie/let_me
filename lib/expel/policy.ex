@@ -23,10 +23,23 @@ defmodule Expel.Policy do
         end
       end
 
+  ## Options
+
+  These options can be passed when using this module:
+
+  - `check_module` - The module where the check functions are defined. Defaults
+    to `__MODULE__.Checks`.
+  - `error_reason` - The error reason used by the `c:authorize/3` callback.
+    Defaults to `:unauthorized`.
+
+  ## Check module
+
   The checks passed to `allow/1` and `allow/2` reference the names of functions
-  in the checks module. By default, Expel tries to find the functions in
-  `__MODULE__.Checks` (in the example, this would be `MyApp.Policy.Checks`).
-  However, you can override the default check module:
+  in the checks module.
+
+  By default, Expel tries to find the functions in `__MODULE__.Checks` (in the
+  example, this would be `MyApp.Policy.Checks`). However, you can override the
+  default check module:
 
       use Expel.Policy, check_module: MyApp.AuthChecks
   """
@@ -210,8 +223,11 @@ defmodule Expel.Policy do
     check_module =
       Keyword.get(opts, :check_module, Module.concat(__CALLER__.module, Checks))
 
+    error_reason = Keyword.get(opts, :error_reason, :unauthorized)
+
     quote do
       Module.put_attribute(__MODULE__, :check_module, unquote(check_module))
+      Module.put_attribute(__MODULE__, :error_reason, unquote(error_reason))
       Module.register_attribute(__MODULE__, :rules, accumulate: true)
       Module.register_attribute(__MODULE__, :actions, accumulate: true)
       Module.register_attribute(__MODULE__, :allow_checks, accumulate: true)
@@ -231,6 +247,7 @@ defmodule Expel.Policy do
 
   defmacro __before_compile__(env) do
     check_module = Module.get_attribute(env.module, :check_module)
+    error_reason = Module.get_attribute(env.module, :error_reason)
 
     rules =
       env.module
@@ -239,7 +256,11 @@ defmodule Expel.Policy do
       |> Enum.into(%{}, &{:"#{&1.object}_#{&1.action}", &1})
 
     introspection_functions = Expel.Builder.introspection_functions(rules)
-    authorize_functions = Expel.Builder.authorize_functions(rules, check_module)
+
+    authorize_functions =
+      Expel.Builder.authorize_functions(rules, check_module,
+        error_reason: error_reason
+      )
 
     quote do
       unquote(introspection_functions)
