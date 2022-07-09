@@ -223,14 +223,14 @@ defmodule Expel.Policy do
   @callback get_rule(atom) :: Expel.Rule.t() | nil
 
   defmacro __using__(opts \\ []) do
-    check_module =
-      Keyword.get(opts, :check_module, Module.concat(__CALLER__.module, Checks))
-
-    error_reason = Keyword.get(opts, :error_reason, :unauthorized)
+    opts =
+      Keyword.validate!(opts,
+        check_module: Module.concat(__CALLER__.module, Checks),
+        error_reason: :unauthorized
+      )
 
     quote do
-      Module.put_attribute(__MODULE__, :check_module, unquote(check_module))
-      Module.put_attribute(__MODULE__, :error_reason, unquote(error_reason))
+      Module.put_attribute(__MODULE__, :opts, unquote(opts))
       Module.register_attribute(__MODULE__, :rules, accumulate: true)
       Module.register_attribute(__MODULE__, :actions, accumulate: true)
       Module.register_attribute(__MODULE__, :allow_checks, accumulate: true)
@@ -249,8 +249,7 @@ defmodule Expel.Policy do
   end
 
   defmacro __before_compile__(env) do
-    check_module = Module.get_attribute(env.module, :check_module)
-    error_reason = Module.get_attribute(env.module, :error_reason)
+    opts = Module.get_attribute(env.module, :opts)
 
     rules =
       env.module
@@ -259,11 +258,7 @@ defmodule Expel.Policy do
       |> Enum.into(%{}, &{:"#{&1.object}_#{&1.action}", &1})
 
     introspection_functions = Expel.Builder.introspection_functions(rules)
-
-    authorize_functions =
-      Expel.Builder.authorize_functions(rules, check_module,
-        error_reason: error_reason
-      )
+    authorize_functions = Expel.Builder.authorize_functions(rules, opts)
 
     quote do
       unquote(introspection_functions)

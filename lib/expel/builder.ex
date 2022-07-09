@@ -29,7 +29,8 @@ defmodule Expel.Builder do
     end
   end
 
-  def authorize_functions(%{} = rules, check_module, opts) do
+  def authorize_functions(%{} = rules, opts) do
+    check_module = Keyword.fetch!(opts, :check_module)
     error_reason = Keyword.fetch!(opts, :error_reason)
     rule_clauses = Enum.map(rules, &permit_function_clause(&1, check_module))
 
