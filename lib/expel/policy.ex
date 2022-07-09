@@ -1,7 +1,7 @@
 defmodule Expel.Policy do
   @moduledoc """
-  Expel defines a DSL with authorize and introspection functions for
-  authorization rules.
+  This module defines a DSL for authorization rules and compiles these rules
+  to authorize and introspection functions.
 
   ## Usage
 
@@ -43,6 +43,109 @@ defmodule Expel.Policy do
   default check module:
 
       use Expel.Policy, check_module: MyApp.AuthChecks
+
+  Each check function has to take the subject (user), the object, and optionally
+  an additional options argument, and must return a boolean value.
+
+  For example, this check determines whether a user is banned:
+
+      def banned(%User{banned: true}, _), do: true
+      def banned(%User{}, _), do: false
+
+  This check determines whether the user has the given role:
+
+      def role(%User{role: role}, _, role), do: true
+      def role(_, _, _), do: false
+
+  And this check determines whether the object belongs to the user:
+
+      def own_resource(%User{id: user_id}, %{user_id: user_id}), do: true
+      def own_resource(_, _), do: false
+
+  Expel does not make any assumptions about your access control model, as long
+  as you can map your rules to subject, object and action. You can use the three
+  rules above with the `allow/1` and `deny/1` macros.
+
+      allow role: :admin
+      allow :own_resource
+      deny :banned
+
+  ## Combining checks
+
+  Rules evaluate to `false` by default. These rules will always be `false`
+  because they don't have any `allow` clauses:
+
+      action :create do
+      end
+
+      action :update do
+        deny false
+      end
+
+
+  Trying to evaluate a rule name that does not exist also evaluates to `false`.
+
+  As soon as one `deny` check evaluates to `true`, the whole rule will evaluate
+  to `false`. This rule will always evaluate to `false`:
+
+      action :create do
+        allow true
+        deny true
+      end
+
+  If you pass a list of checks to either `allow/1` or `deny/1`, the checks
+  are combined with a logical `AND`.
+
+      # false
+      action :create do
+        allow [true, false]
+      end
+
+      # true
+      action :create do
+        allow [true, true]
+      end
+
+      # true
+      action :create do
+        allow [true, true]
+        deny [true, false]
+      end
+
+      # false
+      action :create do
+        allow [true, true]
+        deny [true, true]
+      end
+
+  On the other hand, if either the `allow/1` or the `deny/1` macro is used
+  multiple times, the checks are combined with a logical `OR`.
+
+      # true
+      action :create do
+        allow true
+        allow false
+      end
+
+      # false
+      action :create do
+        allow [true, false]
+        allow false
+      end
+
+      # true
+      action :create do
+        allow [true, false]
+        allow true
+      end
+
+      # false
+      action :create do
+        allow [true, true]
+        allow true
+        deny false
+        deny true
+      end
   """
   alias Expel.Rule
 
@@ -74,7 +177,7 @@ defmodule Expel.Policy do
   @callback list_rules :: [Expel.Rule.t()]
 
   @doc """
-  Same as `c:list_rules/0`, but take a keyword list with filter options.
+  Same as `c:list_rules/0`, but takes a keyword list with filter options.
 
   See `Expel.filter_rules/2` for a list of available filter options.
   """

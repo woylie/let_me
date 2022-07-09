@@ -1,6 +1,10 @@
 defmodule Expel do
   @moduledoc """
-  Documentation for `Expel`.
+  Expel is library for defining and evaluating authorization rules and handling
+  query scopes and field redactions.
+
+  For the authorization rules, please read the module documentation for
+  `Expel.Policy`.
   """
 
   alias Expel.Rule
