@@ -158,6 +158,9 @@ defmodule Expel.Policy do
       iex> user = %{id: 2, role: :user}
       iex> MyApp.Policy.authorize(:user_list, user)
       {:error, :unauthorized}
+
+  The error reason can be customized by setting the `:error_reason` option when
+  using the module.
   """
   @callback authorize(atom, any, any) :: :ok | {:error, any}
 
