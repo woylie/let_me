@@ -13,6 +13,8 @@ defmodule Expel do
   Takes a list of rules and a list of filter options and returns a filtered
   list of rules.
 
+  This function is used by `c:Expel.Policy.list_rules/1`.
+
   ## Filter options
 
   - `:object` - Matches object exactly.
