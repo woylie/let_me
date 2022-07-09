@@ -92,6 +92,8 @@ defmodule Expel.Policy do
   """
   @callback fetch_rule!(atom) :: Expel.Rule.t()
 
+  @callback authorized?(atom, any, any) :: boolean
+
   @doc """
   Returns the rule for the given rule identifier. Returns `nil` if the rule is
   not found.
@@ -127,16 +129,22 @@ defmodule Expel.Policy do
       import Expel.Policy
       import Expel.Builder
 
+      require Logger
+
       @before_compile unquote(__MODULE__)
     end
   end
 
   defmacro __before_compile__(env) do
+    check_module = Module.concat(env.module, Checks)
+
     rules =
       env.module
       |> Module.get_attribute(:rules)
       |> Enum.reverse()
       |> Enum.into(%{}, &{:"#{&1.object}_#{&1.action}", &1})
+
+    permit_function = Expel.Builder.permit_function(rules, check_module)
 
     quote do
       @doc false
@@ -156,6 +164,8 @@ defmodule Expel.Policy do
       @impl Expel.Policy
       def get_rule(action) when is_atom(action),
         do: Map.get(__rules__(), action)
+
+      unquote(permit_function)
     end
   end
 
