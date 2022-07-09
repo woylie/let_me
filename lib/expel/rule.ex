@@ -33,6 +33,7 @@ defmodule Expel.Rule do
           allow: [check | [check]],
           deny: [check | [check]],
           description: String.t() | nil,
+          name: atom,
           object: atom,
           pre_hooks: [hook]
         }
@@ -68,12 +69,13 @@ defmodule Expel.Rule do
   """
   @type hook :: atom | {module, atom} | {module, atom, any}
 
-  @enforce_keys [:action, :object]
+  @enforce_keys [:action, :name, :object]
 
   defstruct action: nil,
             allow: [],
             deny: [],
             description: nil,
+            name: nil,
             object: nil,
             pre_hooks: []
 end

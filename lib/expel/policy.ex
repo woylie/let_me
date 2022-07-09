@@ -56,6 +56,7 @@ defmodule Expel.Policy do
           action: :create,
           allow: [[role: :admin], [role: :writer]],
           deny: [],
+          name: :article_create,
           object: :article,
           pre_hooks: []
         },
@@ -63,6 +64,7 @@ defmodule Expel.Policy do
           action: :update,
           allow: [:own_resource],
           deny: [],
+          name: :article_update,
           object: :article,
           pre_hooks: [:preload_groups]
         }
@@ -78,10 +80,9 @@ defmodule Expel.Policy do
   @callback list_rules(keyword) :: [Expel.Rule.t()]
 
   @doc """
-  Returns the rule for the given rule identifier. Returns an `:ok` tuple or
-  `:error`.
+  Returns the rule for the given name. Returns an `:ok` tuple or `:error`.
 
-  The rule identifier is an atom with the format `{object}_{action}`.
+  The rule name is an atom with the format `{object}_{action}`.
 
   ## Example
 
@@ -91,6 +92,7 @@ defmodule Expel.Policy do
          action: :create,
          allow: [[role: :admin], [role: :writer]],
          deny: [],
+         name: :article_create,
          object: :article,
          pre_hooks: []
        }}
@@ -101,10 +103,9 @@ defmodule Expel.Policy do
   @callback fetch_rule(atom) :: {:ok, Expel.Rule.t()} | :error
 
   @doc """
-  Returns the rule for the given rule identifier. Raises if the rule is not
-  found.
+  Returns the rule with the given name. Raises if the rule is not found.
 
-  The rule identifier is an atom with the format `{object}_{action}`.
+  The rule name is an atom with the format `{object}_{action}`.
 
   ## Example
 
@@ -113,6 +114,7 @@ defmodule Expel.Policy do
         action: :create,
         allow: [[role: :admin], [role: :writer]],
         deny: [],
+        name: :article_create,
         object: :article,
         pre_hooks: []
       }
@@ -220,6 +222,7 @@ defmodule Expel.Policy do
         action: :create,
         allow: [[role: :admin], [role: :writer]],
         deny: [],
+        name: :article_create,
         object: :article,
         pre_hooks: []
       }
@@ -529,6 +532,7 @@ defmodule Expel.Policy do
           allow: action.allow,
           deny: action.deny,
           description: action.description,
+          name: :"#{unquote(name)}_#{action.name}",
           object: unquote(name),
           pre_hooks: action.pre_hooks
         })

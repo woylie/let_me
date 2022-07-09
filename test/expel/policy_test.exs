@@ -16,6 +16,7 @@ defmodule Expel.PolicyTest do
                  action: :create,
                  allow: [[role: :admin], [role: :writer]],
                  deny: [],
+                 name: :article_create,
                  object: :article,
                  pre_hooks: []
                },
@@ -23,6 +24,7 @@ defmodule Expel.PolicyTest do
                  action: :update,
                  allow: [:own_resource],
                  deny: [],
+                 name: :article_update,
                  object: :article,
                  pre_hooks: [:preload_groups]
                },
@@ -32,6 +34,7 @@ defmodule Expel.PolicyTest do
                  description:
                    "allows to view an article and the list of articles",
                  deny: [],
+                 name: :article_view,
                  object: :article,
                  pre_hooks: []
                },
@@ -39,6 +42,7 @@ defmodule Expel.PolicyTest do
                  action: :delete,
                  allow: [[role: :admin]],
                  deny: [:same_user],
+                 name: :user_delete,
                  object: :user,
                  pre_hooks: []
                },
@@ -46,6 +50,7 @@ defmodule Expel.PolicyTest do
                  action: :list,
                  allow: [role: :admin, role: :client],
                  deny: [],
+                 name: :user_list,
                  object: :user,
                  pre_hooks: []
                },
@@ -57,6 +62,7 @@ defmodule Expel.PolicyTest do
                    :same_user
                  ],
                  deny: [],
+                 name: :user_view,
                  object: :user,
                  pre_hooks: []
                }
@@ -98,6 +104,7 @@ defmodule Expel.PolicyTest do
                action: :create,
                allow: [[role: :admin], [role: :writer]],
                deny: [],
+               name: :article_create,
                object: :article,
                pre_hooks: []
              }
@@ -116,6 +123,7 @@ defmodule Expel.PolicyTest do
                   action: :create,
                   allow: [[role: :admin], [role: :writer]],
                   deny: [],
+                  name: :article_create,
                   object: :article,
                   pre_hooks: []
                 }}
@@ -132,6 +140,7 @@ defmodule Expel.PolicyTest do
                action: :create,
                allow: [[role: :admin], [role: :writer]],
                deny: [],
+               name: :article_create,
                object: :article,
                pre_hooks: []
              }

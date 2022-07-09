@@ -29,32 +29,34 @@ defmodule Expel do
   ## Examples
 
       iex> rules = [
-      ...>   %Expel.Rule{action: :create, object: :article},
-      ...>   %Expel.Rule{action: :create, object: :category}
+      ...>   %Expel.Rule{action: :create, name: :article_create, object: :article},
+      ...>   %Expel.Rule{action: :create, name: :category_create, object: :category}
       ...> ]
       iex> filter_rules(rules, object: :article)
-      [%Expel.Rule{action: :create, object: :article}]
+      [%Expel.Rule{action: :create, name: :article_create, object: :article}]
 
       iex> rules = [
       ...>   %Expel.Rule{
       ...>     action: :create,
+      ...>     name: :article_create,
       ...>     object: :article,
       ...>     allow: [[role: :editor]]
       ...>   },
       ...>   %Expel.Rule{
       ...>     action: :update,
+      ...>     name: :article_update,
       ...>     object: :article,
       ...>     allow: [:own_resource, [role: :writer]]
       ...>   }
       ...> ]
       iex> filter_rules(rules, allow: :own_resource)
-      [%Expel.Rule{action: :update, object: :article, allow: [:own_resource, [role: :writer]]}]
+      [%Expel.Rule{action: :update, name: :article_update, object: :article, allow: [:own_resource, [role: :writer]]}]
       iex> match?([_, _], filter_rules(rules, allow: :role))
       true
       iex> filter_rules(rules, allow: {:role, :editor})
-      [%Expel.Rule{action: :create, object: :article, allow: [[role: :editor]]}]
+      [%Expel.Rule{action: :create, name: :article_create, object: :article, allow: [[role: :editor]]}]
       iex> filter_rules(rules, allow: {:role, :writer})
-      [%Expel.Rule{action: :update, object: :article, allow: [:own_resource, [role: :writer]]}]
+      [%Expel.Rule{action: :update, name: :article_update, object: :article, allow: [:own_resource, [role: :writer]]}]
   """
   def filter_rules(rules, opts) when is_list(rules) do
     opts = Keyword.validate!(opts, [:action, :allow, :deny, :object])
