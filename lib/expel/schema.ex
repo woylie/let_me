@@ -5,11 +5,12 @@ defmodule Expel.Schema do
   Using this module will define overridable default implementations for the
   `scope/2` and `redacted_fields/2` callbacks.
 
-  ## Example
+  ## Usage
 
       defmodule MyApp.Blog.Post do
         use Expel.Schema
         import Ecto.Schema
+        alias MyApp.Accounts.User
 
         @impl Expel.Schema
         def scope(query_params, %User{role: :admin}), do: query_params
@@ -18,6 +19,30 @@ defmodule Expel.Schema do
         @impl Expel.Schema
         def redacted_fields(_, %User{role: :admin}), do: []
         def redacted_fields(_, %User{}), do: [:view_count]
+      end
+
+  ## Scoping a query
+
+  With the setup above, you scope blog post query depending on the user.
+
+      defmodule MyApp.Blog do
+        import Ecto.Query
+
+        alias MyApp.Accounts.User
+        alias MyApp.Blog.Post
+
+        def list_posts(%User{} = current_user) do
+          Post
+          |> Post.scope(current_user)
+          |> Repo.all()
+        end
+
+        def get_post(id, %User{} = current_user) when is_integer(id) do
+          Post
+          |> where(id: id)
+          |> Post.scope(current_user)
+          |> Repo.one()
+        end
       end
   """
 

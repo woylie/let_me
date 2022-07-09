@@ -395,11 +395,9 @@ defmodule Expel.Policy do
 
     if duplicate_rules != [] do
       rules_as_string =
-        duplicate_rules
-        |> Enum.map(fn {{object, action}, _} ->
+        Enum.map_join(duplicate_rules, "\n    ", fn {{object, action}, _} ->
           "object: #{inspect(object)}, action: #{inspect(action)}"
         end)
-        |> Enum.join("\n    ")
 
       raise """
       duplicate authorization rules

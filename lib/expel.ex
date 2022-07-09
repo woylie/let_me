@@ -103,4 +103,63 @@ defmodule Expel do
        do: true
 
   defp matches_check?(_, {name, _opts}) when is_atom(name), do: false
+
+  @doc """
+  Takes a struct or a list of structs and uses the callback implementation for
+  `c:Expel.Schema.redacted_fields/2` in the struct module to redact fields
+  depending on the subject (user).
+
+  ## Options
+
+  - `:redact_value` - The value to be used for redacted fields. Defaults to
+    `:redacted`.
+
+  ## Example
+
+      iex> article = %MyApp.Article{}
+      iex> user = %{id: 2, role: :user}
+      iex> redact(article, user)
+      %MyApp.Article{like_count: :redacted, title: "Give us back our moon dust and cockroaches", user_id: 1, view_count: :redacted}
+
+      iex> article = %MyApp.Article{}
+      iex> user = %{id: 2, role: :user}
+      iex> redact(article, user, redact_value: nil)
+      %MyApp.Article{like_count: nil, title: "Give us back our moon dust and cockroaches", user_id: 1, view_count: nil}
+
+
+      iex> articles = [
+      ...>   %MyApp.Article{},
+      ...>   %MyApp.Article{user_id: 2, title: "Joey Chestnut is chomp champ"}
+      ...> ]
+      iex> user = %{id: 2, role: :user}
+      iex> redact(articles, user)
+      [%MyApp.Article{like_count: :redacted, title: "Give us back our moon dust and cockroaches", user_id: 1, view_count: :redacted}, %MyApp.Article{like_count: 25, title: "Joey Chestnut is chomp champ", user_id: 2, view_count: :redacted}]
+  """
+  @spec redact(struct, any, keyword) :: struct
+  @spec redact([struct], any, keyword) :: [struct]
+  @spec redact(nil, any, keyword) :: nil
+  def redact(struct, subject, opts \\ [redact_value: :redacted])
+
+  def redact(objects, subject, opts) when is_list(objects) do
+    redact_value = Keyword.fetch!(opts, :redact_value)
+    Enum.map(objects, &do_redact(&1, subject, redact_value))
+  end
+
+  def redact(nil, _, _), do: nil
+
+  def redact(object, subject, opts) do
+    redact_value = Keyword.fetch!(opts, :redact_value)
+    do_redact(object, subject, redact_value)
+  end
+
+  defp do_redact(%module{} = object, subject, redact_value) do
+    redacted_fields = module.redacted_fields(object, subject)
+    replace_keys(redacted_fields, redact_value, object)
+  end
+
+  defp replace_keys([], _, acc), do: acc
+
+  defp replace_keys([key | rest], value, acc) do
+    replace_keys(rest, value, Map.put(acc, key, value))
+  end
 end

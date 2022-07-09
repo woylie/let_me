@@ -1,4 +1,63 @@
 defmodule ExpelTest do
   use ExUnit.Case
   doctest Expel, import: true
+
+  alias MyApp.Article
+
+  @article %Article{
+    like_count: 25,
+    title: "Give us back our moon dust and cockroaches",
+    user_id: 5,
+    view_count: 200
+  }
+
+  @admin %{role: :admin, id: 1}
+  @owner %{role: :user, id: 5}
+  @user %{role: :user, id: 2}
+
+  describe "redact/3" do
+    test "replaces struct keys with default value depending on user" do
+      assert Expel.redact(@article, @admin) == @article
+
+      assert Expel.redact(@article, @owner) ==
+               %{@article | view_count: :redacted}
+
+      assert Expel.redact(@article, @user) ==
+               %{@article | like_count: :redacted, view_count: :redacted}
+    end
+
+    test "replaces struct keys with given value depending on user" do
+      opts = [redact_value: :removed]
+
+      assert Expel.redact(@article, @owner, opts) ==
+               %{@article | view_count: :removed}
+
+      assert Expel.redact(@article, @user, opts) ==
+               %{@article | like_count: :removed, view_count: :removed}
+    end
+
+    test "replaces keys in struct list with default value depending on user" do
+      assert Expel.redact([@article], @admin) == [@article]
+
+      assert Expel.redact([@article], @owner) ==
+               [%{@article | view_count: :redacted}]
+
+      assert Expel.redact([@article], @user) ==
+               [%{@article | like_count: :redacted, view_count: :redacted}]
+    end
+
+    test "replaces keys in struct list with given value depending on user" do
+      opts = [redact_value: :removed]
+
+      assert Expel.redact([@article], @owner, opts) ==
+               [%{@article | view_count: :removed}]
+
+      assert Expel.redact([@article], @user, opts) ==
+               [%{@article | like_count: :removed, view_count: :removed}]
+    end
+
+    test "handles nil value" do
+      assert Expel.redact(nil, @user) == nil
+    end
+  end
 end
