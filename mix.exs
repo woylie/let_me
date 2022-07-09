@@ -55,7 +55,7 @@ defmodule Expel.MixProject do
 
   defp package do
     [
-      licenses: ["Apache 2"],
+      licenses: ["MIT"],
       links: %{
         "GitHub" => @source_url,
         "Changelog" => @source_url <> "/blob/main/CHANGELOG.md"
