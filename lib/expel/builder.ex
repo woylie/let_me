@@ -73,6 +73,7 @@ defmodule Expel.Builder do
          {identifier, %Expel.Rule{} = rule},
          check_module
        ) do
+    pre_hook_calls = build_pre_hook_calls(rule.pre_hooks, check_module)
     allow_condition = build_conditions(rule.allow, check_module)
     deny_condition = build_conditions(rule.deny, check_module)
 
@@ -89,8 +90,37 @@ defmodule Expel.Builder do
 
     quote do
       def authorized?(unquote(identifier), subject, object) do
+        unquote(pre_hook_calls)
         unquote(combined_condition)
       end
+    end
+  end
+
+  defp build_pre_hook_calls([], _), do: nil
+
+  defp build_pre_hook_calls(pre_hooks, check_module)
+       when is_list(pre_hooks) do
+    functions =
+      Enum.map(pre_hooks, fn
+        pre_hook when is_atom(pre_hook) ->
+          {check_module, pre_hook, []}
+
+        {module, function} ->
+          {module, function, []}
+
+        {module, function, args} ->
+          {module, function, [args]}
+      end)
+
+    quote do
+      {subject, object} =
+        Enum.reduce(
+          unquote(Macro.escape(functions)),
+          {subject, object},
+          fn {module, function, args}, {subject, object} ->
+            apply(module, function, [subject, object] ++ args)
+          end
+        )
     end
   end
 

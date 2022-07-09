@@ -490,7 +490,7 @@ defmodule Expel.Policy do
         allow: get_acc_attribute(__MODULE__, :allow_checks),
         description: Module.get_attribute(__MODULE__, :description),
         deny: get_acc_attribute(__MODULE__, :deny_checks),
-        pre_hooks: get_acc_attribute(__MODULE__, :pre_hooks)
+        pre_hooks: __MODULE__ |> get_acc_attribute(:pre_hooks) |> List.flatten()
       })
     end
   end
@@ -718,10 +718,92 @@ defmodule Expel.Policy do
   @doc """
   Registers one or multiple functions to run in order to hydrate the subject
   and/or object of the request.
+
+  This is useful if you need to enhance the data for multiple checks in the
+  same action. The configured hook functions will be called once before running
+  the checks for an action.
+
+  The referenced functions must take the subject and object as arguments and
+  return a 2-tuple with the updated subject and object.
+
+  ## Examples
+
+  Let's assume we defined these check and hook functions in our check module:
+
+      def MyApp.Policy.Checks do
+        # Checks
+
+        def min_age(%{age: age}, _, min_age), do: age >= min_age
+
+        # Hooks
+
+        def double_age(subject, object) do
+          new_subject = %{subject | age: subject.age * 2}
+          {new_subject, object}
+        end
+
+        def set_age(subject, object, age) do
+          new_subject = %{subject | age: age}
+          {new_subject, object}
+        end
+      end
+
+  If an atom is passed, Expel will try to find the function in the check module.
+
+      object :article do
+        action :view do
+          pre_hooks :double_age
+          allow min_age: 50
+        end
+      end
+
+  With this in place, the following authorization request will evaluate to
+  `true`:
+
+      MyApp.Policy.authorize!(:article_view, %{age: 25})
+      # => true
+
+  If your hooks are defined in a different module, you can also pass a
+  module/function tuple. The pre-hook configuration above is equivalent to:
+
+      object :article do
+        action :view do
+          pre_hooks {MyApp.Policy.Checks, :double_age}
+          allow min_age: 50
+        end
+      end
+
+  You can also pass options to a hook by using an MFA tuple:
+
+      object :article do
+        action :view do
+          pre_hooks {MyApp.Policy.Checks, :set_age, 50}
+          allow min_age: 50
+        end
+      end
+
+      MyApp.Policy.authorize!(:article_view, %{age: 10})
+      # => true
+
+  And finally, you can also pass a list of hooks, which will be run in sequence:
+
+      alias MyApp.Policy.Checks
+
+      object :article do
+        action :view do
+          pre_hooks [{Checks, :set_age, 25}, :double_age]
+          allow min_age: 50
+        end
+      end
+
+      MyApp.Policy.authorize!(:article_view, %{age: 10})
+      # => true
   """
-  defmacro pre_hooks(checks) do
+  @spec pre_hooks(hook | [hook]) :: Macro.t()
+        when hook: atom | {module, atom} | {module, atom, any}
+  defmacro pre_hooks(hooks) do
     quote do
-      Module.put_attribute(__MODULE__, :pre_hooks, unquote(checks))
+      Module.put_attribute(__MODULE__, :pre_hooks, unquote(hooks))
     end
   end
 end

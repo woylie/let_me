@@ -3,6 +3,8 @@ defmodule MyApp.PolicyCombinations do
 
   use Expel.Policy
 
+  alias MyApp.PolicyCombinations.MoreHooks
+
   object :simple do
     action :allow_without_options do
       allow :own_resource
@@ -67,6 +69,26 @@ defmodule MyApp.PolicyCombinations do
       allow true
       deny :same_user
       deny role: :writer
+    end
+
+    action :single_prehook do
+      pre_hooks :preload_groups
+      allow :same_group
+    end
+
+    action :single_mf_prehook do
+      pre_hooks {MoreHooks, :preload_likeability}
+      allow min_likeability: 5
+    end
+
+    action :single_mfa_prehook do
+      pre_hooks {MoreHooks, :preload_handsomeness, factor: 2}
+      allow min_handsomeness: 5
+    end
+
+    action :multiple_prehooks do
+      pre_hooks [:preload_groups, :preload_pets]
+      allow [:same_group, :same_pet]
     end
   end
 end

@@ -359,6 +359,38 @@ defmodule Expel.PolicyTest do
       refute Policy.authorized?(:user_delete, %{role: :user, id: 1}, %{id: 2})
       refute Policy.authorized?(:user_delete, %{role: :user, id: 1}, %{id: 1})
     end
+
+    test "updates subject and object with pre-hook" do
+      assert PolicyCombinations.authorized?(
+               :complex_single_prehook,
+               %{id: 1},
+               %{id: 100}
+             )
+    end
+
+    test "updates subject and object with multiple pre-hooks" do
+      assert PolicyCombinations.authorized?(
+               :complex_multiple_prehooks,
+               %{id: 1},
+               %{id: 100}
+             )
+    end
+
+    test "accepts module/function tuples as pre-hooks" do
+      assert PolicyCombinations.authorized?(
+               :complex_single_mf_prehook,
+               %{id: 4},
+               %{id: 100}
+             )
+    end
+
+    test "accepts mfa tuples as pre-hooks" do
+      assert PolicyCombinations.authorized?(
+               :complex_single_mfa_prehook,
+               %{id: 3},
+               %{id: 100}
+             )
+    end
   end
 
   describe "authorize/3" do
