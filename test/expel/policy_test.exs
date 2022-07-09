@@ -75,6 +75,21 @@ defmodule Expel.PolicyTest do
       rules = Policy.list_rules(action: :view)
       assert Enum.all?(rules, &(&1.action == :view))
     end
+
+    test "filters by allow check name without options" do
+      assert [%Rule{action: :update, object: :article}] =
+               Policy.list_rules(allow: :own_resource)
+    end
+
+    test "filters by allow check name with options" do
+      assert [%Rule{action: :create, object: :article}] =
+               Policy.list_rules(allow: {:role, :writer})
+    end
+
+    test "filters by deny check name without options" do
+      assert [%Rule{action: :delete, object: :user}] =
+               Policy.list_rules(deny: :same_user)
+    end
   end
 
   describe "get_rule/1" do
