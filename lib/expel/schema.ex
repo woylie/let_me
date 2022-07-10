@@ -46,6 +46,18 @@ defmodule Expel.Schema do
           |> Repo.one()
         end
       end
+
+  ## Redacting fields
+
+  After implementing the `c:redacted_fields/2` callback, you can hide fields from
+  depending on the user by calling `Expel.redact/3` on a struct or a list of
+  structs.
+
+      def list_articles(%User{} = current_user) do
+        Article
+        |> Repo.all()
+        |> Expel.redact(current_user)
+      end
   """
 
   defmacro __using__(_opts) do
