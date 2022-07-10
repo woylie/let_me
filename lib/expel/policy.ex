@@ -501,18 +501,30 @@ defmodule Expel.Policy do
 
       object :article do
         action :create do
-          allow role: :admin
+          allow role: :editor
           allow role: :writer
         end
 
         action :update do
-          allow role: :admin
+          allow role: :editor
           allow [:own_resource, role: :writer]
         end
       end
+
+  If you have multiple actions with the same allow and deny rules, you can also
+  pass a list of action names as the first argument.
+
+      object :article do
+        action [:create, :update, :delete] do
+          allow role: :editor
+          allow role: :writer
+        end
+      end
   """
-  @spec action(atom, Macro.t()) :: Macro.t()
-  defmacro action(name, do: block) do
+  @spec action(atom | [atom], Macro.t()) :: Macro.t()
+  defmacro action(names, do: block) do
+    names = List.wrap(names)
+
     quote do
       # reset attributes from previous `action/2` calls
       Module.delete_attribute(__MODULE__, :allow_checks)
@@ -523,13 +535,16 @@ defmodule Expel.Policy do
       # compile inner block
       unquote(block)
 
-      Module.put_attribute(__MODULE__, :actions, %{
-        name: unquote(name),
-        allow: get_acc_attribute(__MODULE__, :allow_checks),
-        description: Module.get_attribute(__MODULE__, :description),
-        deny: get_acc_attribute(__MODULE__, :deny_checks),
-        pre_hooks: __MODULE__ |> get_acc_attribute(:pre_hooks) |> List.flatten()
-      })
+      for name <- unquote(names) do
+        Module.put_attribute(__MODULE__, :actions, %{
+          name: name,
+          allow: get_acc_attribute(__MODULE__, :allow_checks),
+          description: Module.get_attribute(__MODULE__, :description),
+          deny: get_acc_attribute(__MODULE__, :deny_checks),
+          pre_hooks:
+            __MODULE__ |> get_acc_attribute(:pre_hooks) |> List.flatten()
+        })
+      end
     end
   end
 

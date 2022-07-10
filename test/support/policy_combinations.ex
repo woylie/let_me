@@ -10,6 +10,10 @@ defmodule MyApp.PolicyCombinations do
       allow :own_resource
     end
 
+    action [:list_of_actions_1, :list_of_actions_2] do
+      allow :own_resource
+    end
+
     action :allow_with_options do
       allow role: :editor
     end

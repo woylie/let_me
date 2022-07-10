@@ -234,6 +234,32 @@ defmodule Expel.PolicyTest do
       assert PolicyCombinations.authorized?(:simple_no_checks, %{}) == false
     end
 
+    test "action with list of names results in multiple rules" do
+      assert PolicyCombinations.authorized?(
+               :simple_list_of_actions_1,
+               %{id: 1},
+               %{user_id: 1}
+             ) == true
+
+      assert PolicyCombinations.authorized?(
+               :simple_list_of_actions_2,
+               %{id: 1},
+               %{user_id: 1}
+             ) == true
+
+      assert PolicyCombinations.authorized?(
+               :simple_list_of_actions_1,
+               %{id: 1},
+               %{user_id: 2}
+             ) == false
+
+      assert PolicyCombinations.authorized?(
+               :simple_list_of_actions_2,
+               %{id: 1},
+               %{user_id: 2}
+             ) == false
+    end
+
     test "returns false and logs warning if rule does not exist" do
       assert capture_log([level: :warn], fn ->
                assert PolicyCombinations.authorized?(:does_not_exist, %{}) ==
