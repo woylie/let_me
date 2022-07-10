@@ -53,6 +53,7 @@ defmodule Expel.Schema do
       @behaviour Expel.Schema
 
       def scope(q, _), do: q
+      def scope(q, _, _), do: q
       def redacted_fields(_, _), do: []
 
       defoverridable Expel.Schema
@@ -97,6 +98,12 @@ defmodule Expel.Schema do
   """
   @callback scope(queryable, subject) :: queryable
             when queryable: any, subject: any
+
+  @doc """
+  Same as `c:scope/2`, but takes an additional argument for arbitrary options.
+  """
+  @callback scope(queryable, subject, opts) :: queryable
+            when queryable: any, subject: any, opts: any
 
   @doc """
   Returns the fields that need to be removed from the given object for the given
