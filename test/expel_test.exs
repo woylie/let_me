@@ -2,7 +2,7 @@ defmodule ExpelTest do
   use ExUnit.Case
   doctest Expel, import: true
 
-  alias MyApp.Article
+  alias MyApp.Blog.Article
 
   @article %Article{
     like_count: 25,

@@ -1,4 +1,4 @@
-defmodule MyApp.Article do
+defmodule MyApp.Blog.Article do
   @moduledoc """
   Schema module for articles, without the Ecto stuff.
   """

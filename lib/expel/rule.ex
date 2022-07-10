@@ -7,12 +7,16 @@ defmodule Expel.Rule do
   Struct for an authorization rule.
 
   - `action` - The action (verb) to be performed on the object, e.g. `:update`.
-  - `allow` - A lists of checks to run to determine whether the action is
-    allowed.
-  - `deny` - A lists of checks to run to determine whether the action is
-    explicitly denied. If any of these checks returns `true`, the end
-    result of the permission checks is immediately `false`, even if any of the
-    checks in the `allow` field would return `true`.
+  - `allow` - A list of lists of checks to run to determine whether the action
+    is allowed. The outer list contains the alternatives (one for each `allow`
+    call; combined with `OR`). The inner lists are the checks for each `allow`
+    (combined with `AND`).
+  - `description` - A human-readable description of the action.
+  - `deny` - A list of lists of checks to run to determine whether the action is
+    explicitly denied. Same format as in `allow`. If any of these checks returns
+    `true`, the end result of the authorization request is immediately `false`,
+    even if any of the checks in the `allow` field would return `true`.
+  - `name` - The name of the rule. Is always `{object}_{action}`.
   - `object` - The object that the action is performed on, e.g. `:article`.
   - `pre_hooks` - Functions to run in order to hydrate the subject and/or object
     before running the allow and deny checks.
@@ -21,7 +25,7 @@ defmodule Expel.Rule do
   combined with a logical `OR`. If one of the entries is a list of checks, those
   checks are combined with a logical `AND`.
 
-  Examples:
+  ## Examples
 
   - `[{role: :editor}, {role: :writer}]` - role is editor OR role is writer
   - `[[{role: :editor}], [{role: :writer}]]` - same as above
@@ -39,14 +43,14 @@ defmodule Expel.Rule do
         }
 
   @typedoc """
-  A `check` references a function in the configured Checks module.
+  A `check` references a function in the configured check module.
 
-  Can be either of:
+  Can be either one of:
 
   - A function name as an atom. The function must be a 2-arity function that
-    takes the the subject (usually the current user) and the object as
+    takes the subject (usually the current user) and the object as
     arguments.
-  - A tuple with the function name as an atom and a value in any format. The
+  - A tuple with the function name as an atom and a value of any type. The
     function must be a 3-arity function that takes the subject, the object, and
     the given value as arguments.
   """
@@ -56,9 +60,9 @@ defmodule Expel.Rule do
   A hook can be registered to hydrate the subject and/or object before passing
   them to the check functions.
 
-  Can be either of:
+  Can be either one of:
 
-  - The name of a function defined in the configured Checks module as an atom.
+  - The name of a function defined in the configured check module as an atom.
   - A `{module, function}` tuple.
   - A `{module, function, arguments}` tuple.
 

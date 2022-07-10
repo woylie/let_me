@@ -3,7 +3,7 @@ defmodule MyApp.Policy do
 
   use Expel.Policy, check_module: MyApp.PolicyCombinations.Checks
 
-  object :article, MyApp.Article do
+  object :article, MyApp.Blog.Article do
     action :create do
       allow role: :admin
       allow role: :writer

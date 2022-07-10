@@ -7,40 +7,42 @@ defmodule Expel.Schema do
 
   ## Usage
 
-      defmodule MyApp.Blog.Post do
+      defmodule MyApp.Blog.Article do
         use Expel.Schema
         import Ecto.Schema
         alias MyApp.Accounts.User
 
         @impl Expel.Schema
-        def scope(query_params, %User{role: :admin}), do: query_params
+        def scope(q, %User{role: :admin}), do: q
         def scope(q, %User{}), do: where(q, published: true)
 
         @impl Expel.Schema
         def redacted_fields(_, %User{role: :admin}), do: []
+        def redacted_fields(%__MODULE__{user_id: id}, %User{id: id}), do: []
         def redacted_fields(_, %User{}), do: [:view_count]
       end
 
   ## Scoping a query
 
-  With the setup above, you scope blog post query depending on the user.
+  With the setup above, you can scope a blog article query depending on the
+  user.
 
       defmodule MyApp.Blog do
         import Ecto.Query
 
         alias MyApp.Accounts.User
-        alias MyApp.Blog.Post
+        alias MyApp.Blog.Article
 
-        def list_posts(%User{} = current_user) do
-          Post
-          |> Post.scope(current_user)
+        def list_articles(%User{} = current_user) do
+          Article
+          |> Article.scope(current_user)
           |> Repo.all()
         end
 
-        def get_post(id, %User{} = current_user) when is_integer(id) do
-          Post
+        def get_article(id, %User{} = current_user) when is_integer(id) do
+          Article
           |> where(id: id)
-          |> Post.scope(current_user)
+          |> Article.scope(current_user)
           |> Repo.one()
         end
       end
@@ -62,7 +64,7 @@ defmodule Expel.Schema do
   current user) and returns an updated queryable.
 
   This allows you to add `WHERE` clauses to a query depending on the user. For
-  example, you may want to add a `WHERE` clause to only return posts that are
+  example, you may want to add a `WHERE` clause to only return articles that are
   published, unless the user is an admin. Or you may want to only return
   objects that belong to the user.
 
@@ -71,10 +73,9 @@ defmodule Expel.Schema do
         use Expel.Schema
 
         import Ecto.Schema
-
         alias MyApp.Accounts.User
 
-        # schema
+        # Ecto schema and changeset
 
         @impl Expel.Schema
         def scope(q, %User{role: :admin}), do: q
@@ -102,20 +103,17 @@ defmodule Expel.Schema do
   subject.
 
   This function can be used to hide certain fields depending on the current
-  user.
+  user. See also `Expel.redact/3` and `Expel.reject_redacted_fields/3`.
 
-      defmodule MyApp.Blog.Post do
+      defmodule MyApp.Blog.Article do
         use Expel.Schema
         alias MyApp.Accounts.User
 
         @impl Expel.Schema
-        # hide view count unless the user is an admin or the post was written
+        # hide view count unless the user is an admin or the article was written
         # by the user
         def redacted_fields(_, %User{role: :admin}), do: []
-
-        def redacted_fields(%__MODULE__{user_id: id}, %User{id: id}),
-          do: [:view_count]
-
+        def redacted_fields(%__MODULE__{user_id: id}, %User{id: id}), do: []
         def redacted_fields(_, %User{}), do: [:view_count]
       end
   """

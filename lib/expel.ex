@@ -3,8 +3,8 @@ defmodule Expel do
   Expel is library for defining and evaluating authorization rules and handling
   query scopes and field redactions.
 
-  For the authorization rules, please read the module documentation for
-  `Expel.Policy`.
+  This module only defines auxiliary functions. The main functionality lies in
+  the `Expel.Policy` module.
   """
 
   alias Expel.Rule
@@ -17,8 +17,8 @@ defmodule Expel do
 
   ## Filter options
 
-  - `:object` - Matches object exactly.
-  - `:action` - Matches action exactly.
+  - `:object` - Matches an object exactly.
+  - `:action` - Matches an action exactly.
   - `:allow` - Either a check name as an atom or a 2-tuple with the check name
     and the options.
   - `:deny` - Either a check name as an atom or a 2-tuple with the check name
@@ -105,9 +105,11 @@ defmodule Expel do
   defp matches_check?(_, {name, _opts}) when is_atom(name), do: false
 
   @doc """
-  Takes a struct or a list of structs and uses the callback implementation for
-  `c:Expel.Schema.redacted_fields/2` in the struct module to redact fields
-  depending on the subject (user).
+  Takes a struct or a list of structs and redacts fields depending on the
+  subject (user).
+
+  Uses the callback implementation for `c:Expel.Schema.redacted_fields/2` in the
+  struct module.
 
   ## Options
 
@@ -116,24 +118,23 @@ defmodule Expel do
 
   ## Example
 
-      iex> article = %MyApp.Article{}
+      iex> article = %MyApp.Blog.Article{}
       iex> user = %{id: 2, role: :user}
       iex> redact(article, user)
-      %MyApp.Article{like_count: :redacted, title: "Give us back our moon dust and cockroaches", user_id: 1, view_count: :redacted}
+      %MyApp.Blog.Article{like_count: :redacted, title: "Give us back our moon dust and cockroaches", user_id: 1, view_count: :redacted}
 
-      iex> article = %MyApp.Article{}
+      iex> article = %MyApp.Blog.Article{}
       iex> user = %{id: 2, role: :user}
       iex> redact(article, user, redact_value: nil)
-      %MyApp.Article{like_count: nil, title: "Give us back our moon dust and cockroaches", user_id: 1, view_count: nil}
-
+      %MyApp.Blog.Article{like_count: nil, title: "Give us back our moon dust and cockroaches", user_id: 1, view_count: nil}
 
       iex> articles = [
-      ...>   %MyApp.Article{},
-      ...>   %MyApp.Article{user_id: 2, title: "Joey Chestnut is chomp champ"}
+      ...>   %MyApp.Blog.Article{},
+      ...>   %MyApp.Blog.Article{user_id: 2, title: "Joey Chestnut is chomp champ"}
       ...> ]
       iex> user = %{id: 2, role: :user}
       iex> redact(articles, user)
-      [%MyApp.Article{like_count: :redacted, title: "Give us back our moon dust and cockroaches", user_id: 1, view_count: :redacted}, %MyApp.Article{like_count: 25, title: "Joey Chestnut is chomp champ", user_id: 2, view_count: :redacted}]
+      [%MyApp.Blog.Article{like_count: :redacted, title: "Give us back our moon dust and cockroaches", user_id: 1, view_count: :redacted}, %MyApp.Blog.Article{like_count: 25, title: "Joey Chestnut is chomp champ", user_id: 2, view_count: :redacted}]
   """
   @spec redact(struct, any, keyword) :: struct
   @spec redact([struct], any, keyword) :: [struct]
@@ -173,13 +174,12 @@ defmodule Expel do
 
       iex> fields = [:like_count, :title, :user_id, :view_count]
       iex> user = %{id: 1, role: :user}
-      iex> article = %MyApp.Article{}
+      iex> article = %MyApp.Blog.Article{}
       iex> reject_redacted_fields(fields, article, user)
       [:title, :user_id]
 
   This can be useful as a safeguard to prevent accidentally casting fields the
-  user may not see and thereby nilifying or replacing them with the redacted
-  value.
+  user is not allowed to see and thereby nilifying or replacing them.
 
       def update_changeset(%Article{} = article, attrs, %User{} = user) do
         fields = Expel.reject_redacted_fields(

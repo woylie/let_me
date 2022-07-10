@@ -81,7 +81,7 @@ defmodule Expel.Builder do
   end
 
   defp permit_function_clause(
-         {identifier, %Expel.Rule{} = rule},
+         {rule_name, %Expel.Rule{} = rule},
          check_module
        ) do
     pre_hook_calls = build_pre_hook_calls(rule.pre_hooks, check_module)
@@ -100,7 +100,7 @@ defmodule Expel.Builder do
       end
 
     quote do
-      def authorized?(unquote(identifier), subject, object) do
+      def authorized?(unquote(rule_name), subject, object) do
         unquote(pre_hook_calls)
         unquote(combined_condition)
       end

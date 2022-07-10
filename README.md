@@ -243,8 +243,8 @@ iex> MyApp.Policy.list_rules(role: :writer)
 
 Even if a user is generally allowed to see a certain resource type, they may
 only be allowed to see a subset of the data. For example, in a blog system, a
-user might only be allowed to see published posts, unless they are a writer. Or
-in a system where users belong to companies, a company user might only be
+user might only be allowed to see published articles, unless they are a writer.
+Or in a system where users belong to companies, a company user might only be
 allowed to see users who belong to the same company.
 
 In order to scope your queries depending on the user type, you can implement the

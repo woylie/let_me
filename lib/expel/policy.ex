@@ -1,25 +1,36 @@
 defmodule Expel.Policy do
   @moduledoc """
   This module defines a DSL for authorization rules and compiles these rules
-  to authorize and introspection functions.
+  to authorization and introspection functions.
 
   ## Usage
 
       defmodule MyApp.Policy do
         use Expel.Policy
 
-        object :article do
+        object :articles do
+          # Creating articles is allowed if the user role is `editor` or `writer`.
           action :create do
-            allow role: :admin
+            allow role: :editor
             allow role: :writer
           end
 
-          action :update do
-            allow :own_resource
+          # Viewing articles is always allowed, unless the user is banned.
+          action :read do
+            allow true
+            deny :banned
           end
 
-          action :view do
-            allow true
+          # Updating an article is allowed if (the user role is `editor`) OR
+          # (the user role is `writer` AND the article belongs to the user).
+          action :update do
+            allow role: :editor
+            allow [:own_resource, role: :writer]
+          end
+
+          # Deleting an article is allowed if the user is an editor.
+          action :delete do
+            allow role: :editor
           end
         end
       end
@@ -35,8 +46,8 @@ defmodule Expel.Policy do
 
   ## Check module
 
-  The checks passed to `allow/1` and `allow/2` reference the names of functions
-  in the checks module.
+  The checks passed to `allow/1` and `deny/1` reference the names of functions
+  in the check module.
 
   By default, Expel tries to find the functions in `__MODULE__.Checks` (in the
   example, this would be `MyApp.Policy.Checks`). However, you can override the
@@ -45,7 +56,7 @@ defmodule Expel.Policy do
       use Expel.Policy, check_module: MyApp.AuthChecks
 
   Each check function has to take the subject (user), the object, and optionally
-  an additional options argument, and must return a boolean value.
+  an additional argument, and must return a boolean value.
 
   For example, this check determines whether a user is banned:
 
@@ -240,7 +251,7 @@ defmodule Expel.Policy do
   ## Examples
 
       iex> MyApp.Policy.get_schema(:article)
-      MyApp.Article
+      MyApp.Blog.Article
 
       iex> MyApp.Policy.get_schema(:user)
       nil
@@ -265,10 +276,9 @@ defmodule Expel.Policy do
       def own_resource(%{id: user_id}, %{user_id: user_id}), do: true
       def own_resource(_, _), do: false
 
-  The identifier for the action consists of the object and the action name, in
-  this case `:article_create`. To authorize the action, we need to pass this
-  identifier, the subject (current user) and the object (the article to be
-  updated).
+  The rule name consists of the object and the action name, in this case
+  `:article_create`. To authorize the action, we need to pass the rule name, the
+  subject (current user) and the object (the article to be updated).
 
       iex> article = %{id: 80, user_id: 1}
       iex> user_1 = %{id: 1}
@@ -336,10 +346,10 @@ defmodule Expel.Policy do
   @callback authorized?(atom, any, any) :: boolean
 
   @doc """
-  Returns the rule for the given rule identifier. Returns `nil` if the rule is
+  Returns the rule for the given rule name. Returns `nil` if the rule is
   not found.
 
-  The rule identifier is an atom with the format `{object}_{action}`.
+  The rule name is an atom with the format `{object}_{action}`.
 
   ## Example
 
@@ -479,12 +489,13 @@ defmodule Expel.Policy do
   Defines an action that needs to be authorized.
 
   Within the do-block, you can use the `allow/1`, `deny/1` and `pre_hooks/1`
-  macros to define the checks to be run.
+  macros to define the checks to be run and the `desc/1` macro to add a
+  description.
 
   This macro must be used within the do-block of `object/2`.
 
-  Each `action` block will be compiled to a rule. The identifier for the rule
-  is an atom with the format `{object}_{action}`.
+  Each `action` block will be compiled to a rule. The rule name is an atom with
+  the format `{object}_{action}`.
 
   ## Example
 
@@ -530,10 +541,10 @@ defmodule Expel.Policy do
   - a function name as an atom
   - a tuple with the function name and an additional argument
   - a list of function names or function/argument tuples
-  - `true` - Always allows an action. This is useful in combination with the
-    `deny/1` macro.
+  - `true` or `false` - Always allows or denies an action. Can be useful in
+    combination with the `deny/1` macro.
 
-  The function must be defined in the configured Checks module and take the
+  The function must be defined in the configured check module and take the
   subject (current user), object as arguments, and if given, the additional
   argument.
 
@@ -633,14 +644,13 @@ defmodule Expel.Policy do
   Defines the checks to be run to determine if an action is denied.
 
   If any of the checks evaluates to `true`, the `allow` checks are overridden
-  and the permission request is automatically denied.
+  and the authorization request is automatically denied.
 
   If a list is given as an argument, the checks are combined with a logical
   `AND`.
 
   If the `allow/1` macro is used multiple times within the same `action/2`
   block, the checks of each macro call are combined with a logical `OR`.
-
 
   ## Examples
 
@@ -657,8 +667,8 @@ defmodule Expel.Policy do
         def same_user(_, _, _), do: false
       end
 
-  This would allow the `:user_delete` by default, _unless_ the object is the
-  current user:
+  This would allow the `:user_delete` action by default, _unless_ the object is
+  the current user:
 
       object :user do
         action :delete do
@@ -731,6 +741,9 @@ defmodule Expel.Policy do
           allow role: :writer
         end
       end
+
+  At the moment, this doesn't do much, except that you can find the schema
+  module by passing the object name to `c:get_schema/1` now.
   """
   @spec object(atom, module | nil, Macro.t()) :: Macro.t()
   defmacro object(name, module \\ nil, do: block) do
@@ -768,8 +781,9 @@ defmodule Expel.Policy do
   and/or object of the request.
 
   This is useful if you need to enhance the data for multiple checks in the
-  same action. The configured hook functions will be called once before running
-  the checks for an action.
+  same action by preloading associations, making external requests, or similar
+  things. The configured hook functions will be called once before running the
+  checks for an action.
 
   The referenced functions must take the subject and object as arguments and
   return a 2-tuple with the updated subject and object.
