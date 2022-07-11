@@ -11,7 +11,7 @@ jobs:
     name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
     strategy:
       matrix:
-        otp: [23.3", "24.1"]
+        otp: ["23.3", "24.1"]
         elixir: ["1.13"]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
