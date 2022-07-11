@@ -1,7 +1,7 @@
 defmodule MyApp.PolicyCombinations do
   @moduledoc false
 
-  use Expel.Policy
+  use LetMe.Policy
 
   alias MyApp.PolicyCombinations.MoreHooks
 

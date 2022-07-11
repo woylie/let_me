@@ -1,10 +1,10 @@
-defmodule Expel.PolicyTest do
+defmodule LetMe.PolicyTest do
   use ExUnit.Case, async: true
-  doctest Expel.Policy
+  doctest LetMe.Policy
 
   import ExUnit.CaptureLog
 
-  alias Expel.Rule
+  alias LetMe.Rule
   alias MyApp.Policy
   alias MyApp.PolicyCombinations
   alias MyApp.PolicyShort
@@ -449,7 +449,7 @@ defmodule Expel.PolicyTest do
                %{user_id: 1}
              ) == :ok
 
-      assert_raise Expel.UnauthorizedError, "unauthorized", fn ->
+      assert_raise LetMe.UnauthorizedError, "unauthorized", fn ->
         PolicyCombinations.authorize!(
           :simple_allow_without_options,
           %{id: 1},

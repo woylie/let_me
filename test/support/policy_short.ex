@@ -1,7 +1,7 @@
 defmodule MyApp.PolicyShort do
   @moduledoc false
 
-  use Expel.Policy,
+  use LetMe.Policy,
     check_module: MyApp.PolicyCombinations.Checks,
     error_reason: :forbidden
 

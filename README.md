@@ -1,6 +1,6 @@
-# Expel
+# LetMe
 
-Expel is an authorization library for Elixir.
+LetMe is an authorization library for Elixir.
 
 It aims to give you an easy, readable and flexible way of defining authorization
 rules by defining a simple DSL, while also giving you introspection functions
@@ -12,27 +12,27 @@ that allow you to answer questions like:
 
 ## Installation
 
-Add Expel to `mix.exs` :
+Add LetMe to `mix.exs` :
 
 ```elixir
 def deps do
   [
-    {:expel, "~> 0.1.0"}
+    {:let_me, "~> 0.1.0"}
   ]
 end
 ```
 
-Add Expel to `.formatter.exs`:
+Add LetMe to `.formatter.exs`:
 
 ```elixir
 [
-  import_deps: [:expel]
+  import_deps: [:let_me]
 ]
 ```
 
 ## Policy module
 
-The heart of Expel is the Policy module. It provides a set of macros for
+The heart of LetMe is the Policy module. It provides a set of macros for
 defining the authorization rules of your application. These rules are compiled
 to authorization and introspection functions.
 
@@ -40,7 +40,7 @@ A policy module for a simple article CRUD interface might look like this:
 
 ```elixir
 defmodule MyApp.Policy do
-  use Expel.Policy
+  use LetMe.Policy
 
   object :articles do
     # Creating articles is allowed if the user role is `editor` or `writer`.
@@ -78,10 +78,10 @@ to you.
 
 In general, authorization rules are based on the subject (usually the current
 user), the object on which the action is performed, and the action (verb).
-Expel does not make any assumptions on the authorization model or check
+LetMe does not make any assumptions on the authorization model or check
 implementation.
 
-The checks passed to `Expel.Policy.allow/1` reference functions in the check
+The checks passed to `LetMe.Policy.allow/1` reference functions in the check
 module (by default `__MODULE__.Checks`, so in the example
 `MyApp.Policy.Checks`). Each check function must take the subject, the object,
 and optionally an additional argument, and must return a boolean value.
@@ -123,13 +123,13 @@ end
 
 ## Callbacks
 
-With `use Expel.Policy` at the top of your policy module, Expel will generate
+With `use LetMe.Policy` at the top of your policy module, LetMe will generate
 several functions for you.
 
-- Authorization functions: See `c:Expel.Policy.authorize/3`,
-  `c:Expel.Policy.authorize!/3` and `c:Expel.Policy.authorized?/3`.
-- Introspection functions: See `c:Expel.Policy.list_rules/0`,
-  `c:Expel.Policy.list_rules/1`, `c:Expel.Policy.get_rule/1` and others.
+- Authorization functions: See `c:LetMe.Policy.authorize/3`,
+  `c:LetMe.Policy.authorize!/3` and `c:LetMe.Policy.authorized?/3`.
+- Introspection functions: See `c:LetMe.Policy.list_rules/0`,
+  `c:LetMe.Policy.list_rules/1`, `c:LetMe.Policy.get_rule/1` and others.
 
 ### Authorization
 
@@ -189,7 +189,7 @@ rules, e.g. to display them in a documentation page:
 ```elixir
 iex> MyApp.Policy.list_rules()
 [
-  %Expel.Rule{
+  %LetMe.Rule{
     action: :create,
     allow: [
       [role: :admin],
@@ -209,7 +209,7 @@ You can also find a rule by its name:
 
 ```elixir
 iex> MyApp.Policy.get_rule(:article_create)
-%Expel.Rule{
+%LetMe.Rule{
   action: :create,
   allow: [
     [role: :admin],
@@ -226,12 +226,12 @@ Or you can list all actions tied to a certain role (or any other check):
 ```elixir
 iex> MyApp.Policy.list_rules(role: :writer)
 [
-  %Expel.Rule{
+  %LetMe.Rule{
     action: :create,
     object: :article,
     # ...
   },
-  %Expel.Rule{
+  %LetMe.Rule{
     action: :update,
     object: :article,
     # ...
@@ -248,20 +248,20 @@ Or in a system where users belong to companies, a company user might only be
 allowed to see users who belong to the same company.
 
 In order to scope your queries depending on the user type, you can implement the
-`c:Expel.Schema.scope/2` callback of the `Expel.Schema` behaviour, usually in
+`c:LetMe.Schema.scope/2` callback of the `LetMe.Schema` behaviour, usually in
 your Ecto schema module.
 
 ```elixir
 defmodule MyApp.Blog.Article do
   use Ecto.Schema
-  use Expel.Schema
+  use LetMe.Schema
 
   import Ecto.Query
   alias MyApp.Accounts.User
 
   # Ecto schema and changeset
 
-  @impl Expel.Schema
+  @impl LetMe.Schema
   def scope(q, %User{role: :editor}), do: q
   def scope(q, %User{role: :writer}), do: q
   def scope(q, %User{}), do: where(q, published: true)
@@ -318,19 +318,19 @@ situations like this by conditionally showing or hiding certain information in
 the frontend, but it would be cleaner if the context functions would not return
 those fields in the first place.
 
-To assist in these kinds of situations, the `Expel.Schema` behaviour has another
-callback: `c:Expel.Schema.redacted_fields/2`.
+To assist in these kinds of situations, the `LetMe.Schema` behaviour has another
+callback: `c:LetMe.Schema.redacted_fields/2`.
 
 ```elixir
 defmodule MyApp.Accounts.User do
   use Ecto.Schema
-  use Expel.Schema
+  use LetMe.Schema
 
   alias MyApp.Accounts.User
 
   # Ecto schema and changeset
 
-  @impl Expel.Schema
+  @impl LetMe.Schema
   def redacted_fields(%User{}, %User{role: :admin}), do: []
   def redacted_fields(%User{id: id}, %User{id: id}), do: []
   def redacted_fields(%User{}, %User{}), do: [:email, :phone_number]
@@ -359,7 +359,7 @@ then add a select clause with only the unredacted fields.
 ```elixir
 def list_users(%User{} = current_user) do
   fields = User.__schema__(:fields)
-  filtered_fields = Expel.reject_redacted_fields(fields, %User{}, current_user)
+  filtered_fields = LetMe.reject_redacted_fields(fields, %User{}, current_user)
 
   Article
   |> select(^filtered_fields)
@@ -386,13 +386,13 @@ this syntax.
 ### Redacting the query result
 
 To mitigate these shortcomings, you can do the redactions _after_ retrieving the
-data from the database using `Expel.redact/2`.
+data from the database using `LetMe.redact/2`.
 
 ```elixir
 def list_articles(%User{} = current_user) do
   Article
   |> Repo.all()
-  |> Expel.redact(current_user)
+  |> LetMe.redact(current_user)
 end
 ```
 
@@ -424,7 +424,7 @@ The `redact` function can handle structs, lists of structs, and `nil` values.
   write the actual checks as regular functions).
 - You don't care about introspection.
 - You want to return details on _why_ an authorization request fails. Checks
-  in Expel must currently return a boolean value, which means you'll only be
+  in LetMe must currently return a boolean value, which means you'll only be
   able to give your users a generic error, without telling them which exact
   check failed.
 

@@ -1,4 +1,4 @@
-defmodule Expel.Policy do
+defmodule LetMe.Policy do
   @moduledoc """
   This module defines a DSL for authorization rules and compiles these rules
   to authorization and introspection functions.
@@ -6,7 +6,7 @@ defmodule Expel.Policy do
   ## Usage
 
       defmodule MyApp.Policy do
-        use Expel.Policy
+        use LetMe.Policy
 
         object :articles do
           # Creating articles is allowed if the user role is `editor` or `writer`.
@@ -49,11 +49,11 @@ defmodule Expel.Policy do
   The checks passed to `allow/1` and `deny/1` reference the names of functions
   in the check module.
 
-  By default, Expel tries to find the functions in `__MODULE__.Checks` (in the
+  By default, LetMe tries to find the functions in `__MODULE__.Checks` (in the
   example, this would be `MyApp.Policy.Checks`). However, you can override the
   default check module:
 
-      use Expel.Policy, check_module: MyApp.AuthChecks
+      use LetMe.Policy, check_module: MyApp.AuthChecks
 
   Each check function has to take the subject (user), the object, and optionally
   an additional argument, and must return a boolean value.
@@ -73,7 +73,7 @@ defmodule Expel.Policy do
       def own_resource(%User{id: user_id}, %{user_id: user_id}), do: true
       def own_resource(_, _), do: false
 
-  Expel does not make any assumptions about your access control model, as long
+  LetMe does not make any assumptions about your access control model, as long
   as you can map your rules to subject, object and action. You can use the three
   rules above with the `allow/1` and `deny/1` macros.
 
@@ -166,7 +166,7 @@ defmodule Expel.Policy do
   authorization request before running the checks. See the documentation for
   `pre_hooks/1`.
   """
-  alias Expel.Rule
+  alias LetMe.Rule
 
   @doc """
   Returns all authorization rules as a list.
@@ -175,7 +175,7 @@ defmodule Expel.Policy do
 
       iex> MyApp.PolicyShort.list_rules()
       [
-        %Expel.Rule{
+        %LetMe.Rule{
           action: :create,
           allow: [[role: :admin], [role: :writer]],
           deny: [],
@@ -183,7 +183,7 @@ defmodule Expel.Policy do
           object: :article,
           pre_hooks: []
         },
-        %Expel.Rule{
+        %LetMe.Rule{
           action: :update,
           allow: [:own_resource],
           deny: [],
@@ -193,14 +193,14 @@ defmodule Expel.Policy do
         }
       ]
   """
-  @callback list_rules :: [Expel.Rule.t()]
+  @callback list_rules :: [LetMe.Rule.t()]
 
   @doc """
   Same as `c:list_rules/0`, but takes a keyword list with filter options.
 
-  See `Expel.filter_rules/2` for a list of available filter options.
+  See `LetMe.filter_rules/2` for a list of available filter options.
   """
-  @callback list_rules(keyword) :: [Expel.Rule.t()]
+  @callback list_rules(keyword) :: [LetMe.Rule.t()]
 
   @doc """
   Returns the rule for the given name. Returns an `:ok` tuple or `:error`.
@@ -211,7 +211,7 @@ defmodule Expel.Policy do
 
       iex> MyApp.Policy.fetch_rule(:article_create)
       {:ok,
-       %Expel.Rule{
+       %LetMe.Rule{
          action: :create,
          allow: [[role: :admin], [role: :writer]],
          deny: [],
@@ -223,7 +223,7 @@ defmodule Expel.Policy do
        iex> MyApp.Policy.fetch_rule(:cookie_eat)
        :error
   """
-  @callback fetch_rule(atom) :: {:ok, Expel.Rule.t()} | :error
+  @callback fetch_rule(atom) :: {:ok, LetMe.Rule.t()} | :error
 
   @doc """
   Returns the rule with the given name. Raises if the rule is not found.
@@ -233,7 +233,7 @@ defmodule Expel.Policy do
   ## Example
 
       iex> MyApp.Policy.fetch_rule!(:article_create)
-      %Expel.Rule{
+      %LetMe.Rule{
         action: :create,
         allow: [[role: :admin], [role: :writer]],
         deny: [],
@@ -242,7 +242,7 @@ defmodule Expel.Policy do
         pre_hooks: []
       }
   """
-  @callback fetch_rule!(atom) :: Expel.Rule.t()
+  @callback fetch_rule!(atom) :: LetMe.Rule.t()
 
   @doc """
   Returns the schema module for the given object name, if it was registered
@@ -323,7 +323,7 @@ defmodule Expel.Policy do
       iex> MyApp.Policy.authorize!(:article_update, user_1, article)
       :ok
       iex> MyApp.Policy.authorize!(:article_update, user_2, article)
-      ** (Expel.UnauthorizedError) unauthorized
+      ** (LetMe.UnauthorizedError) unauthorized
   """
   @callback authorize!(atom, any, any) :: :ok
 
@@ -354,7 +354,7 @@ defmodule Expel.Policy do
   ## Example
 
       iex> MyApp.Policy.get_rule(:article_create)
-      %Expel.Rule{
+      %LetMe.Rule{
         action: :create,
         allow: [[role: :admin], [role: :writer]],
         deny: [],
@@ -366,7 +366,7 @@ defmodule Expel.Policy do
       iex> MyApp.Policy.get_rule(:cookie_eat)
       nil
   """
-  @callback get_rule(atom) :: Expel.Rule.t() | nil
+  @callback get_rule(atom) :: LetMe.Rule.t() | nil
 
   defmacro __using__(opts \\ []) do
     opts =
@@ -384,10 +384,10 @@ defmodule Expel.Policy do
       Module.register_attribute(__MODULE__, :deny_checks, accumulate: true)
       Module.register_attribute(__MODULE__, :pre_hooks, accumulate: true)
 
-      @behaviour Expel.Policy
+      @behaviour LetMe.Policy
 
-      import Expel.Policy
-      import Expel.Builder
+      import LetMe.Policy
+      import LetMe.Builder
 
       require Logger
 
@@ -406,9 +406,9 @@ defmodule Expel.Policy do
       |> Enum.reverse()
       |> Enum.into(%{}, &{:"#{&1.object}_#{&1.action}", &1})
 
-    introspection_functions = Expel.Builder.introspection_functions(rules)
-    authorize_functions = Expel.Builder.authorize_functions(rules, opts)
-    schema_functions = Expel.Builder.schema_functions(schemas)
+    introspection_functions = LetMe.Builder.introspection_functions(rules)
+    authorize_functions = LetMe.Builder.authorize_functions(rules, opts)
+    schema_functions = LetMe.Builder.schema_functions(schemas)
 
     quote do
       unquote(introspection_functions)
@@ -626,7 +626,7 @@ defmodule Expel.Policy do
         end
       end
   """
-  @spec allow(Expel.Rule.check() | [Expel.Rule.check()]) :: Macro.t()
+  @spec allow(LetMe.Rule.check() | [LetMe.Rule.check()]) :: Macro.t()
   defmacro allow(checks) do
     quote do
       Module.put_attribute(__MODULE__, :allow_checks, unquote(checks))
@@ -636,7 +636,7 @@ defmodule Expel.Policy do
   @doc """
   Allows you to add a description to a rule.
 
-  The description can be accessed from the `Expel.Rule` struct. You can use it
+  The description can be accessed from the `LetMe.Rule` struct. You can use it
   to generate help texts or documentation.
 
   ## Example
@@ -723,7 +723,7 @@ defmodule Expel.Policy do
         end
       end
   """
-  @spec deny(Expel.Rule.check() | [Expel.Rule.check()]) :: Macro.t()
+  @spec deny(LetMe.Rule.check() | [LetMe.Rule.check()]) :: Macro.t()
   defmacro deny(checks) do
     quote do
       Module.put_attribute(__MODULE__, :deny_checks, unquote(checks))
@@ -749,7 +749,7 @@ defmodule Expel.Policy do
       end
 
   You can optionally pass the schema module as the second argument. The schema
-  module should implement the `Expel.Schema` behaviour.
+  module should implement the `LetMe.Schema` behaviour.
 
       object :article, MyApp.Blog.Article do
         action :create do
@@ -825,7 +825,7 @@ defmodule Expel.Policy do
         end
       end
 
-  If an atom is passed, Expel will try to find the function in the check module.
+  If an atom is passed, LetMe will try to find the function in the check module.
 
       object :article do
         action :view do
@@ -876,7 +876,7 @@ defmodule Expel.Policy do
       MyApp.Policy.authorize!(:article_view, %{age: 10})
       # => true
   """
-  @spec pre_hooks(Expel.Rule.hook() | [Expel.Rule.hook()]) :: Macro.t()
+  @spec pre_hooks(LetMe.Rule.hook() | [LetMe.Rule.hook()]) :: Macro.t()
   defmacro pre_hooks(hooks) do
     quote do
       Module.put_attribute(__MODULE__, :pre_hooks, unquote(hooks))

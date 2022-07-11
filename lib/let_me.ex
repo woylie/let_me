@@ -1,19 +1,19 @@
-defmodule Expel do
+defmodule LetMe do
   @moduledoc """
-  Expel is library for defining and evaluating authorization rules and handling
+  LetMe is library for defining and evaluating authorization rules and handling
   query scopes and field redactions.
 
   This module only defines auxiliary functions. The main functionality lies in
-  the `Expel.Policy` module.
+  the `LetMe.Policy` module.
   """
 
-  alias Expel.Rule
+  alias LetMe.Rule
 
   @doc """
   Takes a list of rules and a list of filter options and returns a filtered
   list of rules.
 
-  This function is used by `c:Expel.Policy.list_rules/1`.
+  This function is used by `c:LetMe.Policy.list_rules/1`.
 
   ## Filter options
 
@@ -35,20 +35,20 @@ defmodule Expel do
   ## Examples
 
       iex> rules = [
-      ...>   %Expel.Rule{action: :create, name: :article_create, object: :article},
-      ...>   %Expel.Rule{action: :create, name: :category_create, object: :category}
+      ...>   %LetMe.Rule{action: :create, name: :article_create, object: :article},
+      ...>   %LetMe.Rule{action: :create, name: :category_create, object: :category}
       ...> ]
       iex> filter_rules(rules, object: :article)
-      [%Expel.Rule{action: :create, name: :article_create, object: :article}]
+      [%LetMe.Rule{action: :create, name: :article_create, object: :article}]
 
       iex> rules = [
-      ...>   %Expel.Rule{
+      ...>   %LetMe.Rule{
       ...>     action: :create,
       ...>     name: :article_create,
       ...>     object: :article,
       ...>     allow: [[role: :editor]]
       ...>   },
-      ...>   %Expel.Rule{
+      ...>   %LetMe.Rule{
       ...>     action: :update,
       ...>     name: :article_update,
       ...>     object: :article,
@@ -56,13 +56,13 @@ defmodule Expel do
       ...>   }
       ...> ]
       iex> filter_rules(rules, allow: :own_resource)
-      [%Expel.Rule{action: :update, name: :article_update, object: :article, allow: [:own_resource, [role: :writer]]}]
+      [%LetMe.Rule{action: :update, name: :article_update, object: :article, allow: [:own_resource, [role: :writer]]}]
       iex> match?([_, _], filter_rules(rules, allow: :role))
       true
       iex> filter_rules(rules, allow: {:role, :editor})
-      [%Expel.Rule{action: :create, name: :article_create, object: :article, allow: [[role: :editor]]}]
+      [%LetMe.Rule{action: :create, name: :article_create, object: :article, allow: [[role: :editor]]}]
       iex> filter_rules(rules, allow: {:role, :writer})
-      [%Expel.Rule{action: :update, name: :article_update, object: :article, allow: [:own_resource, [role: :writer]]}]
+      [%LetMe.Rule{action: :update, name: :article_update, object: :article, allow: [:own_resource, [role: :writer]]}]
   """
   def filter_rules(rules, opts) when is_list(rules) do
     opts = Keyword.validate!(opts, [:action, :allow, :deny, :object])
@@ -108,7 +108,7 @@ defmodule Expel do
   Takes a struct or a list of structs and redacts fields depending on the
   subject (user).
 
-  Uses the callback implementation for `c:Expel.Schema.redacted_fields/2` in the
+  Uses the callback implementation for `c:LetMe.Schema.redacted_fields/2` in the
   struct module.
 
   ## Options
@@ -167,7 +167,7 @@ defmodule Expel do
   @doc """
   Removes redacted fields from a given list of fields.
 
-  Uses the `c:Expel.Schema.redacted_fields/2` callback implementation of the
+  Uses the `c:LetMe.Schema.redacted_fields/2` callback implementation of the
   struct module to determine the fields to remove.
 
   ## Examples
@@ -182,7 +182,7 @@ defmodule Expel do
   user is not allowed to see and thereby nilifying or replacing them.
 
       def update_changeset(%Article{} = article, attrs, %User{} = user) do
-        fields = Expel.reject_redacted_fields(
+        fields = LetMe.reject_redacted_fields(
           [:title, :body, :internal_reference],
           article,
           user

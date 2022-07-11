@@ -1,12 +1,12 @@
-defmodule Expel.MixProject do
+defmodule LetMe.MixProject do
   use Mix.Project
 
-  @source_url "https://github.com/woylie/expel"
+  @source_url "https://github.com/woylie/let_me"
   @version "0.1.0"
 
   def project do
     [
-      app: :expel,
+      app: :let_me,
       version: @version,
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
@@ -20,7 +20,7 @@ defmodule Expel.MixProject do
         "coveralls.html": :test,
         "coveralls.github": :test
       ],
-      name: "Expel",
+      name: "LetMe",
       source_url: @source_url,
       homepage_url: @source_url,
       description: description(),

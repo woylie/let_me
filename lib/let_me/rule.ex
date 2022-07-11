@@ -1,4 +1,4 @@
-defmodule Expel.Rule do
+defmodule LetMe.Rule do
   @moduledoc """
   A struct for an authorization rule.
   """

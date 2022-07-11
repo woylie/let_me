@@ -1,6 +1,6 @@
-defmodule ExpelTest do
+defmodule LetMeTest do
   use ExUnit.Case
-  doctest Expel, import: true
+  doctest LetMe, import: true
 
   alias MyApp.Blog.Article
 
@@ -17,47 +17,47 @@ defmodule ExpelTest do
 
   describe "redact/3" do
     test "replaces struct keys with default value depending on user" do
-      assert Expel.redact(@article, @admin) == @article
+      assert LetMe.redact(@article, @admin) == @article
 
-      assert Expel.redact(@article, @owner) ==
+      assert LetMe.redact(@article, @owner) ==
                %{@article | view_count: :redacted}
 
-      assert Expel.redact(@article, @user) ==
+      assert LetMe.redact(@article, @user) ==
                %{@article | like_count: :redacted, view_count: :redacted}
     end
 
     test "replaces struct keys with given value depending on user" do
       opts = [redact_value: :removed]
 
-      assert Expel.redact(@article, @owner, opts) ==
+      assert LetMe.redact(@article, @owner, opts) ==
                %{@article | view_count: :removed}
 
-      assert Expel.redact(@article, @user, opts) ==
+      assert LetMe.redact(@article, @user, opts) ==
                %{@article | like_count: :removed, view_count: :removed}
     end
 
     test "replaces keys in struct list with default value depending on user" do
-      assert Expel.redact([@article], @admin) == [@article]
+      assert LetMe.redact([@article], @admin) == [@article]
 
-      assert Expel.redact([@article], @owner) ==
+      assert LetMe.redact([@article], @owner) ==
                [%{@article | view_count: :redacted}]
 
-      assert Expel.redact([@article], @user) ==
+      assert LetMe.redact([@article], @user) ==
                [%{@article | like_count: :redacted, view_count: :redacted}]
     end
 
     test "replaces keys in struct list with given value depending on user" do
       opts = [redact_value: :removed]
 
-      assert Expel.redact([@article], @owner, opts) ==
+      assert LetMe.redact([@article], @owner, opts) ==
                [%{@article | view_count: :removed}]
 
-      assert Expel.redact([@article], @user, opts) ==
+      assert LetMe.redact([@article], @user, opts) ==
                [%{@article | like_count: :removed, view_count: :removed}]
     end
 
     test "handles nil value" do
-      assert Expel.redact(nil, @user) == nil
+      assert LetMe.redact(nil, @user) == nil
     end
   end
 end

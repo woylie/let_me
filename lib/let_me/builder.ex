@@ -1,4 +1,4 @@
-defmodule Expel.Builder do
+defmodule LetMe.Builder do
   @moduledoc false
 
   def get_acc_attribute(module, name) do
@@ -11,21 +11,21 @@ defmodule Expel.Builder do
     quote do
       defp __rules__, do: unquote(Macro.escape(rules))
 
-      @impl Expel.Policy
+      @impl LetMe.Policy
       def list_rules, do: Map.values(__rules__())
 
-      @impl Expel.Policy
-      def list_rules(opts), do: Expel.filter_rules(list_rules(), opts)
+      @impl LetMe.Policy
+      def list_rules(opts), do: LetMe.filter_rules(list_rules(), opts)
 
-      @impl Expel.Policy
+      @impl LetMe.Policy
       def fetch_rule(action) when is_atom(action),
         do: Map.fetch(__rules__(), action)
 
-      @impl Expel.Policy
+      @impl LetMe.Policy
       def fetch_rule!(action) when is_atom(action),
         do: Map.fetch!(__rules__(), action)
 
-      @impl Expel.Policy
+      @impl LetMe.Policy
       def get_rule(action) when is_atom(action),
         do: Map.get(__rules__(), action)
     end
@@ -37,7 +37,7 @@ defmodule Expel.Builder do
     quote do
       defp __schemas__, do: unquote(Macro.escape(schemas))
 
-      @impl Expel.Policy
+      @impl LetMe.Policy
       def get_schema(object_name) when is_atom(object_name),
         do: Map.get(__schemas__(), object_name)
     end
@@ -49,7 +49,7 @@ defmodule Expel.Builder do
     rule_clauses = Enum.map(rules, &permit_function_clause(&1, check_module))
 
     quote do
-      @impl Expel.Policy
+      @impl LetMe.Policy
       def authorized?(action, subject, object \\ nil)
 
       unquote(rule_clauses)
@@ -64,24 +64,24 @@ defmodule Expel.Builder do
         false
       end
 
-      @impl Expel.Policy
+      @impl LetMe.Policy
       def authorize(action, subject, object \\ nil) do
         if authorized?(action, subject, object),
           do: :ok,
           else: {:error, unquote(error_reason)}
       end
 
-      @impl Expel.Policy
+      @impl LetMe.Policy
       def authorize!(action, subject, object \\ nil) do
         if authorized?(action, subject, object),
           do: :ok,
-          else: raise(Expel.UnauthorizedError)
+          else: raise(LetMe.UnauthorizedError)
       end
     end
   end
 
   defp permit_function_clause(
-         {rule_name, %Expel.Rule{} = rule},
+         {rule_name, %LetMe.Rule{} = rule},
          check_module
        ) do
     pre_hook_calls = build_pre_hook_calls(rule.pre_hooks, check_module)

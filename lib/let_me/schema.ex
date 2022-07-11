@@ -1,4 +1,4 @@
-defmodule Expel.Schema do
+defmodule LetMe.Schema do
   @moduledoc """
   Defines a behaviour with callbacks for scoping and redactions.
 
@@ -8,15 +8,15 @@ defmodule Expel.Schema do
   ## Usage
 
       defmodule MyApp.Blog.Article do
-        use Expel.Schema
+        use LetMe.Schema
         import Ecto.Schema
         alias MyApp.Accounts.User
 
-        @impl Expel.Schema
+        @impl LetMe.Schema
         def scope(q, %User{role: :admin}), do: q
         def scope(q, %User{}), do: where(q, published: true)
 
-        @impl Expel.Schema
+        @impl LetMe.Schema
         def redacted_fields(_, %User{role: :admin}), do: []
         def redacted_fields(%__MODULE__{user_id: id}, %User{id: id}), do: []
         def redacted_fields(_, %User{}), do: [:view_count]
@@ -50,25 +50,25 @@ defmodule Expel.Schema do
   ## Redacting fields
 
   After implementing the `c:redacted_fields/2` callback, you can hide fields from
-  depending on the user by calling `Expel.redact/3` on a struct or a list of
+  depending on the user by calling `LetMe.redact/3` on a struct or a list of
   structs.
 
       def list_articles(%User{} = current_user) do
         Article
         |> Repo.all()
-        |> Expel.redact(current_user)
+        |> LetMe.redact(current_user)
       end
   """
 
   defmacro __using__(_opts) do
     quote do
-      @behaviour Expel.Schema
+      @behaviour LetMe.Schema
 
       def scope(q, _), do: q
       def scope(q, _, _), do: q
       def redacted_fields(_, _), do: []
 
-      defoverridable Expel.Schema
+      defoverridable LetMe.Schema
     end
   end
 
@@ -83,25 +83,25 @@ defmodule Expel.Schema do
 
       defmodule MyApp.Blog.Article do
         use Ecto.Schema
-        use Expel.Schema
+        use LetMe.Schema
 
         import Ecto.Schema
         alias MyApp.Accounts.User
 
         # Ecto schema and changeset
 
-        @impl Expel.Schema
+        @impl LetMe.Schema
         def scope(q, %User{role: :admin}), do: q
         def scope(q, %User{}), do: where(q, published: true)
       end
 
-  Since Expel does not depend on Ecto and does not make any assumptions on the
+  Since LetMe does not depend on Ecto and does not make any assumptions on the
   queryable passed to the callback function, you are not constrained to use this
   mechanism for Ecto queries only. For example, you could use the function to
   add filter parameters before passing them to a filter function or making an
   API call.
 
-      @impl Expel.Schema
+      @impl LetMe.Schema
       def scope(query_params, %User{role: :admin}), do: query_params
 
       def scope(query_params, %User{}) do
@@ -122,13 +122,13 @@ defmodule Expel.Schema do
   subject.
 
   This function can be used to hide certain fields depending on the current
-  user. See also `Expel.redact/3` and `Expel.reject_redacted_fields/3`.
+  user. See also `LetMe.redact/3` and `LetMe.reject_redacted_fields/3`.
 
       defmodule MyApp.Blog.Article do
-        use Expel.Schema
+        use LetMe.Schema
         alias MyApp.Accounts.User
 
-        @impl Expel.Schema
+        @impl LetMe.Schema
         # hide view count unless the user is an admin or the article was written
         # by the user
         def redacted_fields(_, %User{role: :admin}), do: []
