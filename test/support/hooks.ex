@@ -1,4 +1,4 @@
-defmodule MyApp.PolicyCombinations.MoreHooks do
+defmodule LetMe.TestHooks do
   @moduledoc false
 
   def preload_handsomeness(%{} = subject, %{} = object, factor: factor) do

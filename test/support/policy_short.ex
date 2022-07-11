@@ -2,7 +2,7 @@ defmodule MyApp.PolicyShort do
   @moduledoc false
 
   use LetMe.Policy,
-    check_module: MyApp.PolicyCombinations.Checks,
+    check_module: MyApp.Checks,
     error_reason: :forbidden
 
   object :article do
