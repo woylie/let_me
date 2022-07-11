@@ -429,6 +429,7 @@ defmodule LetMe.Policy do
       |> Enum.frequencies_by(&{&1.object, &1.action})
       |> Enum.filter(fn {_, count} -> count > 1 end)
 
+    # coveralls-ignore-start
     if duplicate_rules != [] do
       rules_as_string =
         Enum.map_join(duplicate_rules, "\n    ", fn {{object, action}, _} ->
@@ -445,6 +446,8 @@ defmodule LetMe.Policy do
       Look out for actions that are defined twice for the same object.
       """
     end
+
+    # coveralls-ignore-end
 
     :ok
   end
@@ -467,6 +470,7 @@ defmodule LetMe.Policy do
           |> Enum.filter(fn {_, count} -> count > 1 end)
           |> Enum.map(&elem(&1, 0))
 
+        # coveralls-ignore-start
         if duplicate_checks != [] do
           raise """
           duplicate authorization checks
@@ -479,6 +483,8 @@ defmodule LetMe.Policy do
               #{inspect(duplicate_checks)}
           """
         end
+
+      # coveralls-ignore-end
 
       _ ->
         :ok

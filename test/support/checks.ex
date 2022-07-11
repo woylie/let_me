@@ -1,4 +1,4 @@
-defmodule MyApp.PolicyCombinations.Checks do
+defmodule MyApp.Checks do
   @moduledoc false
 
   # checks

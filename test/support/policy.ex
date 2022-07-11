@@ -1,7 +1,7 @@
 defmodule MyApp.Policy do
   @moduledoc false
 
-  use LetMe.Policy, check_module: MyApp.PolicyCombinations.Checks
+  use LetMe.Policy, check_module: MyApp.Checks
 
   object :article, MyApp.Blog.Article do
     action :create do

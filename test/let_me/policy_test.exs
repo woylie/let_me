@@ -6,8 +6,108 @@ defmodule LetMe.PolicyTest do
 
   alias LetMe.Rule
   alias MyApp.Policy
-  alias MyApp.PolicyCombinations
+  alias MyApp.TestPolicy
   alias MyApp.PolicyShort
+
+  defmodule TestPolicy do
+    use LetMe.Policy, check_module: MyApp.Checks
+    alias LetMe.TestHooks
+
+    object :simple do
+      action :allow_without_options do
+        allow :own_resource
+      end
+
+      action [:list_of_actions_1, :list_of_actions_2] do
+        allow :own_resource
+      end
+
+      action :allow_with_options do
+        allow role: :editor
+      end
+
+      action :allow_true do
+        allow true
+      end
+
+      action :allow_false do
+        allow false
+      end
+
+      action :deny_without_options do
+        allow true
+        deny :same_user
+      end
+
+      action :deny_with_options do
+        allow true
+        deny role: :writer
+      end
+
+      action :deny_true do
+        allow true
+        deny true
+      end
+
+      action :deny_false do
+        allow true
+        deny false
+      end
+
+      action :no_allow do
+        deny :same_user
+      end
+
+      action :no_checks do
+      end
+
+      action :empty_list_check do
+        allow []
+      end
+    end
+
+    object :complex do
+      action :multiple_allow_checks do
+        allow [:own_resource, role: :editor]
+      end
+
+      action :multiple_allow_conditions do
+        allow role: :editor
+        allow :own_resource
+      end
+
+      action :multiple_deny_checks do
+        allow true
+        deny [:same_user, role: :writer]
+      end
+
+      action :multiple_deny_conditions do
+        allow true
+        deny :same_user
+        deny role: :writer
+      end
+
+      action :single_prehook do
+        pre_hooks :preload_groups
+        allow :same_group
+      end
+
+      action :single_mf_prehook do
+        pre_hooks {TestHooks, :preload_likeability}
+        allow min_likeability: 5
+      end
+
+      action :single_mfa_prehook do
+        pre_hooks {TestHooks, :preload_handsomeness, factor: 2}
+        allow min_handsomeness: 5
+      end
+
+      action :multiple_prehooks do
+        pre_hooks [:preload_groups, :preload_pets]
+        allow [:same_group, :same_pet]
+      end
+    end
+  end
 
   describe "list_rules" do
     test "returns all rules" do
@@ -155,13 +255,13 @@ defmodule LetMe.PolicyTest do
 
   describe "authorized?/3" do
     test "evaluates a single allow check without options" do
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_allow_without_options,
                %{id: 1},
                %{user_id: 1}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_allow_without_options,
                %{id: 1},
                %{user_id: 2}
@@ -169,30 +269,30 @@ defmodule LetMe.PolicyTest do
     end
 
     test "evaluates a single allow check with options" do
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_allow_with_options,
                %{role: :editor}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_allow_with_options,
                %{role: :writer}
              ) == false
     end
 
     test "evaluates a boolean as an allow check" do
-      assert PolicyCombinations.authorized?(:simple_allow_true, %{}) == true
-      assert PolicyCombinations.authorized?(:simple_allow_false, %{}) == false
+      assert TestPolicy.authorized?(:simple_allow_true, %{}) == true
+      assert TestPolicy.authorized?(:simple_allow_false, %{}) == false
     end
 
     test "evaluates a single deny check without options" do
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_deny_without_options,
                %{id: 1},
                %{id: 1}
              ) == false
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_deny_without_options,
                %{id: 1},
                %{id: 2}
@@ -200,30 +300,30 @@ defmodule LetMe.PolicyTest do
     end
 
     test "evaluates a single deny check with options" do
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_deny_with_options,
                %{role: :editor}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_deny_with_options,
                %{role: :writer}
              ) == false
     end
 
     test "evaluates a boolean as a deny check" do
-      assert PolicyCombinations.authorized?(:simple_deny_true, %{}) == false
-      assert PolicyCombinations.authorized?(:simple_deny_false, %{}) == true
+      assert TestPolicy.authorized?(:simple_deny_true, %{}) == false
+      assert TestPolicy.authorized?(:simple_deny_false, %{}) == true
     end
 
     test "deny check without any allow checks is always false" do
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_no_allow,
                %{id: 1},
                %{id: 1}
              ) == false
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_no_allow,
                %{id: 1},
                %{id: 2}
@@ -231,29 +331,32 @@ defmodule LetMe.PolicyTest do
     end
 
     test "action without any checks is always false" do
-      assert PolicyCombinations.authorized?(:simple_no_checks, %{}) == false
+      assert TestPolicy.authorized?(:simple_no_checks, %{}) == false
+
+      assert TestPolicy.authorized?(:simple_empty_list_check, %{}) ==
+               false
     end
 
     test "action with list of names results in multiple rules" do
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_list_of_actions_1,
                %{id: 1},
                %{user_id: 1}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_list_of_actions_2,
                %{id: 1},
                %{user_id: 1}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_list_of_actions_1,
                %{id: 1},
                %{user_id: 2}
              ) == false
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :simple_list_of_actions_2,
                %{id: 1},
                %{user_id: 2}
@@ -262,32 +365,32 @@ defmodule LetMe.PolicyTest do
 
     test "returns false and logs warning if rule does not exist" do
       assert capture_log([level: :warn], fn ->
-               assert PolicyCombinations.authorized?(:does_not_exist, %{}) ==
+               assert TestPolicy.authorized?(:does_not_exist, %{}) ==
                         false
              end) =~ "Permission checked for rule that does not exist"
     end
 
     test "evaluates a list of allow checks with AND" do
       # allow [:own_resource, role: :editor]
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_allow_checks,
                %{id: 1, role: :editor},
                %{user_id: 1}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_allow_checks,
                %{id: 1, role: :editor},
                %{user_id: 2}
              ) == false
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_allow_checks,
                %{id: 1, role: :writer},
                %{user_id: 1}
              ) == false
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_allow_checks,
                %{id: 1, role: :writer},
                %{user_id: 2}
@@ -297,25 +400,25 @@ defmodule LetMe.PolicyTest do
     test "evaluates a multiple allow conditions with OR" do
       # allow role: :editor
       # allow :own_resource
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_allow_conditions,
                %{id: 1, role: :editor},
                %{user_id: 1}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_allow_conditions,
                %{id: 1, role: :editor},
                %{user_id: 2}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_allow_conditions,
                %{id: 1, role: :writer},
                %{user_id: 1}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_allow_conditions,
                %{id: 1, role: :writer},
                %{user_id: 2}
@@ -325,25 +428,25 @@ defmodule LetMe.PolicyTest do
     test "evaluates a list of deny checks with AND" do
       # deny [:same_user, role: :writer]
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_deny_checks,
                %{id: 1, role: :writer},
                %{id: 1}
              ) == false
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_deny_checks,
                %{id: 1, role: :writer},
                %{id: 2}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_deny_checks,
                %{id: 1, role: :editor},
                %{id: 1}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_deny_checks,
                %{id: 1, role: :editor},
                %{id: 2}
@@ -353,25 +456,25 @@ defmodule LetMe.PolicyTest do
     test "evaluates a multiple deny conditions with OR" do
       # deny :same_user
       # deny role: :writer
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_deny_conditions,
                %{id: 1, role: :editor},
                %{id: 1}
              ) == false
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_deny_conditions,
                %{id: 1, role: :editor},
                %{id: 2}
              ) == true
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_deny_conditions,
                %{id: 1, role: :writer},
                %{id: 1}
              ) == false
 
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_deny_conditions,
                %{id: 1, role: :writer},
                %{id: 2}
@@ -379,7 +482,7 @@ defmodule LetMe.PolicyTest do
     end
 
     test "can configure check module with use option" do
-      # Policy module is configured to use PolicyCombinations.Checks
+      # Policy module is configured to use TestPolicy.Checks
       assert Policy.authorized?(:user_delete, %{role: :admin, id: 1}, %{id: 2})
       refute Policy.authorized?(:user_delete, %{role: :admin, id: 1}, %{id: 1})
       refute Policy.authorized?(:user_delete, %{role: :user, id: 1}, %{id: 2})
@@ -387,7 +490,7 @@ defmodule LetMe.PolicyTest do
     end
 
     test "updates subject and object with pre-hook" do
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_single_prehook,
                %{id: 1},
                %{id: 100}
@@ -395,7 +498,7 @@ defmodule LetMe.PolicyTest do
     end
 
     test "updates subject and object with multiple pre-hooks" do
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_multiple_prehooks,
                %{id: 1},
                %{id: 100}
@@ -403,7 +506,7 @@ defmodule LetMe.PolicyTest do
     end
 
     test "accepts module/function tuples as pre-hooks" do
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_single_mf_prehook,
                %{id: 4},
                %{id: 100}
@@ -411,7 +514,7 @@ defmodule LetMe.PolicyTest do
     end
 
     test "accepts mfa tuples as pre-hooks" do
-      assert PolicyCombinations.authorized?(
+      assert TestPolicy.authorized?(
                :complex_single_mfa_prehook,
                %{id: 3},
                %{id: 100}
@@ -421,13 +524,13 @@ defmodule LetMe.PolicyTest do
 
   describe "authorize/3" do
     test "evaluates a single allow check without options" do
-      assert PolicyCombinations.authorize(
+      assert TestPolicy.authorize(
                :simple_allow_without_options,
                %{id: 1},
                %{user_id: 1}
              ) == :ok
 
-      assert PolicyCombinations.authorize(
+      assert TestPolicy.authorize(
                :simple_allow_without_options,
                %{id: 1},
                %{user_id: 2}
@@ -443,14 +546,14 @@ defmodule LetMe.PolicyTest do
 
   describe "authorize!/3" do
     test "evaluates a single allow check without options" do
-      assert PolicyCombinations.authorize!(
+      assert TestPolicy.authorize!(
                :simple_allow_without_options,
                %{id: 1},
                %{user_id: 1}
              ) == :ok
 
       assert_raise LetMe.UnauthorizedError, "unauthorized", fn ->
-        PolicyCombinations.authorize!(
+        TestPolicy.authorize!(
           :simple_allow_without_options,
           %{id: 1},
           %{user_id: 2}
