@@ -17,6 +17,6 @@ defmodule MyApp.Blog.Article do
 
   @impl LetMe.Schema
   def redacted_fields(_, %{role: :admin}), do: []
-  def redacted_fields(%{user_id: id}, %{id: id}), do: [:view_count]
+  def redacted_fields(%__MODULE__{user_id: id}, %{id: id}), do: [:view_count]
   def redacted_fields(_, %{}), do: [:like_count, :view_count]
 end
