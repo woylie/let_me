@@ -176,7 +176,7 @@ defmodule LetMe do
       iex> user = %{id: 1, role: :user}
       iex> article = %MyApp.Blog.Article{}
       iex> reject_redacted_fields(fields, article, user)
-      [:title, :user_id]
+      [:like_count, :title, :user_id]
 
   This can be useful as a safeguard to prevent accidentally casting fields the
   user is not allowed to see and thereby nilifying or replacing them.
@@ -195,7 +195,10 @@ defmodule LetMe do
   """
   @spec reject_redacted_fields([atom], struct, any) :: [atom]
   def reject_redacted_fields(fields, %schema{} = object, subject) do
-    redacted_fields = subject |> schema.redacted_fields(object) |> MapSet.new()
+    redacted_fields =
+      object
+      |> schema.redacted_fields(subject)
+      |> MapSet.new()
 
     fields
     |> MapSet.new()
