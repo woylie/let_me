@@ -135,7 +135,19 @@ defmodule LetMe.Schema do
         def redacted_fields(%__MODULE__{user_id: id}, %User{id: id}), do: []
         def redacted_fields(_, %User{}), do: [:view_count]
       end
+
+  The return value must be a list of fields to redact. You can also redact
+  nested fields by passing the field names directly:
+
+      [:email, sibling: [:phone_number]]
+
+  Or you can pass the module name of a nested struct, if that module also
+  implements `LetMe.Schema`:
+
+      [:email, sibling: MyApp.Relative]
   """
-  @callback redacted_fields(object, subject) :: [atom]
+  @callback redacted_fields(object, subject) :: redacted_fields()
             when object: any, subject: any
+
+  @type redacted_fields :: [atom | {atom, module | redacted_fields()}]
 end

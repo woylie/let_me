@@ -155,13 +155,59 @@ defmodule LetMe do
 
   defp do_redact(%module{} = object, subject, redact_value) do
     redacted_fields = module.redacted_fields(object, subject)
-    replace_keys(redacted_fields, redact_value, object)
+    replace_keys(redacted_fields, subject, redact_value, object)
   end
 
-  defp replace_keys([], _, acc), do: acc
+  defp replace_keys([], _, _, acc), do: acc
 
-  defp replace_keys([key | rest], value, acc) do
-    replace_keys(rest, value, Map.put(acc, key, value))
+  defp replace_keys([{key, nested_redacted_fields} | rest], subject, value, acc)
+       when is_atom(key) and is_list(nested_redacted_fields) do
+    case Map.get(acc, key) do
+      nil ->
+        replace_keys(rest, subject, value, acc)
+
+      %{__struct__: Ecto.Association.NotLoaded} ->
+        replace_keys(rest, subject, value, acc)
+
+      %{} = nested_map ->
+        replace_keys(
+          rest,
+          subject,
+          value,
+          Map.put(
+            acc,
+            key,
+            replace_keys(nested_redacted_fields, subject, value, nested_map)
+          )
+        )
+    end
+  end
+
+  defp replace_keys([{key, module} | rest], subject, value, acc)
+       when is_atom(key) and is_atom(module) do
+    case Map.get(acc, key) do
+      nil ->
+        replace_keys(rest, subject, value, acc)
+
+      %{__struct__: Ecto.Association.NotLoaded} ->
+        replace_keys(rest, subject, value, acc)
+
+      %^module{} = nested_map ->
+        replace_keys(
+          rest,
+          subject,
+          value,
+          Map.put(
+            acc,
+            key,
+            do_redact(nested_map, subject, value)
+          )
+        )
+    end
+  end
+
+  defp replace_keys([key | rest], subject, value, acc) when is_atom(key) do
+    replace_keys(rest, subject, value, Map.put(acc, key, value))
   end
 
   @doc """
