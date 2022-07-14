@@ -8,7 +8,7 @@ defmodule LetMe.Policy do
       defmodule MyApp.Policy do
         use LetMe.Policy
 
-        object :articles do
+        object :article do
           # Creating articles is allowed if the user role is `editor` or `writer`.
           action :create do
             allow role: :editor

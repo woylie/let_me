@@ -44,7 +44,7 @@ A policy module for a simple article CRUD interface might look like this:
 defmodule MyApp.Policy do
   use LetMe.Policy
 
-  object :articles do
+  object :article do
     # Creating articles is allowed if the user role is `editor` or `writer`.
     action :create do
       allow role: :editor
