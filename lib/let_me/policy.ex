@@ -203,6 +203,38 @@ defmodule LetMe.Policy do
   @callback list_rules(keyword) :: [LetMe.Rule.t()]
 
   @doc """
+  Takes a list of rules and only returns the rules that would evaluate to `true`
+  for the given subject and object.
+
+  The object needs to be passed as a tuple, where the first element is the
+  object name, and the second element is the actual object, e.g.
+  `{:article, %Article{}}`.
+
+  ## Example
+
+      iex> rules = MyApp.Policy.list_rules()
+      iex> MyApp.Policy.filter_allowed_actions(
+      ...>   rules,
+      ...>   %{id: 2, role: nil},
+      ...>   {:article, %MyApp.Blog.Article{}}
+      ...> )
+      [
+        %LetMe.Rule{
+          action: :view,
+          allow: [true],
+          deny: [],
+          description: "allows to view an article and the list of articles",
+          name: :article_view,
+          object: :article,
+          pre_hooks: []
+        }
+      ]
+  """
+  @callback filter_allowed_actions([LetMe.Rule.t()], subject, {atom, object}) ::
+              [LetMe.Rule.t()]
+            when subject: any, object: any
+
+  @doc """
   Returns the rule for the given name. Returns an `:ok` tuple or `:error`.
 
   The rule name is an atom with the format `{object}_{action}`.
