@@ -183,17 +183,17 @@ defmodule LetMe do
   @spec redact(struct, any, keyword) :: struct
   @spec redact([struct], any, keyword) :: [struct]
   @spec redact(nil, any, keyword) :: nil
-  def redact(struct, subject, opts \\ [redact_value: :redacted])
+  def redact(struct, subject, opts \\ [])
 
   def redact(objects, subject, opts) when is_list(objects) do
-    {redact_value, opts} = Keyword.pop!(opts, :redact_value)
+    {redact_value, opts} = Keyword.pop(opts, :redact_value, :redacted)
     Enum.map(objects, &do_redact(&1, subject, redact_value, opts))
   end
 
   def redact(nil, _, _), do: nil
 
   def redact(object, subject, opts) do
-    {redact_value, opts} = Keyword.pop!(opts, :redact_value)
+    {redact_value, opts} = Keyword.pop(opts, :redact_value, :redacted)
     do_redact(object, subject, redact_value, opts)
   end
 
