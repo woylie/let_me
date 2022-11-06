@@ -56,11 +56,11 @@ defmodule LetMe.Builder do
 
     quote do
       @impl LetMe.Policy
-      def authorized?(action, subject, object \\ nil)
+      def authorize?(action, subject, object \\ nil)
 
       unquote(rule_clauses)
 
-      def authorized?(action, _, _) when is_atom(action) do
+      def authorize?(action, _, _) when is_atom(action) do
         Logger.warn(
           "Permission checked for rule that does not exist: #{action}",
           action: action,
@@ -72,14 +72,14 @@ defmodule LetMe.Builder do
 
       @impl LetMe.Policy
       def authorize(action, subject, object \\ nil) do
-        if authorized?(action, subject, object),
+        if authorize?(action, subject, object),
           do: :ok,
           else: {:error, unquote(error_reason)}
       end
 
       @impl LetMe.Policy
       def authorize!(action, subject, object \\ nil) do
-        if authorized?(action, subject, object),
+        if authorize?(action, subject, object),
           do: :ok,
           else: raise(LetMe.UnauthorizedError)
       end
@@ -106,7 +106,7 @@ defmodule LetMe.Builder do
       end
 
     quote do
-      def authorized?(unquote(rule_name), subject, object) do
+      def authorize?(unquote(rule_name), subject, object) do
         unquote(pre_hook_calls)
         unquote(combined_condition)
       end

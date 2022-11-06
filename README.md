@@ -129,7 +129,7 @@ With `use LetMe.Policy` at the top of your policy module, LetMe will generate
 several functions for you.
 
 - Authorization functions: See `c:LetMe.Policy.authorize/3`,
-  `c:LetMe.Policy.authorize!/3` and `c:LetMe.Policy.authorized?/3`.
+  `c:LetMe.Policy.authorize!/3` and `c:LetMe.Policy.authorize?/3`.
 - Introspection functions: See `c:LetMe.Policy.list_rules/0`,
   `c:LetMe.Policy.list_rules/1`, `c:LetMe.Policy.get_rule/1` and others.
 

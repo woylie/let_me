@@ -138,7 +138,7 @@ defmodule LetMe do
     rules
     |> LetMe.filter_rules(object: object_name)
     |> Enum.reduce([], fn %LetMe.Rule{name: name} = rule, acc ->
-      if policy.authorized?(name, subject, object),
+      if policy.authorize?(name, subject, object),
         do: [rule | acc],
         else: acc
     end)
