@@ -21,6 +21,9 @@
   scoped. So in order to reduce the room for error at the cost of a minor
   inconvenience, you will now always need to implement the 3-arity function,
   even if you don't need the third argument.
+- Changed `c:LetMe.Schema.redacted_fields/2` to
+  `c:LetMe.Schema.redacted_fields/3` to allow passing additional options, and to
+  be consistent with `c:LetMe.Schema.scope/3`.
 
 ## [0.2.0] - 2022-07-12
 

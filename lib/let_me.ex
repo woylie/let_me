@@ -150,13 +150,15 @@ defmodule LetMe do
   Takes a struct or a list of structs and redacts fields depending on the
   subject (user).
 
-  Uses the callback implementation for `c:LetMe.Schema.redacted_fields/2` in the
+  Uses the callback implementation for `c:LetMe.Schema.redacted_fields/3` in the
   struct module.
 
   ## Options
 
   - `:redact_value` - The value to be used for redacted fields. Defaults to
     `:redacted`.
+
+  Any additional options will be passed to `c:LetMe.Schema.redacted_fields/3`.
 
   ## Example
 
@@ -184,32 +186,38 @@ defmodule LetMe do
   def redact(struct, subject, opts \\ [redact_value: :redacted])
 
   def redact(objects, subject, opts) when is_list(objects) do
-    redact_value = Keyword.fetch!(opts, :redact_value)
-    Enum.map(objects, &do_redact(&1, subject, redact_value))
+    {redact_value, opts} = Keyword.pop!(opts, :redact_value)
+    Enum.map(objects, &do_redact(&1, subject, redact_value, opts))
   end
 
   def redact(nil, _, _), do: nil
 
   def redact(object, subject, opts) do
-    redact_value = Keyword.fetch!(opts, :redact_value)
-    do_redact(object, subject, redact_value)
+    {redact_value, opts} = Keyword.pop!(opts, :redact_value)
+    do_redact(object, subject, redact_value, opts)
   end
 
-  defp do_redact(%module{} = object, subject, redact_value) do
-    redacted_fields = module.redacted_fields(object, subject)
-    replace_keys(redacted_fields, subject, redact_value, object)
+  defp do_redact(%module{} = object, subject, redact_value, opts) do
+    redacted_fields = module.redacted_fields(object, subject, opts)
+    replace_keys(redacted_fields, subject, redact_value, object, opts)
   end
 
-  defp replace_keys([], _, _, acc), do: acc
+  defp replace_keys([], _, _, acc, _), do: acc
 
-  defp replace_keys([{key, nested_redacted_fields} | rest], subject, value, acc)
+  defp replace_keys(
+         [{key, nested_redacted_fields} | rest],
+         subject,
+         value,
+         acc,
+         opts
+       )
        when is_atom(key) and is_list(nested_redacted_fields) do
     case Map.get(acc, key) do
       nil ->
-        replace_keys(rest, subject, value, acc)
+        replace_keys(rest, subject, value, acc, opts)
 
       %{__struct__: Ecto.Association.NotLoaded} ->
-        replace_keys(rest, subject, value, acc)
+        replace_keys(rest, subject, value, acc, opts)
 
       %{} = nested_map ->
         replace_keys(
@@ -219,20 +227,27 @@ defmodule LetMe do
           Map.put(
             acc,
             key,
-            replace_keys(nested_redacted_fields, subject, value, nested_map)
-          )
+            replace_keys(
+              nested_redacted_fields,
+              subject,
+              value,
+              nested_map,
+              opts
+            )
+          ),
+          opts
         )
     end
   end
 
-  defp replace_keys([{key, module} | rest], subject, value, acc)
+  defp replace_keys([{key, module} | rest], subject, value, acc, opts)
        when is_atom(key) and is_atom(module) do
     case Map.get(acc, key) do
       nil ->
-        replace_keys(rest, subject, value, acc)
+        replace_keys(rest, subject, value, acc, opts)
 
       %{__struct__: Ecto.Association.NotLoaded} ->
-        replace_keys(rest, subject, value, acc)
+        replace_keys(rest, subject, value, acc, opts)
 
       %^module{} = nested_map ->
         replace_keys(
@@ -242,20 +257,22 @@ defmodule LetMe do
           Map.put(
             acc,
             key,
-            do_redact(nested_map, subject, value)
-          )
+            do_redact(nested_map, subject, value, opts)
+          ),
+          opts
         )
     end
   end
 
-  defp replace_keys([key | rest], subject, value, acc) when is_atom(key) do
-    replace_keys(rest, subject, value, Map.put(acc, key, value))
+  defp replace_keys([key | rest], subject, value, acc, opts)
+       when is_atom(key) do
+    replace_keys(rest, subject, value, Map.put(acc, key, value), opts)
   end
 
   @doc """
   Removes redacted fields from a given list of fields.
 
-  Uses the `c:LetMe.Schema.redacted_fields/2` callback implementation of the
+  Uses the `c:LetMe.Schema.redacted_fields/3` callback implementation of the
   struct module to determine the fields to remove.
 
   ## Examples
@@ -280,12 +297,16 @@ defmodule LetMe do
         |> cast(attrs, fields)
         |> validate_required([:title, :body])
       end
+
+  If a keyword list is given as a fourth argument, it is passed to
+  `c:LetMe.Schema.redacted_fields/3`.
   """
-  @spec reject_redacted_fields([atom], struct, any) :: [atom]
-  def reject_redacted_fields(fields, %schema{} = object, subject) do
+  @spec reject_redacted_fields([atom], struct, any, keyword) :: [atom]
+  def reject_redacted_fields(fields, %schema{} = object, subject, opts \\ [])
+      when is_list(opts) do
     redacted_fields =
       object
-      |> schema.redacted_fields(subject)
+      |> schema.redacted_fields(subject, opts)
       |> MapSet.new()
 
     fields

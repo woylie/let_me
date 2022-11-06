@@ -325,7 +325,7 @@ the frontend, but it would be cleaner if the context functions would not return
 those fields in the first place.
 
 To assist in these kinds of situations, the `LetMe.Schema` behaviour has another
-callback: `c:LetMe.Schema.redacted_fields/2`.
+callback: `c:LetMe.Schema.redacted_fields/3`.
 
 ```elixir
 defmodule MyApp.Accounts.User do
@@ -337,14 +337,15 @@ defmodule MyApp.Accounts.User do
   # Ecto schema and changeset
 
   @impl LetMe.Schema
-  def redacted_fields(%User{}, %User{role: :admin}), do: []
-  def redacted_fields(%User{id: id}, %User{id: id}), do: []
-  def redacted_fields(%User{}, %User{}), do: [:email, :phone_number]
+  def redacted_fields(%User{}, %User{role: :admin}, _), do: []
+  def redacted_fields(%User{id: id}, %User{id: id}, _), do: []
+  def redacted_fields(%User{}, %User{}, _), do: [:email, :phone_number]
 end
 ```
 
 The `redacted_fields/2` function takes the object as the first argument and the
-subject as the second argument. It returns a list of fields that need to be
+subject as the second argument. The third argument can be used to pass any
+additional options. The function returns a list of fields that need to be
 redacted.
 
 In the example above, all fields are visible if the user is an admin or if the

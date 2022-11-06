@@ -17,7 +17,7 @@ defmodule MyApp.Blog.Article do
   def scope(q, %{id: id}, _) when is_list(q), do: Keyword.put(q, :user_id, id)
 
   @impl LetMe.Schema
-  def redacted_fields(_, %{role: :admin}), do: []
-  def redacted_fields(%__MODULE__{user_id: id}, %{id: id}), do: [:view_count]
-  def redacted_fields(_, %{}), do: [:like_count, :view_count]
+  def redacted_fields(_, %{role: :admin}, _), do: []
+  def redacted_fields(%__MODULE__{user_id: id}, %{id: id}, _), do: [:view_count]
+  def redacted_fields(_, %{}, _), do: [:like_count, :view_count]
 end
