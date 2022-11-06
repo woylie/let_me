@@ -125,14 +125,10 @@ defmodule LetMe do
         MyApp.Policy
       )
   """
-  @spec filter_allowed_actions(
-          [LetMe.Rule.t()],
-          subject,
-          {atom, object},
-          module
-        ) ::
-          [LetMe.Rule.t()]
-        when subject: any, object: any
+  @spec filter_allowed_actions([LetMe.Rule.t()], subject, object, module) :: [
+          LetMe.Rule.t()
+        ]
+        when subject: any, object: {atom, any} | struct
   def filter_allowed_actions(rules, subject, {object_name, object}, policy)
       when is_list(rules) and is_atom(object_name) do
     rules
@@ -143,6 +139,11 @@ defmodule LetMe do
         else: acc
     end)
     |> Enum.reverse()
+  end
+
+  def filter_allowed_actions(rules, subject, %_{} = object, policy) do
+    object_name = policy.get_object_name(object)
+    filter_allowed_actions(rules, subject, {object_name, object}, policy)
   end
 
   @doc """
