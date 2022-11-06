@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [1.0.0] - 2022-11-06
+
 ### Added
 
 - Added `c:LetMe.Policy.filter_allowed_actions/3` and

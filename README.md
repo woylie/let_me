@@ -19,7 +19,7 @@ Add LetMe to `mix.exs` :
 ```elixir
 def deps do
   [
-    {:let_me, "~> 0.2.0"}
+    {:let_me, "~> 1.0.0"}
   ]
 end
 ```
@@ -434,6 +434,12 @@ The `redact` function can handle structs, lists of structs, and `nil` values.
   in LetMe must currently return a boolean value, which means you'll only be
   able to give your users a generic error, without telling them which exact
   check failed.
+
+## Status
+
+This library is actively maintained, but since it has no dependencies and the
+feature set is narrowly scoped, you may not see a whole lot of updates. Should
+you miss something, though, don't hesitate to open an issue.
 
 ## Alternatives
 
