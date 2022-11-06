@@ -291,6 +291,23 @@ defmodule LetMe.Policy do
   @callback get_schema(atom) :: module | nil
 
   @doc """
+  Returns the object name for the given schema module or struct, if it was
+  registered using `object/3`.
+
+  ## Examples
+
+      iex> MyApp.Policy.get_object_name(MyApp.Blog.Article)
+      :article
+
+      iex> MyApp.Policy.get_object_name(%MyApp.Blog.Article{})
+      :article
+
+      iex> MyApp.Policy.get_object_name(MyApp.Blog.Tag)
+      nil
+  """
+  @callback get_object_name(module) :: atom | nil
+
+  @doc """
   Authorizes a request defined by the action, subject and object.
 
   ## Example
@@ -796,7 +813,8 @@ defmodule LetMe.Policy do
       end
 
   At the moment, this doesn't do much, except that you can find the schema
-  module by passing the object name to `c:get_schema/1` now.
+  module by passing the object name to `c:get_schema/1`, or find the object name
+  by passing the schema module or struct to `c:get_object_name/1` now.
   """
   @spec object(atom, module | nil, Macro.t()) :: Macro.t()
   defmacro object(name, module \\ nil, do: block) do

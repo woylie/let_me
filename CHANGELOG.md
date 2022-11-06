@@ -6,6 +6,7 @@
 
 - Added `c:LetMe.Policy.filter_allowed_actions/3` and
   `LetMe.filter_allowed_actions/4`.
+- Added `c:LetMe.Policy.get_object_name/1`.
 
 ### Changed
 
