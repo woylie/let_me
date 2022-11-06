@@ -18,8 +18,7 @@ defmodule LetMe.Builder do
       def list_rules(opts), do: LetMe.filter_rules(list_rules(), opts)
 
       @impl LetMe.Policy
-      def filter_allowed_actions(rules, subject, {object_name, _} = object)
-          when is_list(rules) and is_atom(object_name) do
+      def filter_allowed_actions(rules, subject, object) when is_list(rules) do
         LetMe.filter_allowed_actions(rules, subject, object, __MODULE__)
       end
 

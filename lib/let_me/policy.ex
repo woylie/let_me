@@ -206,11 +206,11 @@ defmodule LetMe.Policy do
   Takes a list of rules and only returns the rules that would evaluate to `true`
   for the given subject and object.
 
-  The object needs to be passed as a tuple, where the first element is the
+  ## Examples
+
+  The object can be passed as a tuple, where the first element is the
   object name, and the second element is the actual object, e.g.
   `{:article, %Article{}}`.
-
-  ## Example
 
       iex> rules = MyApp.Policy.list_rules()
       iex> MyApp.Policy.filter_allowed_actions(
@@ -229,10 +229,31 @@ defmodule LetMe.Policy do
           pre_hooks: []
         }
       ]
+
+  If you registered the schema module with `LetMe.Policy.object/3`, you can also
+  pass the schema module or the struct instead of a tuple.
+
+  iex> rules = MyApp.Policy.list_rules()
+  iex> MyApp.Policy.filter_allowed_actions(
+  ...>   rules,
+  ...>   %{id: 2, role: nil},
+  ...>   %MyApp.Blog.Article{}
+  ...> )
+  [
+    %LetMe.Rule{
+      action: :view,
+      allow: [true],
+      deny: [],
+      description: "allows to view an article and the list of articles",
+      name: :article_view,
+      object: :article,
+      pre_hooks: []
+    }
+  ]
   """
-  @callback filter_allowed_actions([LetMe.Rule.t()], subject, {atom, object}) ::
+  @callback filter_allowed_actions([LetMe.Rule.t()], subject, object) ::
               [LetMe.Rule.t()]
-            when subject: any, object: any
+            when subject: any, object: {atom, any} | struct
 
   @doc """
   Returns the rule for the given name. Returns an `:ok` tuple or `:error`.
@@ -814,7 +835,9 @@ defmodule LetMe.Policy do
 
   At the moment, this doesn't do much, except that you can find the schema
   module by passing the object name to `c:get_schema/1`, or find the object name
-  by passing the schema module or struct to `c:get_object_name/1` now.
+  by passing the schema module or struct to `c:get_object_name/1` now. Also,
+  you can now only pass the struct to`c:MyApp.Policy.filter_allowed_actions/3`,
+  without explicitly passing the object name.
   """
   @spec object(atom, module | nil, Macro.t()) :: Macro.t()
   defmacro object(name, module \\ nil, do: block) do
