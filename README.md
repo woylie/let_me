@@ -264,6 +264,7 @@ defmodule MyApp.Blog.Article do
   # Ecto schema and changeset
 
   @impl LetMe.Schema
+  def scope(q, user, opts \\ nil)
   def scope(q, %User{role: :editor}, _), do: q
   def scope(q, %User{role: :writer}, _), do: q
   def scope(q, %User{}, _), do: where(q, published: true)

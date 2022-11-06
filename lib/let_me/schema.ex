@@ -13,8 +13,9 @@ defmodule LetMe.Schema do
         alias MyApp.Accounts.User
 
         @impl LetMe.Schema
-        def scope(q, %User{role: :admin}), do: q
-        def scope(q, %User{}), do: where(q, published: true)
+        def scope(q, user, opts \\\\ nil)
+        def scope(q, %User{role: :admin}, _), do: q
+        def scope(q, %User{}, _), do: where(q, published: true)
 
         @impl LetMe.Schema
         def redacted_fields(_, %User{role: :admin}), do: []
@@ -90,6 +91,7 @@ defmodule LetMe.Schema do
         # Ecto schema and changeset
 
         @impl LetMe.Schema
+        def scope(q, user, opts \\\\ nil)
         def scope(q, %User{role: :admin}, _), do: q
         def scope(q, %User{}, _), do: where(q, published: true)
       end
@@ -101,6 +103,8 @@ defmodule LetMe.Schema do
   API call.
 
       @impl LetMe.Schema
+      def scope(q, user, opts \\\\ nil)
+
       def scope(query_params, %User{role: :admin}, _), do: query_params
 
       def scope(query_params, %User{}, _) do

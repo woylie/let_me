@@ -11,6 +11,7 @@ defmodule MyApp.Blog.Article do
             view_count: 200
 
   @impl LetMe.Schema
+  def scope(q, user, opts \\ nil)
   def scope(q, user, _) when is_atom(q), do: scope([module: q], user, nil)
   def scope(q, %{role: :admin}, _), do: q
   def scope(q, %{id: id}, _) when is_list(q), do: Keyword.put(q, :user_id, id)
