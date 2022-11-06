@@ -67,8 +67,9 @@ defmodule LetMe.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"],
-      source_ref: "main"
+      extras: ["README.md", "CHANGELOG.md"],
+      source_ref: @version,
+      skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
     ]
   end
 end
