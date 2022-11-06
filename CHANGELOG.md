@@ -12,6 +12,15 @@
 
 - Renamed `c:LetMe.Policy.authorized?/3` to `c:LetMe.Policy.authorize?/3`,
   because consistency is more important than grammar, maybe.
+- The `c:LetMe.Schema.scope/2` callback was removed in favour of
+  `c:LetMe.Schema.scope/3`. The `__using__` macro defined default
+  implementations for both functions that returned the given query unchanged, in
+  case you only needed the `redact` callback of the behaviour. In practice, this
+  made it all too easy to call the 2-arity version when only the 3-arity
+  version was defined, and vice versa, which would lead the query to not be
+  scoped. So in order to reduce the room for error at the cost of a minor
+  inconvenience, you will now always need to implement the 3-arity function,
+  even if you don't need the third argument.
 
 ## [0.2.0] - 2022-07-12
 
