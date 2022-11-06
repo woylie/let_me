@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## [1.0.1] - 2022-11-06
+
+### Changed
+
+- Use `Keyword.pop/3` with default value instead of `Keyword.pop!/2`, so that
+  you can pass options to `LetMe.redact/3` without passing the `redact_value`
+  option.
+
 ## [1.0.0] - 2022-11-06
 
 ### Added
