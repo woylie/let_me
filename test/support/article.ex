@@ -11,9 +11,9 @@ defmodule MyApp.Blog.Article do
             view_count: 200
 
   @impl LetMe.Schema
-  def scope(q, user) when is_atom(q), do: scope([module: q], user)
-  def scope(q, %{role: :admin}), do: q
-  def scope(q, %{id: id}) when is_list(q), do: Keyword.put(q, :user_id, id)
+  def scope(q, user, _) when is_atom(q), do: scope([module: q], user, nil)
+  def scope(q, %{role: :admin}, _), do: q
+  def scope(q, %{id: id}, _) when is_list(q), do: Keyword.put(q, :user_id, id)
 
   @impl LetMe.Schema
   def redacted_fields(_, %{role: :admin}), do: []

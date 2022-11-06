@@ -64,7 +64,6 @@ defmodule LetMe.Schema do
     quote do
       @behaviour LetMe.Schema
 
-      def scope(q, _), do: q
       def scope(q, _, _), do: q
       def redacted_fields(_, _), do: []
 
@@ -91,8 +90,8 @@ defmodule LetMe.Schema do
         # Ecto schema and changeset
 
         @impl LetMe.Schema
-        def scope(q, %User{role: :admin}), do: q
-        def scope(q, %User{}), do: where(q, published: true)
+        def scope(q, %User{role: :admin}, _), do: q
+        def scope(q, %User{}, _), do: where(q, published: true)
       end
 
   Since LetMe does not depend on Ecto and does not make any assumptions on the
@@ -102,17 +101,13 @@ defmodule LetMe.Schema do
   API call.
 
       @impl LetMe.Schema
-      def scope(query_params, %User{role: :admin}), do: query_params
+      def scope(query_params, %User{role: :admin}, _), do: query_params
 
-      def scope(query_params, %User{}) do
+      def scope(query_params, %User{}, _) do
         Keyword.put(query_params, :published, true)
       end
-  """
-  @callback scope(queryable, subject) :: queryable
-            when queryable: any, subject: any
 
-  @doc """
-  Same as `c:scope/2`, but takes an additional argument for arbitrary options.
+  You can use the third argument to pass any additional options.
   """
   @callback scope(queryable, subject, opts) :: queryable
             when queryable: any, subject: any, opts: any

@@ -250,7 +250,7 @@ Or in a system where users belong to companies, a company user might only be
 allowed to see users who belong to the same company.
 
 In order to scope your queries depending on the user type, you can implement the
-`c:LetMe.Schema.scope/2` callback of the `LetMe.Schema` behaviour, usually in
+`c:LetMe.Schema.scope/3` callback of the `LetMe.Schema` behaviour, usually in
 your Ecto schema module.
 
 ```elixir
@@ -264,14 +264,17 @@ defmodule MyApp.Blog.Article do
   # Ecto schema and changeset
 
   @impl LetMe.Schema
-  def scope(q, %User{role: :editor}), do: q
-  def scope(q, %User{role: :writer}), do: q
-  def scope(q, %User{}), do: where(q, published: true)
+  def scope(q, %User{role: :editor}, _), do: q
+  def scope(q, %User{role: :writer}, _), do: q
+  def scope(q, %User{}, _), do: where(q, published: true)
 end
 ```
 
 Here, the Ecto query is modified to only return published articles, unless the
-user is an editor or writer. You can then update your list and fetch functions:
+user is an editor or writer. You can use the third argument for additional
+options.
+
+With this, you can then update your list and fetch functions:
 
 ```elixir
 def list_articles(%User{} = current_user) do
