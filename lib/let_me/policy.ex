@@ -370,12 +370,12 @@ defmodule LetMe.Policy do
       iex> article = %{id: 80, user_id: 1}
       iex> user_1 = %{id: 1}
       iex> user_2 = %{id: 2}
-      iex> MyApp.Policy.authorized?(:article_update, user_1, article)
+      iex> MyApp.Policy.authorize?(:article_update, user_1, article)
       true
-      iex> MyApp.Policy.authorized?(:article_update, user_2, article)
+      iex> MyApp.Policy.authorize?(:article_update, user_2, article)
       false
   """
-  @callback authorized?(atom, any, any) :: boolean
+  @callback authorize?(atom, any, any) :: boolean
 
   @doc """
   Returns the rule for the given rule name. Returns `nil` if the rule is

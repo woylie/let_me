@@ -7,6 +7,11 @@
 - Added `c:LetMe.Policy.filter_allowed_actions/3` and
   `LetMe.filter_allowed_actions/4`.
 
+### Changed
+
+- Renamed `c:LetMe.Policy.authorized?/3` to `c:LetMe.Policy.authorize?/3`,
+  because consistency is more important than grammar, maybe.
+
 ## [0.2.0] - 2022-07-12
 
 ### Changed
