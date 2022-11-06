@@ -67,7 +67,7 @@ defmodule LetMe.PolicyTest do
       end
     end
 
-    object :complex do
+    object :complex, MyApp.Blog.Article do
       action :multiple_allow_checks do
         allow [:own_resource, role: :editor]
       end

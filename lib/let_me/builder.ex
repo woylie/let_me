@@ -38,14 +38,29 @@ defmodule LetMe.Builder do
   end
 
   def schema_functions(schemas) when is_list(schemas) do
-    schemas = Enum.into(schemas, %{})
+    schema_function_clauses =
+      for {object_name, schema} <- schemas do
+        quote do
+          def get_schema(unquote(object_name)), do: unquote(schema)
+        end
+      end
+
+    object_function_clauses =
+      for {object_name, schema} <- schemas do
+        quote do
+          def get_object_name(unquote(schema)), do: unquote(object_name)
+        end
+      end
 
     quote do
-      defp __schemas__, do: unquote(Macro.escape(schemas))
+      @impl LetMe.Policy
+      unquote(schema_function_clauses)
+      def get_schema(object_name) when is_atom(object_name), do: nil
 
       @impl LetMe.Policy
-      def get_schema(object_name) when is_atom(object_name),
-        do: Map.get(__schemas__(), object_name)
+      unquote(object_function_clauses)
+      def get_object_name(%schema{}), do: get_object_name(schema)
+      def get_object_name(schema), do: nil
     end
   end
 
