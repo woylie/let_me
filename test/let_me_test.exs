@@ -21,11 +21,11 @@ defmodule LetMeTest do
     defstruct [:name, :email, :phone_number, :pet, :spouse, :age, :locale]
 
     @impl LetMe.Schema
-    def redacted_fields(_, :nested_fields) do
+    def redacted_fields(_, :nested_fields, _) do
       [:name, :phone_number, spouse: [:email, pet: [:weight]]]
     end
 
-    def redacted_fields(_, :nested_schemas) do
+    def redacted_fields(_, :nested_schemas, _) do
       [:name, :phone_number, spouse: __MODULE__, pet: LetMeTest.Pet]
     end
   end
@@ -36,7 +36,7 @@ defmodule LetMeTest do
     defstruct [:name, :email, :phone_number, :weight, :age]
 
     @impl LetMe.Schema
-    def redacted_fields(_, :nested_schemas) do
+    def redacted_fields(_, :nested_schemas, _) do
       [:email, :age]
     end
   end
@@ -213,7 +213,7 @@ defmodule LetMeTest do
     end
   end
 
-  describe "reject_redacted_fields/3" do
+  describe "reject_redacted_fields/4" do
     test "can handle nested fields returned by callback" do
       fields = [:name, :email, :phone_number, :pet, :spouse, :age, :locale]
       person = person()

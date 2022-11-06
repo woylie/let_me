@@ -3,7 +3,7 @@ defmodule LetMe.Schema do
   Defines a behaviour with callbacks for scoping and redactions.
 
   Using this module will define overridable default implementations for the
-  `scope/2` and `redacted_fields/2` callbacks.
+  `c:scope/3` and `c:redacted_fields/3` callbacks.
 
   ## Usage
 
@@ -18,9 +18,9 @@ defmodule LetMe.Schema do
         def scope(q, %User{}, _), do: where(q, published: true)
 
         @impl LetMe.Schema
-        def redacted_fields(_, %User{role: :admin}), do: []
-        def redacted_fields(%__MODULE__{user_id: id}, %User{id: id}), do: []
-        def redacted_fields(_, %User{}), do: [:view_count]
+        def redacted_fields(_, %User{role: :admin}, _), do: []
+        def redacted_fields(%__MODULE__{user_id: id}, %User{id: id}, _), do: []
+        def redacted_fields(_, %User{}, _), do: [:view_count]
       end
 
   ## Scoping a query
@@ -50,9 +50,9 @@ defmodule LetMe.Schema do
 
   ## Redacting fields
 
-  After implementing the `c:redacted_fields/2` callback, you can hide fields from
-  depending on the user by calling `LetMe.redact/3` on a struct or a list of
-  structs.
+  After implementing the `c:redacted_fields/3` callback, you can hide fields
+  from depending on the user by calling `LetMe.redact/3` on a struct or a list
+  of structs.
 
       def list_articles(%User{} = current_user) do
         Article
@@ -66,7 +66,7 @@ defmodule LetMe.Schema do
       @behaviour LetMe.Schema
 
       def scope(q, _, _), do: q
-      def redacted_fields(_, _), do: []
+      def redacted_fields(_, _, _), do: []
 
       defoverridable LetMe.Schema
     end
@@ -130,9 +130,9 @@ defmodule LetMe.Schema do
         @impl LetMe.Schema
         # hide view count unless the user is an admin or the article was written
         # by the user
-        def redacted_fields(_, %User{role: :admin}), do: []
-        def redacted_fields(%__MODULE__{user_id: id}, %User{id: id}), do: []
-        def redacted_fields(_, %User{}), do: [:view_count]
+        def redacted_fields(_, %User{role: :admin}, _), do: []
+        def redacted_fields(%__MODULE__{user_id: id}, %User{id: id}, _), do: []
+        def redacted_fields(_, %User{}, _), do: [:view_count]
       end
 
   The return value must be a list of fields to redact. You can also redact
@@ -144,9 +144,11 @@ defmodule LetMe.Schema do
   implements `LetMe.Schema`:
 
       [:email, sibling: MyApp.Relative]
+
+  The last argument can be used for any additional options.
   """
-  @callback redacted_fields(object, subject) :: redacted_fields()
-            when object: any, subject: any
+  @callback redacted_fields(object, subject, opts) :: redacted_fields()
+            when object: any, subject: any, opts: keyword
 
   @type redacted_fields :: [atom | {atom, module | redacted_fields()}]
 end
