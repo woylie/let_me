@@ -5,6 +5,7 @@ defmodule LetMe.PolicyTest do
   import ExUnit.CaptureLog
 
   alias LetMe.Rule
+  alias MyApp.Blog.Article
   alias MyApp.Policy
   alias MyApp.TestPolicy
   alias MyApp.PolicyShort
@@ -195,6 +196,44 @@ defmodule LetMe.PolicyTest do
     test "filters by deny check name without options" do
       assert [%Rule{action: :delete, object: :user}] =
                Policy.list_rules(deny: :same_user)
+    end
+  end
+
+  describe "filter_allowed_actions" do
+    test "filters list of rules by subject and object" do
+      rules = Policy.list_rules()
+      object = {:article, %Article{user_id: 1}}
+
+      assert [%Rule{name: :article_view}] =
+               Policy.filter_allowed_actions(rules, %{id: 2}, object)
+
+      assert [%Rule{name: :article_create}, %Rule{name: :article_view}] =
+               Policy.filter_allowed_actions(
+                 rules,
+                 %{id: 2, role: :writer},
+                 object
+               )
+
+      assert [%Rule{name: :article_create}, %Rule{name: :article_view}] =
+               Policy.filter_allowed_actions(
+                 rules,
+                 %{id: 2, role: :admin},
+                 object
+               )
+
+      assert [
+               %Rule{name: :article_create},
+               %Rule{name: :article_update},
+               %Rule{name: :article_view}
+             ] =
+               Policy.filter_allowed_actions(
+                 rules,
+                 %{id: 1, role: :admin},
+                 object
+               )
+
+      assert [%Rule{name: :article_update}, %Rule{name: :article_view}] =
+               Policy.filter_allowed_actions(rules, %{id: 1}, object)
     end
   end
 

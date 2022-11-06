@@ -105,6 +105,47 @@ defmodule LetMe do
   defp matches_check?(_, {name, _opts}) when is_atom(name), do: false
 
   @doc """
+  Takes a list of rules and only returns the rules that would evaluate to `true`
+  for the given subject and object.
+
+  The object needs to be passed as a tuple, where the first element is the
+  object name, and the second element is the actual object, e.g.
+  `{:article, %Article{}}`.
+
+  This function is used internally by `c:LetMe.Policy.filter_allowed_actions/3`.
+
+  ## Example
+
+      rules = MyApp.Policy.list_rules()
+
+      filter_allowed_actions(
+        rules,
+        %User{},
+        {:article, %Article{}},
+        MyApp.Policy
+      )
+  """
+  @spec filter_allowed_actions(
+          [LetMe.Rule.t()],
+          subject,
+          {atom, object},
+          module
+        ) ::
+          [LetMe.Rule.t()]
+        when subject: any, object: any
+  def filter_allowed_actions(rules, subject, {object_name, object}, policy)
+      when is_list(rules) and is_atom(object_name) do
+    rules
+    |> LetMe.filter_rules(object: object_name)
+    |> Enum.reduce([], fn %LetMe.Rule{name: name} = rule, acc ->
+      if policy.authorized?(name, subject, object),
+        do: [rule | acc],
+        else: acc
+    end)
+    |> Enum.reverse()
+  end
+
+  @doc """
   Takes a struct or a list of structs and redacts fields depending on the
   subject (user).
 

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Added `c:LetMe.Policy.filter_allowed_actions/3` and
+  `LetMe.filter_allowed_actions/4`.
+
 ## [0.2.0] - 2022-07-12
 
 ### Changed
