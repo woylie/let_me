@@ -20,6 +20,9 @@ defmodule LetMe.MixProject do
         "coveralls.html": :test,
         "coveralls.github": :test
       ],
+      dialyzer: [
+        plt_file: {:no_warn, ".plts/dialyzer.plt"}
+      ],
       name: "LetMe",
       source_url: @source_url,
       homepage_url: @source_url,
