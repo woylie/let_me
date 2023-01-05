@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## [1.0.2] - 2023-01-05
+
+### Added
+
+- Added a cheat sheet for rules and checks.
+
+### Fixed
+
+- Fixed a code example for rule introspection in the readme.
+
 ## [1.0.1] - 2022-11-06
 
 ### Changed
