@@ -1,0 +1,273 @@
+# Rules and Checks
+
+## Minimal example
+{: .col-2}
+
+### Policy definition
+
+#### Policy module
+
+```elixir
+defmodule MyApp.Policy do
+  use LetMe.Policy
+
+  object :article do
+    action :create do
+      allow role: :writer
+    end
+  end
+end
+```
+
+#### Check module
+
+```elixir
+defmodule MyApp.Policy.Checks do
+  def role(%MyApp.User{role: role}, _object, role), do: true
+  def role(_, _, _), do: false
+end
+```
+
+### Context module
+
+```elixir
+defmodule MyApp.Blog do
+  alias MyApp.Blog.Article
+  alias MyApp.Policy
+
+  def create_article(params, %MyApp.User{} = current_user) do
+    with :ok <- Policy.authorize(:article_create, current_user) do
+      %Article{}
+      |> Article.changeset(params)
+      |> Repo.insert()
+    end
+  end
+end
+```
+
+## Check examples
+{: .col-2}
+
+### Check without options
+
+#### Policy module
+
+```elixir
+object :article do
+  action :create do
+    allow :writer
+  end
+end
+```
+
+#### Check implementation
+
+```elixir
+def writer(%MyApp.User{role: :writer}, _object, _opts), do: true
+def writer(_, _, _), do: false
+```
+
+### Check with options
+
+#### Policy module
+
+```elixir
+object :article do
+  action :delete do
+    allow trust_level: 50
+  end
+end
+```
+
+#### Check implementation
+
+```elixir
+def trust_level(%MyApp.User{trust_level: actual_level}, _, required_level)
+  when actual_level >= required_level,
+  do: true
+
+def trust_level(_, _, _), do: false
+```
+
+### Check that depends on the object
+
+#### Policy module
+
+```elixir
+object :article do
+  action :update do
+    allow :own_resource
+  end
+end
+```
+
+#### Check implementation
+
+```elixir
+def own_resource(%MyApp.User{id: user_id}, %{user_id: user_id}, _), do: true
+def own_resource(_, _, _), do: false
+```
+
+## Rule examples
+{: .col-2}
+
+### Multiple actions with the same rules
+
+```elixir
+object :article do
+  action [:create, :update, :delete] do
+    allow :admin
+  end
+end
+```
+
+### Combine checks with `AND`
+
+```elixir
+action :create do
+  allow [:two_fa_enabled, role: :writer]
+end
+```
+
+### Combine checks with `OR`
+
+```elixir
+action :create do
+  allow role: :admin
+  allow role: :writer
+end
+```
+
+### Conditionally allow with exception
+
+```elixir
+action :create do
+  allow :is_admin
+  deny :is_suspended
+end
+```
+
+### Always allow
+
+```elixir
+action :read do
+  allow true
+end
+```
+
+### Always deny
+
+```elixir
+action :read do
+  deny true
+end
+```
+
+### Always allow with exception
+
+```elixir
+action :read do
+  allow true
+  deny :user_is_suspended
+end
+```
+
+### Add description
+
+```elixir
+action :create do
+  desc "allows a user to create a new article"
+  allow role: :writer
+end
+```
+
+## Pre-hooks
+{: .col-2}
+
+### Without options
+
+#### Policy module
+
+```elixir
+object :article do
+  action :create do
+    pre_hooks :preload_roles
+
+    allow role: :admin
+    allow role: :editor
+    allow role: :writer
+  end
+end
+```
+
+#### Check module
+
+```elixir
+def role(%MyApp.User{roles: roles}, _object, role) do
+  Enum.any?(roles, & &1.id == role)
+end
+
+def role(_, _, _), do: false
+
+def preload_roles(subject, object) do
+  {MyApp.Repo.preload(subject, [:roles]), object}
+end
+```
+
+### With options
+
+#### Policy module
+
+```elixir
+object :article do
+  action :create do
+    pre_hooks {:preload_roles, force: true}
+
+    allow role: :admin
+    allow role: :editor
+    allow role: :writer
+  end
+end
+```
+
+#### Check module
+
+```elixir
+def role(%MyApp.User{roles: roles}, _object, role) do
+  Enum.any?(roles, & &1.id == role)
+end
+
+def role(_, _, _), do: false
+
+def preload_roles(subject, object, opts) do
+  {MyApp.Repo.preload(subject, [:roles], opts), object}
+end
+```
+
+### From a different module
+
+```elixir
+object :article do
+  action :create do
+    pre_hooks {MyApp.Policy.Prehooks, :preload_roles, force: true}
+
+    allow role: :admin
+    allow role: :editor
+    allow role: :writer
+  end
+end
+```
+
+### Multiple pre-hooks
+
+```elixir
+object :article do
+  action :create do
+    pre_hooks [:preload_roles, :role_list_to_role_id_list]
+
+    allow role: :admin
+    allow role: :editor
+    allow role: :writer
+  end
+end
+```
