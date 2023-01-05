@@ -226,7 +226,7 @@ iex> MyApp.Policy.get_rule(:article_create)
 Or you can list all actions tied to a certain role (or any other check):
 
 ```elixir
-iex> MyApp.Policy.list_rules(role: :writer)
+iex> MyApp.Policy.list_rules(allow: {:role, :writer})
 [
   %LetMe.Rule{
     action: :create,
