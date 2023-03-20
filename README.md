@@ -19,7 +19,7 @@ Add LetMe to `mix.exs` :
 ```elixir
 def deps do
   [
-    {:let_me, "~> 1.0.2"}
+    {:let_me, "~> 1.0.3"}
   ]
 end
 ```

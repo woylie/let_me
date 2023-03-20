@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [1.0.3] - 2023-03-21
+
+- Update `ex_doc` and other dev dependencies.
+
 ## [1.0.2] - 2023-01-05
 
 ### Added
