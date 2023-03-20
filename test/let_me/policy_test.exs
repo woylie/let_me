@@ -7,8 +7,8 @@ defmodule LetMe.PolicyTest do
   alias LetMe.Rule
   alias MyApp.Blog.Article
   alias MyApp.Policy
-  alias MyApp.TestPolicy
   alias MyApp.PolicyShort
+  alias MyApp.TestPolicy
 
   defmodule TestPolicy do
     use LetMe.Policy, check_module: MyApp.Checks
