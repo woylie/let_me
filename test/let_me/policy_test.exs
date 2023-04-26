@@ -65,6 +65,9 @@ defmodule LetMe.PolicyTest do
       action :empty_list_check do
         allow []
       end
+
+      action :with_metadata, metadata_key_one: :useless_check do
+      end
     end
 
     object :complex, MyApp.Blog.Article do
@@ -145,7 +148,10 @@ defmodule LetMe.PolicyTest do
                  deny: [:same_user],
                  name: :user_delete,
                  object: :user,
-                 pre_hooks: []
+                 pre_hooks: [],
+                 metadata: [
+                   deprecated: "Hard deletion is deprecated"
+                 ]
                },
                %Rule{
                  action: :list,

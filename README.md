@@ -201,7 +201,8 @@ iex> MyApp.Policy.list_rules()
     description: nil,
     name: :article_create,
     object: :article,
-    pre_hooks: []
+    pre_hooks: [],
+    metadata: []
   },
   # ...
 ]
@@ -239,6 +240,46 @@ iex> MyApp.Policy.list_rules(allow: {:role, :writer})
     # ...
   }
 ]
+```
+
+Metadata can be defined on an `action` for use in extending LetMe's
+functionality that are out of scope for the library itself.
+
+For example, you may want to expose some of your actions through your Absinthe
+GraphQL schema. Perhaps you wanted to exclude only certain actions. Using the
+`action`'s metadata, it becomes easier to do so.
+
+With `metadata`, there should be no limit to how the library can be extended
+in your own application.
+
+```elixir
+defmodule GraphqlPolicy do
+  use LetMe.Policy
+
+  object :user do
+    action :disable, gql_exclude: true do
+      allow role: :admin
+    end
+  end
+end
+```
+
+```elixir
+iex> MyApp.Policy.get_rule(:user_disable)
+%LetMe.Rule{
+  action: :disable,
+  allow: [
+    [role: :admin]
+  ],
+  deny: [],
+  description: nil,
+  name: :user_disable,
+  object: :user,
+  pre_hooks: [],
+  metadata: [
+    gql_exclude: true
+  ]
+}
 ```
 
 ## Scoped queries
