@@ -20,6 +20,7 @@ defmodule LetMe.Rule do
   - `object` - The object that the action is performed on, e.g. `:article`.
   - `pre_hooks` - Functions to run in order to hydrate the subject and/or object
     before running the allow and deny checks.
+  - `metadata` - A list of relevant metadata useful for extending functionality.
 
   The list entries in the outer list of the `allow` and `deny` fields are
   combined with a logical `OR`. If one of the entries is a list of checks, those
@@ -39,7 +40,8 @@ defmodule LetMe.Rule do
           description: String.t() | nil,
           name: atom,
           object: atom,
-          pre_hooks: [hook]
+          pre_hooks: [hook],
+          metadata: Keyword.t()
         }
 
   @typedoc """
@@ -81,5 +83,6 @@ defmodule LetMe.Rule do
             description: nil,
             name: nil,
             object: nil,
-            pre_hooks: []
+            pre_hooks: [],
+            metadata: []
 end

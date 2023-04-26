@@ -453,6 +453,7 @@ defmodule LetMe.Policy do
       Module.register_attribute(__MODULE__, :allow_checks, accumulate: true)
       Module.register_attribute(__MODULE__, :deny_checks, accumulate: true)
       Module.register_attribute(__MODULE__, :pre_hooks, accumulate: true)
+      Module.register_attribute(__MODULE__, :metadata, accumulate: true)
 
       @behaviour LetMe.Policy
 
@@ -597,8 +598,8 @@ defmodule LetMe.Policy do
         end
       end
   """
-  @spec action(atom | [atom], Macro.t()) :: Macro.t()
-  defmacro action(names, do: block) do
+  @spec action(atom | [atom], Keyword.t(), Macro.t()) :: Macro.t()
+  defmacro action(names, metadata \\ [], do: block) do
     names = List.wrap(names)
 
     quote do
@@ -607,6 +608,7 @@ defmodule LetMe.Policy do
       Module.delete_attribute(__MODULE__, :description)
       Module.delete_attribute(__MODULE__, :deny_checks)
       Module.delete_attribute(__MODULE__, :pre_hooks)
+      Module.delete_attribute(__MODULE__, :metadata)
 
       # compile inner block
       unquote(block)
@@ -618,7 +620,8 @@ defmodule LetMe.Policy do
           description: Module.get_attribute(__MODULE__, :description),
           deny: get_acc_attribute(__MODULE__, :deny_checks),
           pre_hooks:
-            __MODULE__ |> get_acc_attribute(:pre_hooks) |> List.flatten()
+            __MODULE__ |> get_acc_attribute(:pre_hooks) |> List.flatten(),
+          metadata: unquote(metadata)
         })
       end
     end
@@ -864,7 +867,8 @@ defmodule LetMe.Policy do
           description: action.description,
           name: :"#{unquote(name)}_#{action.name}",
           object: unquote(name),
-          pre_hooks: action.pre_hooks
+          pre_hooks: action.pre_hooks,
+          metadata: action.metadata
         })
       end
     end

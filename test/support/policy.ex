@@ -21,7 +21,7 @@ defmodule MyApp.Policy do
   end
 
   object :user do
-    action :delete do
+    action :delete, deprecated: "Hard deletion is deprecated" do
       allow role: :admin
       deny :same_user
     end
