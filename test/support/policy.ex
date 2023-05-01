@@ -21,9 +21,15 @@ defmodule MyApp.Policy do
   end
 
   object :user do
-    action :delete, deprecated: "Hard deletion is deprecated" do
+    action :delete do
       allow role: :admin
       deny :same_user
+      metadata deprecated: "Hard deletion is deprecated", replacement: :remove
+      metadata gql_exclude: true
+    end
+
+    action :remove do
+      allow role: :super_admin
     end
 
     action :list do

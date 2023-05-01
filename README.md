@@ -257,8 +257,9 @@ defmodule GraphqlPolicy do
   use LetMe.Policy
 
   object :user do
-    action :disable, gql_exclude: true do
+    action :disable do
       allow role: :admin
+      metadata gql_exclude: true
     end
   end
 end

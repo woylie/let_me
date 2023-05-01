@@ -271,3 +271,46 @@ object :article do
   end
 end
 ```
+
+### Metadata
+
+```elixir
+object :article do
+  action :create do
+    allow role: :admin
+    allow role: :editor
+    allow role: :writer
+    
+    metadata deprecated: "Use :article_post instead"
+  end
+end
+```
+
+### Metadata multiple in one
+
+```elixir
+object :article do
+  action :create do
+    allow role: :admin
+    allow role: :editor
+    allow role: :writer
+    
+    metadata deprecated: "Use :article_post instead", gql_exclude: true
+  end
+end
+```
+
+### Metadata multiple in many
+
+```elixir
+object :article do
+  action :create do
+    allow role: :admin
+    allow role: :editor
+    allow role: :writer
+    
+    metadata deprecated: "Use :article_post instead"
+    metadata gql_exclude: true
+  end
+end
+```
