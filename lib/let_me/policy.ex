@@ -453,7 +453,6 @@ defmodule LetMe.Policy do
       Module.register_attribute(__MODULE__, :allow_checks, accumulate: true)
       Module.register_attribute(__MODULE__, :deny_checks, accumulate: true)
       Module.register_attribute(__MODULE__, :pre_hooks, accumulate: true)
-      Module.register_attribute(__MODULE__, :metadata, accumulate: true)
 
       @behaviour LetMe.Policy
 
@@ -598,8 +597,8 @@ defmodule LetMe.Policy do
         end
       end
   """
-  @spec action(atom | [atom], Keyword.t(), Macro.t()) :: Macro.t()
-  defmacro action(names, metadata \\ [], do: block) do
+  @spec action(atom | [atom], Macro.t()) :: Macro.t()
+  defmacro action(names, do: block) do
     names = List.wrap(names)
 
     quote do
@@ -621,7 +620,7 @@ defmodule LetMe.Policy do
           deny: get_acc_attribute(__MODULE__, :deny_checks),
           pre_hooks:
             __MODULE__ |> get_acc_attribute(:pre_hooks) |> List.flatten(),
-          metadata: unquote(metadata)
+          metadata: get_acc_attribute(__MODULE__, :metadata)
         })
       end
     end
@@ -806,6 +805,35 @@ defmodule LetMe.Policy do
   defmacro deny(checks) do
     quote do
       Module.put_attribute(__MODULE__, :deny_checks, unquote(checks))
+    end
+  end
+
+  @doc """
+  Assigns metadata to the action in the form of a keyword list
+
+  The metadata can be accessed from the `LetMe.Rule` struct. You can use it
+  to extend the functionality of your policy.
+
+  ## Example
+
+      object :article do
+        action :create do
+          allow role: :writer
+
+          metadata deprecated: "Cannot create articles with this policy."
+        end
+      end
+  """
+  @spec metadata(Keyword.t()) :: Macro.t()
+  defmacro metadata(metadata) do
+    quote do
+      current = get_acc_attribute(__MODULE__, :metadata)
+
+      Module.put_attribute(
+        __MODULE__,
+        :metadata,
+        current ++ unquote(metadata)
+      )
     end
   end
 

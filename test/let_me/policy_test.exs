@@ -66,7 +66,8 @@ defmodule LetMe.PolicyTest do
         allow []
       end
 
-      action :with_metadata, metadata_key_one: :useless_check do
+      action :with_metadata do
+        metadata metadata_key_one: :useless_check
       end
     end
 
@@ -150,7 +151,9 @@ defmodule LetMe.PolicyTest do
                  object: :user,
                  pre_hooks: [],
                  metadata: [
-                   deprecated: "Hard deletion is deprecated"
+                   gql_exclude: true,
+                   deprecated: "Hard deletion is deprecated",
+                   replacement: :remove
                  ]
                },
                %Rule{
@@ -160,6 +163,15 @@ defmodule LetMe.PolicyTest do
                  name: :user_list,
                  object: :user,
                  pre_hooks: []
+               },
+               %Rule{
+                 action: :remove,
+                 allow: [[role: :super_admin]],
+                 deny: [],
+                 name: :user_remove,
+                 object: :user,
+                 pre_hooks: [],
+                 metadata: []
                },
                %Rule{
                  action: :view,
