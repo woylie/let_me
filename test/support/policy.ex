@@ -24,8 +24,8 @@ defmodule MyApp.Policy do
     action :delete do
       allow role: :admin
       deny :same_user
-      metadata deprecated: "Hard deletion is deprecated", replacement: :remove
-      metadata gql_exclude: true
+      metadata :gql_exclude, true
+      metadata :doc_ja, "指定されたユーザーに対して、指定された機能を無効にします。"
     end
 
     action :remove do

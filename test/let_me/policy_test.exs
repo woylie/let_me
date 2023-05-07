@@ -67,7 +67,7 @@ defmodule LetMe.PolicyTest do
       end
 
       action :with_metadata do
-        metadata metadata_key_one: :useless_check
+        metadata :doc_ja, "指定されたユーザーに対して、指定された機能を無効にします。"
       end
     end
 
@@ -152,8 +152,7 @@ defmodule LetMe.PolicyTest do
                  pre_hooks: [],
                  metadata: [
                    gql_exclude: true,
-                   deprecated: "Hard deletion is deprecated",
-                   replacement: :remove
+                   doc_ja: "指定されたユーザーに対して、指定された機能を無効にします。"
                  ]
                },
                %Rule{
