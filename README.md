@@ -242,8 +242,8 @@ iex> MyApp.Policy.list_rules(allow: {:role, :writer})
 ]
 ```
 
-Metadata can be defined on an `action` for use in extending LetMe's
-functionality that are out of scope for the library itself.
+You can also define metadata on an `action`, which can be useful to extend
+the functionality of the library.
 
 For example, you may want to expose some of your actions through your Absinthe
 GraphQL schema. Perhaps you wanted to exclude only certain actions. Using the
