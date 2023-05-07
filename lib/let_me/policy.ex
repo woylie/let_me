@@ -810,6 +810,7 @@ defmodule LetMe.Policy do
 
   @doc """
   Assigns metadata to the action in the form of a key value pair.
+
   Keys should always be atoms.
 
   The metadata can be accessed from the `LetMe.Rule` struct. You can use it
