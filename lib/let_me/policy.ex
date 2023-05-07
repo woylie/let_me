@@ -809,7 +809,8 @@ defmodule LetMe.Policy do
   end
 
   @doc """
-  Assigns metadata to the action in the form of a keyword list
+  Assigns metadata to the action in the form of a key value pair.
+  Keys should always be atoms.
 
   The metadata can be accessed from the `LetMe.Rule` struct. You can use it
   to extend the functionality of your policy.
@@ -820,20 +821,16 @@ defmodule LetMe.Policy do
         action :create do
           allow role: :writer
 
-          metadata deprecated: "Cannot create articles with this policy."
+          metadata :doc_ja, "指定されたユーザーに対して、指定された機能を無効にします。"
         end
       end
   """
-  @spec metadata(Keyword.t()) :: Macro.t()
-  defmacro metadata(metadata) do
+  @spec metadata(atom(), term()) :: Macro.t()
+  defmacro metadata(key, value) do
     quote do
-      current = get_acc_attribute(__MODULE__, :metadata)
-
-      Module.put_attribute(
-        __MODULE__,
-        :metadata,
-        current ++ unquote(metadata)
-      )
+      current_meta = get_acc_attribute(__MODULE__, :metadata)
+      new_meta = {unquote(key), unquote(value)}
+      Module.put_attribute(__MODULE__, :metadata, [new_meta | current_meta])
     end
   end
 

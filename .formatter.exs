@@ -4,7 +4,7 @@ locals_without_parens = [
   allow: 1,
   deny: 1,
   desc: 1,
-  metadata: 1,
+  metadata: 2,
   pre_hooks: 1
 ]
 

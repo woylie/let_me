@@ -259,7 +259,7 @@ defmodule GraphqlPolicy do
   object :user do
     action :disable do
       allow role: :admin
-      metadata gql_exclude: true
+      metadata :gql_exclude, true
     end
   end
 end
