@@ -272,7 +272,8 @@ object :article do
 end
 ```
 
-### Metadata
+## Metadata
+{: .col-2}
 
 ```elixir
 object :article do
@@ -282,7 +283,7 @@ object :article do
     allow role: :writer
     
     metadata :gql_exclude, true
-    metadata :doc_ja, "指定されたユーザーに対して、指定された機能を無効にします。" 
+    metadata :desc_ja, "ユーザーが新しい記事を作成できるようにする"
   end
 end
 ```

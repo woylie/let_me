@@ -811,10 +811,8 @@ defmodule LetMe.Policy do
   @doc """
   Assigns metadata to the action in the form of a key value pair.
 
-  Keys should always be atoms.
-
   The metadata can be accessed from the `LetMe.Rule` struct. You can use it
-  to extend the functionality of your policy.
+  to extend the functionality of the library.
 
   ## Example
 
@@ -822,9 +820,54 @@ defmodule LetMe.Policy do
         action :create do
           allow role: :writer
 
-          metadata :doc_ja, "指定されたユーザーに対して、指定された機能を無効にします。"
+          desc "Allows a user to create a new article."
+          metadata :desc_ja, "ユーザーが新しい記事を作成できるようにする"
         end
       end
+
+  The `LetMe.Rule` struct returned by the introspection functions would look
+  like this:
+
+      %LetMe.Rule{
+        action: :create,
+        allow: [[role: :writer]],
+        deny: [],
+        description: "Allows a user to create a new article.",
+        name: :article_create,
+        object: :article,
+        pre_hooks: [],
+        metadata: [
+          desc_ja: "ユーザーが新しい記事を作成できるようにする"
+        ]
+      }
+
+  It is also possible to use the `metadata` macro multiple times.
+
+      object :article do
+        action :create do
+          allow role: :writer
+
+          desc "Allows a user to create a new article."
+          metadata :desc_ja, "ユーザーが新しい記事を作成できるようにする"
+          metadata :desc_es, "Permite al usuario crear un nuevo artículo."
+        end
+      end
+
+  This would result in:
+
+      %LetMe.Rule{
+        action: :create,
+        allow: [[role: :writer]],
+        deny: [],
+        description: "Allows a user to create a new article.",
+        name: :article_create,
+        object: :article,
+        pre_hooks: [],
+        metadata: [
+          desc_ja: "ユーザーが新しい記事を作成できるようにする",
+          desc_es: "Permite al usuario crear un nuevo artículo."
+        ]
+      }
   """
   @spec metadata(atom(), term()) :: Macro.t()
   defmacro metadata(key, value) do
