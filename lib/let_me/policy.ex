@@ -828,6 +828,14 @@ defmodule LetMe.Policy do
   """
   @spec metadata(atom(), term()) :: Macro.t()
   defmacro metadata(key, value) do
+    unless is_atom(key) do
+      raise """
+      Invalid metadata key.
+
+      Expected an atom, got: #{inspect(key)}
+      """
+    end
+
     quote do
       current_meta = get_acc_attribute(__MODULE__, :metadata)
       new_meta = {unquote(key), unquote(value)}
