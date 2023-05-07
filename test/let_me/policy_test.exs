@@ -67,7 +67,7 @@ defmodule LetMe.PolicyTest do
       end
 
       action :with_metadata do
-        metadata :doc_ja, "指定されたユーザーに対して、指定された機能を無効にします。"
+        metadata :desc_ja, "指定されたユーザーに対して、指定された機能を無効にします。"
       end
     end
 
@@ -152,7 +152,7 @@ defmodule LetMe.PolicyTest do
                  pre_hooks: [],
                  metadata: [
                    gql_exclude: true,
-                   doc_ja: "指定されたユーザーに対して、指定された機能を無効にします。"
+                   desc_ja: "ユーザーアカウントを削除できるようにする"
                  ]
                },
                %Rule{

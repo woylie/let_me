@@ -25,7 +25,7 @@ defmodule MyApp.Policy do
       allow role: :admin
       deny :same_user
       metadata :gql_exclude, true
-      metadata :doc_ja, "指定されたユーザーに対して、指定された機能を無効にします。"
+      metadata :desc_ja, "ユーザーアカウントを削除できるようにする"
     end
 
     action :remove do

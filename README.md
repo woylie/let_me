@@ -246,7 +246,7 @@ You can also define metadata on an `action`, which can be useful to extend
 the functionality of the library.
 
 For example, you may want to expose some of your actions through your Absinthe
-GraphQL schema, but exclude certain actions from the schema. You could solve
+GraphQL schema, but exclude certain actions from it. You could solve
 this by adding a `:gql_exclude` key to the metadata.
 
 ```elixir
