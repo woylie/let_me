@@ -382,8 +382,11 @@ defmodule LetMe.Policy do
 
   The error reason can be customized by setting the `:error_reason` option when
   using the module.
+
+  The last parameter is a set of arguments that can be defined dynamically
+  which will be passed into any `pre_hook`s defined on the resource's policy.
   """
-  @callback authorize(atom, any, any) :: :ok | {:error, any}
+  @callback authorize(atom, any, any, any) :: :ok | {:error, any}
 
   @doc """
   Same as `c:authorize/3`, but raises an error if unauthorized.
@@ -401,7 +404,7 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.authorize!(:article_update, user_2, article)
       ** (LetMe.UnauthorizedError) unauthorized
   """
-  @callback authorize!(atom, any, any) :: :ok
+  @callback authorize!(atom, any, any, any) :: :ok
 
   @doc """
   Same as `c:authorize/3`, but returns a boolean.
@@ -419,7 +422,7 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.authorize?(:article_update, user_2, article)
       false
   """
-  @callback authorize?(atom, any, any) :: boolean
+  @callback authorize?(atom, any, any, any) :: boolean
 
   @doc """
   Returns the rule for the given rule name. Returns `nil` if the rule is
@@ -969,6 +972,10 @@ defmodule LetMe.Policy do
   The referenced functions must take the subject and object as arguments and
   return a 2-tuple with the updated subject and object.
 
+  The referenced functions may also take an optional third argument that are
+  opts passed through the `authorize` functions. These opts are merged into
+  any opts that are specified in the `pre_hook` definition.
+
   ## Examples
 
   Let's assume we defined these check and hook functions in our check module:
@@ -1026,6 +1033,18 @@ defmodule LetMe.Policy do
       end
 
       MyApp.Policy.authorize!(:article_view, %{age: 10})
+      # => true
+
+  You can achieve the same functionality dynamically using the opts on `authorize!`:
+
+      object :article do
+        action :view do
+          pre_hooks {MyApp.Policy.Checks, :set_age}
+          allow min_age: 50
+        end
+      end
+
+      MyApp.Policy.authorize!(:article_view, %{age: 10}, 50)
       # => true
 
   And finally, you can also pass a list of hooks, which will be run in sequence:

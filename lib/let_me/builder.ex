@@ -70,11 +70,11 @@ defmodule LetMe.Builder do
 
     quote do
       @impl LetMe.Policy
-      def authorize?(action, subject, object \\ nil)
+      def authorize?(action, subject, object \\ nil, opts \\ [])
 
       unquote(rule_clauses)
 
-      def authorize?(action, _, _) when is_atom(action) do
+      def authorize?(action, _, _, _) when is_atom(action) do
         Logger.warn(
           "Permission checked for rule that does not exist: #{action}",
           action: action,
@@ -85,15 +85,15 @@ defmodule LetMe.Builder do
       end
 
       @impl LetMe.Policy
-      def authorize(action, subject, object \\ nil) do
-        if authorize?(action, subject, object),
+      def authorize(action, subject, object \\ nil, opts \\ []) do
+        if authorize?(action, subject, object, opts),
           do: :ok,
           else: {:error, unquote(error_reason)}
       end
 
       @impl LetMe.Policy
-      def authorize!(action, subject, object \\ nil) do
-        if authorize?(action, subject, object),
+      def authorize!(action, subject, object \\ nil, opts \\ []) do
+        if authorize?(action, subject, object, opts),
           do: :ok,
           else: raise(LetMe.UnauthorizedError)
       end
@@ -120,7 +120,7 @@ defmodule LetMe.Builder do
       end
 
     quote do
-      def authorize?(unquote(rule_name), subject, object) do
+      def authorize?(unquote(rule_name), subject, object, opts) do
         unquote(pre_hook_calls)
         unquote(combined_condition)
       end
@@ -149,6 +149,20 @@ defmodule LetMe.Builder do
           unquote(Macro.escape(functions)),
           {subject, object},
           fn {module, function, args}, {subject, object} ->
+            normalized_opts =
+              opts
+              |> Enum.into([])
+              |> Keyword.new()
+
+            args =
+              args
+              |> List.flatten()
+              |> Keyword.merge(normalized_opts)
+              |> case do
+                [] -> []
+                args -> [args]
+              end
+
             apply(module, function, [subject, object] ++ args)
           end
         )

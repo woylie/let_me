@@ -111,6 +111,31 @@ defmodule LetMe.PolicyTest do
         pre_hooks [:preload_groups, :preload_pets]
         allow [:same_group, :same_pet]
       end
+
+      action :prehook_with_opts do
+        pre_hooks :add_reason_arg
+        allow [:has_valid_reason]
+      end
+
+      action :single_prehook_with_opts do
+        pre_hooks :preload_groups
+        allow :same_group
+      end
+
+      action :single_mf_prehook_with_opts do
+        pre_hooks {TestHooks, :preload_likeability}
+        allow min_likeability: 5
+      end
+
+      action :single_mfa_prehook_with_opts do
+        pre_hooks {TestHooks, :preload_handsomeness, factor: 2}
+        allow min_handsomeness: 5
+      end
+
+      action :multiple_prehooks_with_opts do
+        pre_hooks [:preload_groups, :preload_pets]
+        allow [:same_group, :same_pet]
+      end
     end
   end
 
@@ -574,6 +599,67 @@ defmodule LetMe.PolicyTest do
                :complex_single_mfa_prehook,
                %{id: 3},
                %{id: 100}
+             )
+    end
+
+    test "uses authorize? opts as args in prehook" do
+      assert TestPolicy.authorize?(
+               :complex_prehook_with_opts,
+               %{id: 5},
+               %{id: 6},
+               %{reason: "valid"}
+             )
+
+      assert TestPolicy.authorize?(
+               :complex_prehook_with_opts,
+               %{id: 5},
+               %{id: 6},
+               %{reason: "also_valid"}
+             )
+
+      refute TestPolicy.authorize?(
+               :complex_prehook_with_opts,
+               %{id: 5},
+               %{id: 6},
+               %{reason: "invalid"}
+             )
+    end
+
+    test "updates subject and object with pre-hook with opts" do
+      assert TestPolicy.authorize?(
+               :complex_single_prehook_with_opts,
+               %{id: 1},
+               %{id: 100},
+               group_id: 500
+             )
+    end
+
+    test "updates subject and object with multiple pre-hooks with opts" do
+      assert TestPolicy.authorize?(
+               :complex_multiple_prehooks_with_opts,
+               %{id: 1},
+               %{id: 100},
+               pet_id: 10,
+               group_id: 100
+             )
+    end
+
+    test "accepts module/function tuples as pre-hooks with opts" do
+      assert TestPolicy.authorize?(
+               :complex_single_mf_prehook_with_opts,
+               %{id: 2},
+               %{id: 100},
+               bonus: 3
+             )
+    end
+
+    test "accepts mfa tuples as pre-hooks with opts" do
+      assert TestPolicy.authorize?(
+               :complex_single_mfa_prehook_with_opts,
+               %{id: 2},
+               %{id: 100},
+               factor: 2,
+               bonus: 1
              )
     end
   end

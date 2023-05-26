@@ -22,13 +22,35 @@ defmodule MyApp.Checks do
   def same_user(%{id: id}, %{id: id}), do: true
   def same_user(_, _), do: false
 
+  def has_valid_reason(_, %{reason: reason})
+      when reason in ["valid", "also_valid"],
+      do: true
+
+  def has_valid_reason(_, _), do: false
+
   # pre-hooks
 
   def preload_groups(%{} = subject, %{} = object) do
     {Map.put(subject, :group_id, 50), Map.put(object, :group_id, 50)}
   end
 
+  def preload_groups(%{} = subject, %{} = object, opts) do
+    group_id = Keyword.get(opts, :group_id)
+
+    {Map.put(subject, :group_id, group_id),
+     Map.put(object, :group_id, group_id)}
+  end
+
   def preload_pets(%{} = subject, %{} = object) do
     {Map.put(subject, :pet_id, 80), Map.put(object, :pet_id, 80)}
+  end
+
+  def preload_pets(%{} = subject, %{} = object, opts) do
+    pet_id = Keyword.get(opts, :pet_id)
+    {Map.put(subject, :pet_id, pet_id), Map.put(object, :pet_id, pet_id)}
+  end
+
+  def add_reason_arg(%{} = subject, %{} = object, reason: reason) do
+    {subject, %{object: object, reason: reason}}
   end
 end
