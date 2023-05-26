@@ -24,6 +24,12 @@ defmodule MyApp.Policy do
     action :delete do
       allow role: :admin
       deny :same_user
+      metadata :gql_exclude, true
+      metadata :desc_ja, "ユーザーアカウントを削除できるようにする"
+    end
+
+    action :remove do
+      allow role: :super_admin
     end
 
     action :list do

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## [1.1.0] - 2023-05-08
+
+### Added
+
+- Added a `metadata` macro to add metadata to actions. The metadata can be read
+  from the `LetMe.Rule` struct.
+
 ## [1.0.3] - 2023-03-21
 
 ### Changed

@@ -65,6 +65,10 @@ defmodule LetMe.PolicyTest do
       action :empty_list_check do
         allow []
       end
+
+      action :with_metadata do
+        metadata :desc_ja, "指定されたユーザーに対して、指定された機能を無効にします。"
+      end
     end
 
     object :complex, MyApp.Blog.Article do
@@ -170,7 +174,11 @@ defmodule LetMe.PolicyTest do
                  deny: [:same_user],
                  name: :user_delete,
                  object: :user,
-                 pre_hooks: []
+                 pre_hooks: [],
+                 metadata: [
+                   gql_exclude: true,
+                   desc_ja: "ユーザーアカウントを削除できるようにする"
+                 ]
                },
                %Rule{
                  action: :list,
@@ -179,6 +187,15 @@ defmodule LetMe.PolicyTest do
                  name: :user_list,
                  object: :user,
                  pre_hooks: []
+               },
+               %Rule{
+                 action: :remove,
+                 allow: [[role: :super_admin]],
+                 deny: [],
+                 name: :user_remove,
+                 object: :user,
+                 pre_hooks: [],
+                 metadata: []
                },
                %Rule{
                  action: :view,

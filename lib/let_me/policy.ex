@@ -610,6 +610,7 @@ defmodule LetMe.Policy do
       Module.delete_attribute(__MODULE__, :description)
       Module.delete_attribute(__MODULE__, :deny_checks)
       Module.delete_attribute(__MODULE__, :pre_hooks)
+      Module.delete_attribute(__MODULE__, :metadata)
 
       # compile inner block
       unquote(block)
@@ -621,7 +622,8 @@ defmodule LetMe.Policy do
           description: Module.get_attribute(__MODULE__, :description),
           deny: get_acc_attribute(__MODULE__, :deny_checks),
           pre_hooks:
-            __MODULE__ |> get_acc_attribute(:pre_hooks) |> List.flatten()
+            __MODULE__ |> get_acc_attribute(:pre_hooks) |> List.flatten(),
+          metadata: get_acc_attribute(__MODULE__, :metadata)
         })
       end
     end
@@ -810,6 +812,84 @@ defmodule LetMe.Policy do
   end
 
   @doc """
+  Assigns metadata to the action in the form of a key value pair.
+
+  The metadata can be accessed from the `LetMe.Rule` struct. You can use it
+  to extend the functionality of the library.
+
+  ## Example
+
+      object :article do
+        action :create do
+          allow role: :writer
+
+          desc "Allows a user to create a new article."
+          metadata :desc_ja, "ユーザーが新しい記事を作成できるようにする"
+        end
+      end
+
+  The `LetMe.Rule` struct returned by the introspection functions would look
+  like this:
+
+      %LetMe.Rule{
+        action: :create,
+        allow: [[role: :writer]],
+        deny: [],
+        description: "Allows a user to create a new article.",
+        name: :article_create,
+        object: :article,
+        pre_hooks: [],
+        metadata: [
+          desc_ja: "ユーザーが新しい記事を作成できるようにする"
+        ]
+      }
+
+  It is also possible to use the `metadata` macro multiple times.
+
+      object :article do
+        action :create do
+          allow role: :writer
+
+          desc "Allows a user to create a new article."
+          metadata :desc_ja, "ユーザーが新しい記事を作成できるようにする"
+          metadata :desc_es, "Permite al usuario crear un nuevo artículo."
+        end
+      end
+
+  This would result in:
+
+      %LetMe.Rule{
+        action: :create,
+        allow: [[role: :writer]],
+        deny: [],
+        description: "Allows a user to create a new article.",
+        name: :article_create,
+        object: :article,
+        pre_hooks: [],
+        metadata: [
+          desc_ja: "ユーザーが新しい記事を作成できるようにする",
+          desc_es: "Permite al usuario crear un nuevo artículo."
+        ]
+      }
+  """
+  @spec metadata(atom(), term()) :: Macro.t()
+  defmacro metadata(key, value) do
+    unless is_atom(key) do
+      raise """
+      Invalid metadata key.
+
+      Expected an atom, got: #{inspect(key)}
+      """
+    end
+
+    quote do
+      current_meta = get_acc_attribute(__MODULE__, :metadata)
+      new_meta = {unquote(key), unquote(value)}
+      Module.put_attribute(__MODULE__, :metadata, [new_meta | current_meta])
+    end
+  end
+
+  @doc """
   Defines an object on which actions can be performed.
 
   Within the do-block, you can use the `action/2` macro to define the actions
@@ -867,7 +947,8 @@ defmodule LetMe.Policy do
           description: action.description,
           name: :"#{unquote(name)}_#{action.name}",
           object: unquote(name),
-          pre_hooks: action.pre_hooks
+          pre_hooks: action.pre_hooks,
+          metadata: action.metadata
         })
       end
     end

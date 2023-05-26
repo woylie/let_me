@@ -19,7 +19,7 @@ Add LetMe to `mix.exs` :
 ```elixir
 def deps do
   [
-    {:let_me, "~> 1.0.3"}
+    {:let_me, "~> 1.1.0"}
   ]
 end
 ```
@@ -201,7 +201,8 @@ iex> MyApp.Policy.list_rules()
     description: nil,
     name: :article_create,
     object: :article,
-    pre_hooks: []
+    pre_hooks: [],
+    metadata: []
   },
   # ...
 ]
@@ -239,6 +240,44 @@ iex> MyApp.Policy.list_rules(allow: {:role, :writer})
     # ...
   }
 ]
+```
+
+You can also define metadata on an `action`, which can be useful to extend
+the functionality of the library.
+
+For example, you may want to expose some of your actions through your Absinthe
+GraphQL schema, but exclude certain actions from it. You could solve
+this by adding a `:gql_exclude` key to the metadata.
+
+```elixir
+defmodule GraphqlPolicy do
+  use LetMe.Policy
+
+  object :user do
+    action :disable do
+      allow role: :admin
+      metadata :gql_exclude, true
+    end
+  end
+end
+```
+
+```elixir
+iex> MyApp.Policy.get_rule(:user_disable)
+%LetMe.Rule{
+  action: :disable,
+  allow: [
+    [role: :admin]
+  ],
+  deny: [],
+  description: nil,
+  name: :user_disable,
+  object: :user,
+  pre_hooks: [],
+  metadata: [
+    gql_exclude: true
+  ]
+}
 ```
 
 ## Scoped queries
