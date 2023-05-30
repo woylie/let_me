@@ -35,6 +35,12 @@ defmodule LetMe.Policy do
         end
       end
 
+  > #### `use LetMe.Policy` {: .info}
+  >
+  > When you `use LetMe.Policy`, the module will set `@behaviour LetMe.Policy`
+  > and define all callback functions for that behaviour based on the macros
+  > you use.
+
   ### Options
 
   These options can be passed when using this module:
