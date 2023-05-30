@@ -2,7 +2,7 @@ defmodule LetMe.TestHooks do
   @moduledoc false
 
   def preload_handsomeness(%{} = subject, %{} = object, opts) do
-    factor = Keyword.get(opts, :factor)
+    factor = Keyword.fetch!(opts, :factor)
     bonus = Keyword.get(opts, :bonus, 0)
     {Map.put(subject, :handsomeness, subject.id * factor + bonus), object}
   end
