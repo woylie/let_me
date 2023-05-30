@@ -35,7 +35,7 @@ defmodule MyApp.Checks do
   end
 
   def preload_groups(%{} = subject, %{} = object, opts) do
-    group_id = Keyword.get(opts, :group_id)
+    group_id = Keyword.fetch!(opts, :group_id)
 
     {Map.put(subject, :group_id, group_id),
      Map.put(object, :group_id, group_id)}
@@ -46,7 +46,7 @@ defmodule MyApp.Checks do
   end
 
   def preload_pets(%{} = subject, %{} = object, opts) do
-    pet_id = Keyword.get(opts, :pet_id)
+    pet_id = Keyword.fetch!(opts, :pet_id)
     {Map.put(subject, :pet_id, pet_id), Map.put(object, :pet_id, pet_id)}
   end
 

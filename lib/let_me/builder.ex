@@ -149,15 +149,10 @@ defmodule LetMe.Builder do
           unquote(Macro.escape(functions)),
           {subject, object},
           fn {module, function, args}, {subject, object} ->
-            normalized_opts =
-              opts
-              |> Enum.into([])
-              |> Keyword.new()
-
             args =
               args
               |> List.flatten()
-              |> Keyword.merge(normalized_opts)
+              |> Keyword.merge(opts)
               |> case do
                 [] -> []
                 args -> [args]

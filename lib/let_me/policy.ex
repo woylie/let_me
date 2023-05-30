@@ -41,7 +41,7 @@ defmodule LetMe.Policy do
 
   - `check_module` - The module where the check functions are defined. Defaults
     to `__MODULE__.Checks`.
-  - `error_reason` - The error reason used by the `c:authorize/3` callback.
+  - `error_reason` - The error reason used by the `c:authorize/4` callback.
     Defaults to `:unauthorized`.
 
   ## Check module
@@ -233,23 +233,23 @@ defmodule LetMe.Policy do
   If you registered the schema module with `LetMe.Policy.object/3`, you can also
   pass the schema module or the struct instead of a tuple.
 
-  iex> rules = MyApp.Policy.list_rules()
-  iex> MyApp.Policy.filter_allowed_actions(
-  ...>   rules,
-  ...>   %{id: 2, role: nil},
-  ...>   %MyApp.Blog.Article{}
-  ...> )
-  [
-    %LetMe.Rule{
-      action: :view,
-      allow: [true],
-      deny: [],
-      description: "allows to view an article and the list of articles",
-      name: :article_view,
-      object: :article,
-      pre_hooks: []
-    }
-  ]
+      iex> rules = MyApp.Policy.list_rules()
+      iex> MyApp.Policy.filter_allowed_actions(
+      ...>   rules,
+      ...>   %{id: 2, role: nil},
+      ...>   %MyApp.Blog.Article{}
+      ...> )
+      [
+        %LetMe.Rule{
+          action: :view,
+          allow: [true],
+          deny: [],
+          description: "allows to view an article and the list of articles",
+          name: :article_view,
+          object: :article,
+          pre_hooks: []
+        }
+      ]
   """
   @callback filter_allowed_actions([LetMe.Rule.t()], subject, object) ::
               [LetMe.Rule.t()]
@@ -380,14 +380,14 @@ defmodule LetMe.Policy do
   The last parameter is a set of arguments that can be defined dynamically
   which will be passed into any `pre_hook`s defined on the resource's policy.
   """
-  @callback authorize(atom, any, any, any) :: :ok | {:error, any}
+  @callback authorize(atom, any, any, Keyword.t()) :: :ok | {:error, any}
 
   @doc """
-  Same as `c:authorize/3`, but raises an error if unauthorized.
+  Same as `c:authorize/4`, but raises an error if unauthorized.
 
   ## Example
 
-  With the same authorization rules as defined in the `c:authorize/3`
+  With the same authorization rules as defined in the `c:authorize/4`
   documentation, we get this:
 
       iex> article = %{id: 80, user_id: 1}
@@ -401,11 +401,11 @@ defmodule LetMe.Policy do
   @callback authorize!(atom, any, any, any) :: :ok
 
   @doc """
-  Same as `c:authorize/3`, but returns a boolean.
+  Same as `c:authorize/4`, but returns a boolean.
 
   ## Example
 
-  With the same authorization rules as defined in the `c:authorize/3`
+  With the same authorization rules as defined in the `c:authorize/4`
   documentation, we get this:
 
       iex> article = %{id: 80, user_id: 1}
@@ -986,7 +986,7 @@ defmodule LetMe.Policy do
           {new_subject, object}
         end
 
-        def set_age(subject, object, age) do
+        def set_age(subject, object, age: age) do
           new_subject = %{subject | age: age}
           {new_subject, object}
         end
@@ -1021,7 +1021,7 @@ defmodule LetMe.Policy do
 
       object :article do
         action :view do
-          pre_hooks {MyApp.Policy.Checks, :set_age, 50}
+          pre_hooks {MyApp.Policy.Checks, :set_age, age: 50}
           allow min_age: 50
         end
       end
@@ -1038,7 +1038,7 @@ defmodule LetMe.Policy do
         end
       end
 
-      MyApp.Policy.authorize!(:article_view, %{age: 10}, 50)
+      MyApp.Policy.authorize!(:article_view, %{age: 10}, age: 50)
       # => true
 
   And finally, you can also pass a list of hooks, which will be run in sequence:

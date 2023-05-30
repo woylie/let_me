@@ -334,7 +334,7 @@ defmodule LetMe.PolicyTest do
     end
   end
 
-  describe "authorize?/3" do
+  describe "authorize?/4" do
     test "evaluates a single allow check without options" do
       assert TestPolicy.authorize?(
                :simple_allow_without_options,
@@ -607,21 +607,21 @@ defmodule LetMe.PolicyTest do
                :complex_prehook_with_opts,
                %{id: 5},
                %{id: 6},
-               %{reason: "valid"}
+               reason: "valid"
              )
 
       assert TestPolicy.authorize?(
                :complex_prehook_with_opts,
                %{id: 5},
                %{id: 6},
-               %{reason: "also_valid"}
+               reason: "also_valid"
              )
 
       refute TestPolicy.authorize?(
                :complex_prehook_with_opts,
                %{id: 5},
                %{id: 6},
-               %{reason: "invalid"}
+               reason: "invalid"
              )
     end
 
@@ -664,7 +664,7 @@ defmodule LetMe.PolicyTest do
     end
   end
 
-  describe "authorize/3" do
+  describe "authorize/4" do
     test "evaluates a single allow check without options" do
       assert TestPolicy.authorize(
                :simple_allow_without_options,
@@ -686,7 +686,7 @@ defmodule LetMe.PolicyTest do
     end
   end
 
-  describe "authorize!/3" do
+  describe "authorize!/4" do
     test "evaluates a single allow check without options" do
       assert TestPolicy.authorize!(
                :simple_allow_without_options,

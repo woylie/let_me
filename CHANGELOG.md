@@ -43,7 +43,7 @@
 
 ### Changed
 
-- Renamed `c:LetMe.Policy.authorized?/3` to `c:LetMe.Policy.authorize?/3`,
+- Renamed `c:LetMe.Policy.authorized?/3` to `c:LetMe.Policy.authorize?/4`,
   because consistency is more important than grammar, maybe.
 - The `c:LetMe.Schema.scope/2` callback was removed in favour of
   `c:LetMe.Schema.scope/3`. The `__using__` macro defined default
