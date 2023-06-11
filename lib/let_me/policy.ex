@@ -380,7 +380,7 @@ defmodule LetMe.Policy do
   The last parameter is a set of arguments that can be defined dynamically
   which will be passed into any `pre_hook`s defined on the resource's policy.
   """
-  @callback authorize(atom, any, any, Keyword.t()) :: :ok | {:error, any}
+  @callback authorize(atom, any, any, keyword) :: :ok | {:error, any}
 
   @doc """
   Same as `c:authorize/4`, but raises an error if unauthorized.
@@ -398,7 +398,7 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.authorize!(:article_update, user_2, article)
       ** (LetMe.UnauthorizedError) unauthorized
   """
-  @callback authorize!(atom, any, any, any) :: :ok
+  @callback authorize!(atom, any, any, keyword) :: :ok
 
   @doc """
   Same as `c:authorize/4`, but returns a boolean.
@@ -416,7 +416,7 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.authorize?(:article_update, user_2, article)
       false
   """
-  @callback authorize?(atom, any, any, any) :: boolean
+  @callback authorize?(atom, any, any, keyword) :: boolean
 
   @doc """
   Returns the rule for the given rule name. Returns `nil` if the rule is
