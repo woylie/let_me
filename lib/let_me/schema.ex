@@ -23,6 +23,12 @@ defmodule LetMe.Schema do
         def redacted_fields(_, %User{}, _), do: [:view_count]
       end
 
+  > #### `use LetMe.Schema` {: .info}
+  >
+  > When you `use LetMe.Schema`, the module will set `@behaviour LetMe.Schema`
+  > and define default implementations for the functions `scope/3` and
+  > `redacted_fields/3`. Both functions are overridable.
+
   ## Scoping a query
 
   With the setup above, you can scope a blog article query depending on the
