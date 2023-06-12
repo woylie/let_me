@@ -239,6 +239,16 @@ defmodule LetMe.PolicyTest do
       assert [%Rule{action: :delete, object: :user}] =
                Policy.list_rules(deny: :same_user)
     end
+
+    test "filters by metadata key" do
+      assert [%Rule{action: :delete, object: :user}] =
+               Policy.list_rules(metadata: :desc_ja)
+    end
+
+    test "filters by metadata pair" do
+      assert [%Rule{action: :delete, object: :user}] =
+               Policy.list_rules(metadata: {:gql_exclude, true})
+    end
   end
 
   describe "filter_allowed_actions" do
