@@ -21,6 +21,8 @@ defmodule LetMe do
   - `:action` - Matches an action exactly.
   - `:allow` - Either a check name as an atom or a 2-tuple with the check name
     and the options.
+  - `:metadata` - Either a metadata name as an atom or a 2-tuple with the
+    metadata name and the metadata value.
   - `:deny` - Either a check name as an atom or a 2-tuple with the check name
     and the options.
 
@@ -65,7 +67,7 @@ defmodule LetMe do
       [%LetMe.Rule{action: :update, name: :article_update, object: :article, allow: [:own_resource, [role: :writer]]}]
   """
   def filter_rules(rules, opts) when is_list(rules) do
-    opts = Keyword.validate!(opts, [:action, :allow, :deny, :object])
+    opts = Keyword.validate!(opts, [:action, :allow, :deny, :metadata, :object])
     Enum.reduce(opts, rules, &do_filter_rules/2)
   end
 
@@ -82,6 +84,12 @@ defmodule LetMe do
   defp do_filter_rules({:deny, check}, rules) do
     Enum.filter(rules, fn
       %Rule{deny: deny} -> matches_check?(deny, check)
+    end)
+  end
+
+  defp do_filter_rules({:metadata, metadata_filter}, rules) do
+    Enum.filter(rules, fn
+      %Rule{metadata: metadata} -> matches_check?(metadata, metadata_filter)
     end)
   end
 
