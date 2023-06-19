@@ -143,7 +143,7 @@ defmodule LetMe.Builder do
           {module, function, [args]}
 
         {_, _, args} ->
-          raise """
+          raise ArgumentError, """
           Invalid pre-hook options
 
           Expected pre-hook options to be a keyword list, got:

@@ -674,6 +674,25 @@ defmodule LetMe.PolicyTest do
                bonus: 1
              )
     end
+
+    test "raises error if pre-hook options are not a list" do
+      error =
+        assert_raise ArgumentError, fn ->
+          defmodule RaiseTestPolicy do
+            use LetMe.Policy, check_module: MyApp.Checks
+            alias LetMe.TestHooks
+
+            object :some_object do
+              action :single_mfa_prehook do
+                pre_hooks {TestHooks, :preload_handsomeness, %{factor: 2}}
+                allow true
+              end
+            end
+          end
+        end
+
+      assert error.message =~ "Invalid pre-hook options"
+    end
   end
 
   describe "authorize/4" do
