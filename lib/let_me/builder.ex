@@ -139,8 +139,17 @@ defmodule LetMe.Builder do
         {module, function} ->
           {module, function, []}
 
-        {module, function, args} ->
+        {module, function, args} when is_list(args) ->
           {module, function, [args]}
+
+        {_, _, args} ->
+          raise """
+          Invalid pre-hook options
+
+          Expected pre-hook options to be a keyword list, got:
+
+              #{inspect(args)}
+          """
       end)
 
     quote do

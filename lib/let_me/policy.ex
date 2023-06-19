@@ -179,7 +179,7 @@ defmodule LetMe.Policy do
 
   ## Example
 
-      iex> MyApp.PolicyShort.list_rules()
+      iex> MyApp.PolicyShort.list_rules() |> Enum.sort()
       [
         %LetMe.Rule{
           action: :create,

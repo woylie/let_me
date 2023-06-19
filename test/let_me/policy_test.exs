@@ -141,75 +141,76 @@ defmodule LetMe.PolicyTest do
 
   describe "list_rules" do
     test "returns all rules" do
-      assert Policy.list_rules() == [
-               %Rule{
-                 action: :create,
-                 allow: [[role: :admin], [role: :writer]],
-                 deny: [],
-                 name: :article_create,
-                 object: :article,
-                 pre_hooks: []
-               },
-               %Rule{
-                 action: :update,
-                 allow: [:own_resource],
-                 deny: [],
-                 name: :article_update,
-                 object: :article,
-                 pre_hooks: [:preload_groups]
-               },
-               %Rule{
-                 action: :view,
-                 allow: [true],
-                 description:
-                   "allows to view an article and the list of articles",
-                 deny: [],
-                 name: :article_view,
-                 object: :article,
-                 pre_hooks: []
-               },
-               %Rule{
-                 action: :delete,
-                 allow: [[role: :admin]],
-                 deny: [:same_user],
-                 name: :user_delete,
-                 object: :user,
-                 pre_hooks: [],
-                 metadata: [
-                   gql_exclude: true,
-                   desc_ja: "ユーザーアカウントを削除できるようにする"
-                 ]
-               },
-               %Rule{
-                 action: :list,
-                 allow: [role: :admin, role: :client],
-                 deny: [],
-                 name: :user_list,
-                 object: :user,
-                 pre_hooks: []
-               },
-               %Rule{
-                 action: :remove,
-                 allow: [[role: :super_admin]],
-                 deny: [],
-                 name: :user_remove,
-                 object: :user,
-                 pre_hooks: [],
-                 metadata: []
-               },
-               %Rule{
-                 action: :view,
-                 allow: [
-                   {:role, :admin},
-                   [{:role, :client}, :same_company],
-                   :same_user
-                 ],
-                 deny: [],
-                 name: :user_view,
-                 object: :user,
-                 pre_hooks: []
-               }
-             ]
+      assert Enum.sort(Policy.list_rules()) ==
+               Enum.sort([
+                 %Rule{
+                   action: :create,
+                   allow: [[role: :admin], [role: :writer]],
+                   deny: [],
+                   name: :article_create,
+                   object: :article,
+                   pre_hooks: []
+                 },
+                 %Rule{
+                   action: :update,
+                   allow: [:own_resource],
+                   deny: [],
+                   name: :article_update,
+                   object: :article,
+                   pre_hooks: [:preload_groups]
+                 },
+                 %Rule{
+                   action: :view,
+                   allow: [true],
+                   description:
+                     "allows to view an article and the list of articles",
+                   deny: [],
+                   name: :article_view,
+                   object: :article,
+                   pre_hooks: []
+                 },
+                 %Rule{
+                   action: :delete,
+                   allow: [[role: :admin]],
+                   deny: [:same_user],
+                   name: :user_delete,
+                   object: :user,
+                   pre_hooks: [],
+                   metadata: [
+                     gql_exclude: true,
+                     desc_ja: "ユーザーアカウントを削除できるようにする"
+                   ]
+                 },
+                 %Rule{
+                   action: :list,
+                   allow: [role: :admin, role: :client],
+                   deny: [],
+                   name: :user_list,
+                   object: :user,
+                   pre_hooks: []
+                 },
+                 %Rule{
+                   action: :remove,
+                   allow: [[role: :super_admin]],
+                   deny: [],
+                   name: :user_remove,
+                   object: :user,
+                   pre_hooks: [],
+                   metadata: []
+                 },
+                 %Rule{
+                   action: :view,
+                   allow: [
+                     {:role, :admin},
+                     [{:role, :client}, :same_company],
+                     :same_user
+                   ],
+                   deny: [],
+                   name: :user_view,
+                   object: :user,
+                   pre_hooks: []
+                 }
+               ])
     end
 
     test "filters by object" do
@@ -278,11 +279,12 @@ defmodule LetMe.PolicyTest do
                %Rule{name: :article_update},
                %Rule{name: :article_view}
              ] =
-               Policy.filter_allowed_actions(
-                 rules,
+               rules
+               |> Policy.filter_allowed_actions(
                  %{id: 1, role: :admin},
                  object
                )
+               |> Enum.sort()
 
       assert [%Rule{name: :article_update}, %Rule{name: :article_view}] =
                Policy.filter_allowed_actions(rules, %{id: 1}, object)
@@ -455,7 +457,7 @@ defmodule LetMe.PolicyTest do
     end
 
     test "returns false and logs warning if rule does not exist" do
-      assert capture_log([level: :warn], fn ->
+      assert capture_log([level: :warning], fn ->
                assert TestPolicy.authorize?(:does_not_exist, %{}) ==
                         false
              end) =~ "Permission checked for rule that does not exist"

@@ -2,11 +2,17 @@
 
 ## Unreleased
 
+## [1.2.0] - 2023-06-19
+
 ### Added
 
 - Added an optional `opts` argument to the authorize functions, so that
   additional options can be passed to pre-hooks.
 - Updated `LetMe.filter_rules/2` to allow filtering by meta data.
+
+### Changed
+
+- Pre-hook options are now expected to be passed as a keyword list.
 
 ### Fixed
 
