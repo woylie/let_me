@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [1.2.0] - 2023-06-19
+
 ### Added
 
 - Added an optional `opts` argument to the authorize functions, so that
