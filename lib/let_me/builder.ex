@@ -75,7 +75,7 @@ defmodule LetMe.Builder do
       unquote(rule_clauses)
 
       def authorize?(action, _, _, _) when is_atom(action) do
-        Logger.warn(
+        Logger.warning(
           "Permission checked for rule that does not exist: #{action}",
           action: action,
           policy_module: unquote(check_module)
