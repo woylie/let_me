@@ -8,6 +8,10 @@
   additional options can be passed to pre-hooks.
 - Updated `LetMe.filter_rules/2` to allow filtering by meta data.
 
+### Fixed
+
+- Fix deprecation warning about `Logger.warn/2` in Elixir 1.15.
+
 ## [1.1.0] - 2023-05-08
 
 ### Added
