@@ -455,7 +455,7 @@ defmodule LetMe.PolicyTest do
     end
 
     test "returns false and logs warning if rule does not exist" do
-      assert capture_log([level: :warn], fn ->
+      assert capture_log([level: :warning], fn ->
                assert TestPolicy.authorize?(:does_not_exist, %{}) ==
                         false
              end) =~ "Permission checked for rule that does not exist"
