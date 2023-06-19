@@ -288,7 +288,8 @@ defmodule LetMe do
       iex> fields = [:like_count, :title, :user_id, :view_count]
       iex> user = %{id: 1, role: :user}
       iex> article = %MyApp.Blog.Article{}
-      iex> reject_redacted_fields(fields, article, user)
+      iex> result = reject_redacted_fields(fields, article, user)
+      iex> Enum.sort(result)
       [:like_count, :title, :user_id]
 
   This can be useful as a safeguard to prevent accidentally casting fields the

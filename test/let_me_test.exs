@@ -218,7 +218,9 @@ defmodule LetMeTest do
       fields = [:name, :email, :phone_number, :pet, :spouse, :age, :locale]
       person = person()
 
-      assert LetMe.reject_redacted_fields(fields, person, :nested_fields) == [
+      assert fields
+             |> LetMe.reject_redacted_fields(person, :nested_fields)
+             |> Enum.sort() == [
                :age,
                :email,
                :locale,
@@ -226,7 +228,9 @@ defmodule LetMeTest do
                :spouse
              ]
 
-      assert LetMe.reject_redacted_fields(fields, person, :nested_schemas) == [
+      assert fields
+             |> LetMe.reject_redacted_fields(person, :nested_schemas)
+             |> Enum.sort() == [
                :age,
                :email,
                :locale,
