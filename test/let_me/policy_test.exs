@@ -734,4 +734,20 @@ defmodule LetMe.PolicyTest do
       end
     end
   end
+
+  describe "typespec generation" do
+    test "should generate action() typespec" do
+      assert Code.Typespec.fetch_types(LetMe.TypespecTestPolicy) ==
+               {:ok,
+                [
+                  type:
+                    {:action,
+                     {:type, 1, :union,
+                      [
+                        {:atom, 0, :type_check_write},
+                        {:atom, 0, :type_check_read}
+                      ]}, []}
+                ]}
+    end
+  end
 end

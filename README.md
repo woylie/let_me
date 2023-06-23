@@ -183,6 +183,43 @@ defmodule MyApp.Blog do
 end
 ```
 
+#### Typespecs
+
+As part of the auto-generated `authorize` set of functions, typespecs are also generated. For
+example, with the policy:
+
+```elixir
+defmodule MyApp.Policy do
+  use LetMe.Policy, error_reason: :not_allowed
+
+  object :article do
+    # Creating articles is allowed if the user role is `editor` or `writer`.
+    action :create do
+      allow role: :editor
+      allow role: :writer
+    end
+
+    action :read do
+      allow true
+      deny :banned
+    end
+  end
+end
+```
+
+The following typespecs are generated in the resultant policy module:
+
+```
+@type :: action() :: :article_create | :article_read
+
+@spec authorize(action(), any(), any(), keyword()) :: :ok | {:error, :not_allowed}
+@spec authorize?(action(), any(), any(), keyword()) :: boolean()
+@spec authorize!(action(), any(), any(), keyword()) :: :ok
+```
+
+This allows you to use dialyzer to statically check your `authorize` calls to ensure valid actions
+are specified, rather than relying on runtime warnings.
+
 ### Introspection
 
 With the introspection functions, you can get the complete list of authorization
