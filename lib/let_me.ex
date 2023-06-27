@@ -66,6 +66,7 @@ defmodule LetMe do
       iex> filter_rules(rules, allow: {:role, :writer})
       [%LetMe.Rule{action: :update, name: :article_update, object: :article, allow: [:own_resource, [role: :writer]]}]
   """
+  @spec filter_rules([Rule.t()], keyword) :: [Rule.t()]
   def filter_rules(rules, opts) when is_list(rules) do
     opts = Keyword.validate!(opts, [:action, :allow, :deny, :metadata, :object])
     Enum.reduce(opts, rules, &do_filter_rules/2)
