@@ -62,7 +62,12 @@ defmodule LetMe.Rule do
   A hook can be registered to hydrate the subject and/or object before passing
   them to the check functions.
 
-  Can be either one of:
+  "Hydration" in this context means enriching or preparing the data by adding
+  or transforming necessary information. For instance, you might fetch related
+  data from the database, calculate derived properties, or format the data in a
+  certain way.
+
+  A hook can be one of the following:
 
   - The name of a function defined in the configured check module as an atom.
   - A `{module, function}` tuple.
