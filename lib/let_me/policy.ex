@@ -39,7 +39,7 @@ defmodule LetMe.Policy do
   >
   > When you `use LetMe.Policy`, the module will set `@behaviour LetMe.Policy`
   > and define all callback functions for that behaviour based on the macros
-  > you use.
+  > you use. It will also define an `action` type based your rules.
 
   ### Options
 
