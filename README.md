@@ -2,19 +2,24 @@
 
 [![CI](https://github.com/woylie/let_me/workflows/CI/badge.svg)](https://github.com/woylie/let_me/actions) [![Hex](https://img.shields.io/hexpm/v/let_me)](https://hex.pm/packages/let_me) [![Hex Docs](https://img.shields.io/badge/hex-docs-green)](https://hexdocs.pm/let_me/readme.html) [![Coverage Status](https://coveralls.io/repos/github/woylie/let_me/badge.svg)](https://coveralls.io/github/woylie/let_me)
 
-LetMe is an authorization library for Elixir.
+LetMe is a user-friendly authorization library for Elixir. Designed with a
+simple and expressive Domain Specific Language (DSL), it provides an intuitive
+way to define and manage your authorization rules.
 
-It aims to give you an easy, readable and flexible way of defining authorization
-rules by defining a simple DSL, while also giving you introspection functions
-that allow you to answer questions like:
+The strength of LetMe lies not only in its simplicity but also in its
+introspection capabilities. It equips you with functions to answer important
+questions about your application's authorization landscape, such as:
 
 - Which actions are defined in my application?
-- What are the conditions for a certain action?
-- Which actions are allowed for a user with a certain role?
+- What are the conditions for a particular action?
+- Which actions are permissible for a user assigned a specific role?
+
+With its intuitive DSL for rule definition coupled with introspection
+capabilities, LetMe makes managing permissions in your application a breeze.
 
 ## Installation
 
-Add LetMe to `mix.exs` :
+Add LetMe to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -24,7 +29,7 @@ def deps do
 end
 ```
 
-Add LetMe to `.formatter.exs`:
+Include LetMe in your `.formatter.exs` file:
 
 ```elixir
 [
@@ -32,13 +37,18 @@ Add LetMe to `.formatter.exs`:
 ]
 ```
 
+This ensures that your LetMe authorization rules are formatted correctly when
+you run `mix format`.
+
+Now, you're ready to start defining authorization rules with LetMe!
+
 ## Policy module
 
-The heart of LetMe is the Policy module. It provides a set of macros for
-defining the authorization rules of your application. These rules are compiled
-to authorization and introspection functions.
+The Policy module sits at the heart of LetMe. It provides macros that allow you
+to define the authorization rules of your application. These rules are then
+compiled into functions for both authorization checks and introspection.
 
-A policy module for a simple article CRUD interface might look like this:
+For instance, here's how you might define a policy for a simple article CRUD interface:
 
 ```elixir
 defmodule MyApp.Policy do
@@ -72,23 +82,32 @@ defmodule MyApp.Policy do
 end
 ```
 
-Whether you want to have a single policy module for your whole application,
-or one per context, or whether you want to break it up in any other way is up
-to you.
+The design of your policy modules—whether you have a single module for your
+entire application, one for each context, or some other arrangement—is
+completely up to you. LetMe offers the flexibility to organize your policy in
+the way that best fits your application's needs.
+
+Please note that while this example uses Role-Based Access Control (RBAC) for
+simplicity, LetMe doesn't make any assumptions about your access control model.
+You are completely free to define your authorization rules in any way you see
+fit.
 
 ## Check module
 
-In general, authorization rules are based on the subject (usually the current
-user), the object on which the action is performed, and the action (verb).
-LetMe does not make any assumptions on the authorization model or check
-implementation.
+Authorization rules, generally speaking, are based on the subject (usually the
+current user), the object on which the action is performed, and the action
+itself (the verb). LetMe doesn't enforce a particular authorization model or
+check implementation, instead allowing you to define what makes sense for your
+application.
 
-The checks passed to `LetMe.Policy.allow/1` reference functions in the check
-module (by default `__MODULE__.Checks`, so in the example
-`MyApp.Policy.Checks`). Each check function must take the subject, the object,
-and optionally an additional argument, and must return a boolean value.
+The checks passed to `LetMe.Policy.allow/1` reference functions in your own
+check module (by default `__MODULE__.Checks`, so in the given example, this
+would be `MyApp.Policy.Checks`). Each function in your check module should
+accept the subject, the object, and optionally an extra argument. They must
+return a boolean value indicating the result of the check.
 
-The check module for the policy module above might look like this:
+For the policy example provided earlier, a corresponding check module could look
+like this:
 
 ```elixir
 defmodule MyApp.Policy.Checks do
@@ -123,10 +142,13 @@ defmodule MyApp.Policy.Checks do
 end
 ```
 
+This way, you can establish checks that are perfectly tailored to your
+application's specific authorization requirements.
+
 ## Callbacks
 
-With `use LetMe.Policy` at the top of your policy module, LetMe will generate
-several functions for you.
+When you incorporate `use LetMe.Policy` at the start of your policy module,
+LetMe generates a suite of useful functions for you:
 
 - Authorization functions: See `c:LetMe.Policy.authorize/4`,
   `c:LetMe.Policy.authorize!/4` and `c:LetMe.Policy.authorize?/4`.
@@ -135,8 +157,10 @@ several functions for you.
 
 ### Authorization
 
-You can use the authorization functions wherever you need to make authorization
-decisions, for example in your context module:
+You can employ the authorization functions wherever your application needs to
+make authorization decisions. An ideal place to use these functions would be in
+your context modules. Here's an example illustrating how you could incorporate
+authorization into a blog's context module:
 
 ```elixir
 defmodule MyApp.Blog do
@@ -183,47 +207,23 @@ defmodule MyApp.Blog do
 end
 ```
 
+In this example, before performing any actions on the articles, we first ensure
+the current user is authorized to perform the intended action. This makes our
+application secure by making sure only authorized users can perform sensitive
+operations.
+
 #### Typespecs
 
-As part of the auto-generated `authorize` set of functions, typespecs are also generated. For
-example, with the policy:
-
-```elixir
-defmodule MyApp.Policy do
-  use LetMe.Policy, error_reason: :not_allowed
-
-  object :article do
-    # Creating articles is allowed if the user role is `editor` or `writer`.
-    action :create do
-      allow role: :editor
-      allow role: :writer
-    end
-
-    action :read do
-      allow true
-      deny :banned
-    end
-  end
-end
-```
-
-The following typespecs are generated in the resultant policy module:
-
-```
-@type :: action() :: :article_create | :article_read
-
-@spec authorize(action(), any(), any(), keyword()) :: :ok | {:error, :not_allowed}
-@spec authorize?(action(), any(), any(), keyword()) :: boolean()
-@spec authorize!(action(), any(), any(), keyword()) :: :ok
-```
-
-This allows you to use dialyzer to statically check your `authorize` calls to ensure valid actions
-are specified, rather than relying on runtime warnings.
+LetMe automatically generates typespecs for the authorize functions in your
+policy modules. This helps you to leverage Dialyzer's static type checking to
+ensure valid actions are specified in your authorize calls. It's another way
+LetMe helps you write reliable, error-free code.
 
 ### Introspection
 
-With the introspection functions, you can get the complete list of authorization
-rules, e.g. to display them in a documentation page:
+LetMe equips you with introspection functions, enabling you to access the
+comprehensive list of authorization rules. This can be beneficial, for instance,
+to render them on a documentation page:
 
 ```elixir
 iex> MyApp.Policy.list_rules()
@@ -245,7 +245,7 @@ iex> MyApp.Policy.list_rules()
 ]
 ```
 
-You can also find a rule by its name:
+If you wish to find a specific rule by its name, you can do so as well:
 
 ```elixir
 iex> MyApp.Policy.get_rule(:article_create)
@@ -261,7 +261,8 @@ iex> MyApp.Policy.get_rule(:article_create)
 }
 ```
 
-Or you can list all actions tied to a certain role (or any other check):
+Moreover, you can list all actions associated with a particular role (or any
+other check):
 
 ```elixir
 iex> MyApp.Policy.list_rules(allow: {:role, :writer})
@@ -279,12 +280,12 @@ iex> MyApp.Policy.list_rules(allow: {:role, :writer})
 ]
 ```
 
-You can also define metadata on an `action`, which can be useful to extend
-the functionality of the library.
+You can also define metadata on an `action`. This feature can be used to extend
+the library's functionality.
 
-For example, you may want to expose some of your actions through your Absinthe
-GraphQL schema, but exclude certain actions from it. You could solve
-this by adding a `:gql_exclude` key to the metadata.
+For example, imagine wanting to expose certain actions through your Absinthe
+GraphQL schema but needing to exclude others. You could achieve this by adding a
+`:gql_exclude` key to the metadata.
 
 ```elixir
 defmodule GraphqlPolicy do
@@ -317,16 +318,19 @@ iex> MyApp.Policy.get_rule(:user_disable)
 }
 ```
 
+This gives you the power to customize your authorization policies even further.
+
 ## Scoped queries
 
-Even if a user is generally allowed to see a certain resource type, they may
-only be allowed to see a subset of the data. For example, in a blog system, a
-user might only be allowed to see published articles, unless they are a writer.
-Or in a system where users belong to companies, a company user might only be
-allowed to see users who belong to the same company.
+There are situations where a user, despite having general access to a certain
+resource type, is only permitted to view a subset of the data. Consider a blog
+system: a user might be restricted to viewing only published articles, unless
+they hold the role of a writer. Similarly, in a system where users are part of
+specific companies, they might only be allowed to see users from their own
+company.
 
-In order to scope your queries depending on the user type, you can implement the
-`c:LetMe.Schema.scope/3` callback of the `LetMe.Schema` behaviour, usually in
+To tailor your queries based on the user type, implement the
+`c:LetMe.Schema.scope/3` callback of the LetMe.Schema behavior, typically within
 your Ecto schema module.
 
 ```elixir
@@ -347,11 +351,11 @@ defmodule MyApp.Blog.Article do
 end
 ```
 
-Here, the Ecto query is modified to only return published articles, unless the
-user is an editor or writer. You can use the third argument for additional
-options.
+In this example, the Ecto query is modified to only return published articles,
+unless the user is an editor or writer. The third argument can be utilized for
+additional options.
 
-With this, you can then update your list and fetch functions:
+With this setup, your list and fetch functions can be updated as follows:
 
 ```elixir
 def list_articles(%User{} = current_user) do
@@ -381,24 +385,22 @@ def fetch_article(id, %User{} = current_user) do
 end
 ```
 
-Looks familiar? Yes, this is nearly the same as in
-[Bodyguard](https://hex.pm/packages/bodyguard). However, Bodyguard exposes a
-`Bodyguard.scope/2` function, which does nothing more than to derive the Ecto
-schema module from the `Ecto.Queryable` and dispatch the call to that module.
-But since you usually know which schema module you are dealing with, I believe
-this is of limited use, and hence you need to call the `scope/2` function of
-your Ecto schema directly. The behaviour then only serves to enforce the
-pattern.
+If you've worked with [Bodyguard](https://hex.pm/packages/bodyguard) before,
+this might look familiar. In Bodyguard,
+you can find a `Bodyguard.scope/2` function that derives the Ecto schema module
+from the `Ecto.Queryable` and forwards the call to that module. In LetMe, you
+need to call the `scope/2` function of your Ecto schema directly. The behaviour
+then only serves to enforce this pattern.
 
 ## Field redactions
 
-Sometimes a user may be allowed to retrieve a resource, but some fields should
-be hidden. For example, a user might be allowed to see some general information
-about another user, such as the name and avatar, but should not be able to see
-contact information like the email or the phone number. You could handle
-situations like this by conditionally showing or hiding certain information in
-the frontend, but it would be cleaner if the context functions would not return
-those fields in the first place.
+In certain scenarios, a user may be authorized to access a resource but should
+only see a subset of its fields. For instance, one user might be able to see
+basic details of another user, such as name and avatar, but shouldn't see
+sensitive information like email or phone number. One way to manage such cases
+would be to conditionally show or hide specific information on the frontend.
+However, a cleaner solution is to have your context functions omit sensitive
+fields entirely.
 
 To assist in these kinds of situations, the `LetMe.Schema` behaviour has another
 callback: `c:LetMe.Schema.redacted_fields/3`.
@@ -419,25 +421,26 @@ defmodule MyApp.Accounts.User do
 end
 ```
 
-The `redacted_fields/2` function takes the object as the first argument and the
-subject as the second argument. The third argument can be used to pass any
-additional options. The function returns a list of fields that need to be
-redacted.
+The `redacted_fields/2` function takes the object as the first argument, the
+subject as the second argument, and an options argument. The function should
+return a list of fields to redact.
 
-In the example above, all fields are visible if the user is an admin or if the
-user that is viewed (the object) is the same as the current user (the subject).
-In all other cases, the email and phone number are hidden.
+In the example above, all fields are visible if the user has an 'admin' role, or
+if the user being viewed (the object) is the same as the current user (the
+subject). In other cases, the 'email' and 'phone_number' fields are hidden.
 
-You have two options to handle field redactions:
+There are two strategies for handling field redactions:
 
-1. Modify the query to not select the redacted fields.
+1. Modify the query to exclude the redacted fields.
 2. Redact the fields after retrieving the resource(s) from the database.
 
 ### Modifying the query
 
-You can get the non-virtual schema fields with the `__schema__/1` function that
-Ecto defines in your Ecto module, reject the redacted fields from the list and
-then add a select clause with only the unredacted fields.
+One approach to field redaction involves adjusting the database query to
+exclude redacted fields. Ecto's `__schema__/1` function can retrieve the
+non-virtual schema fields from your Ecto module. From this list, you can reject
+any redacted fields and add a select clause that includes only the unredacted
+fields.
 
 ```elixir
 def list_users(%User{} = current_user) do
@@ -450,26 +453,23 @@ def list_users(%User{} = current_user) do
 end
 ```
 
-The advantage of this method is that the fields won't even be transferred from
-the DB.
+This method has the advantage of preventing the transfer of redacted fields from
+the database. However, it also comes with several drawbacks:
 
-The drawback is that you cannot make decisions on which fields to select
-based on data in the struct. Used with the `redacted_fields/2` function above,
-we can make sure that admins can see all fields, but we can not make sure that
-users can see all fields of their own user account.
-
-Another drawback is that all redacted fields will be returned as `nil`, and you
-won't be able to distinguish which fields were redacted and which fields are
-just empty, which might be information you would want to display in the
-frontend.
-
-Also, you might have more complex select clauses that are not compatible with
-this syntax.
+1. Decisions about which fields to select cannot be made based on data in the
+   struct. For instance, with the `redacted_fields/2` function described
+   earlier, we can ensure that admins can see all fields, but we cannot
+   guarantee that users can view all fields in their own user account.
+2. All redacted fields will appear as `nil`, and you won't be able to
+   distinguish between fields that were redacted and fields that are simply
+   empty. This distinction might be necessary for display in the frontend.
+3. More complex select clauses may not be compatible with this syntax.
 
 ### Redacting the query result
 
-To mitigate these shortcomings, you can do the redactions _after_ retrieving the
-data from the database using `LetMe.redact/2`.
+To address the limitations of modifying the query, you can redact fields _after_
+retrieving the data from the database. This can be done using the
+`LetMe.redact/2` function.
 
 ```elixir
 def list_articles(%User{} = current_user) do
@@ -481,50 +481,55 @@ end
 
 The `redact` function can handle structs, lists of structs, and `nil` values.
 
-## Why would I want to use this library?
+## Why use this library?
 
-- You want an easy-to-read DSL for authorization rules that still allows you
-  to implement your authorization checks in any way you want.
-- You prefer to put your authorization rules into your business layer and
-  decouple them from your interfaces.
-- You prefer to keep your authorization rules in one place (or one place per
-  context, or similar).
+Consider using this library if:
+
+- You're seeking an easy-to-read DSL for authorization rules that offers the
+  flexibility to implement your authorization checks as desired.
+- You prefer to locate your authorization rules within your business layer,
+  thereby decoupling them from your interfaces.
+- You'd like to centralize your authorization rules in one place (or one per
+  context).
 - You want to generate a list of authorization rules.
-- You want to filter your authorization rules, e.g. to find out which actions
-  are available to a certain user role.
-- You want a library that can also help you with query scopes and field
-  redactions.
-- You want a library with zero dependencies.
+- You need to filter your authorization rules, e.g., to identify which actions a
+  certain user role can perform.
+- You're in need of a library that aids with query scopes and field redactions.
+- You prefer a library with zero dependencies.
 
-## Why wouldn't I want to use this library?
+## When not to use this library?
 
-- You prefer to couple authorization checks to your interfaces.
-- You prefer to use plugs or middlewares for authorization checks and want the
-  necessary plumbing ready for use (you can of course build your own plugs and
-  middlewares around the functions of this library).
-- You don't like DSLs and prefer to write functions (note that the DSL only
-  describes _which_ checks to run and _how_ to apply them, though; you still
-  write the actual checks as regular functions).
-- You don't care about introspection.
-- You want to return details on _why_ an authorization request fails. Checks
-  in LetMe must currently return a boolean value, which means you'll only be
-  able to give your users a generic error, without telling them which exact
-  check failed.
+This library might not be the best fit if:
+
+- You prefer to couple authorization checks with your interfaces.
+- You favor using plugs or middlewares for authorization checks and require
+  ready-made solutions (though you can create your own plugs and middlewares
+  around this library's functions).
+- You dislike DSLs and prefer to write functions directly (keep in mind, the DSL
+  only describes which checks to run and how to apply them; you'll still write
+  the actual checks as regular functions).
+- Introspection isn't a priority for you.
+- You need to provide details on why an authorization request fails. Checks in
+  LetMe currently return only a boolean value, meaning users receive a generic
+  error without knowing which exact check failed.
 
 ## Status
 
-This library is actively maintained, but since it has no dependencies and the
-feature set is narrowly scoped, you may not see a whole lot of updates. Should
-you miss something, though, don't hesitate to open an issue.
+This library is actively maintained. Given its zero dependencies and precisely
+scoped feature set, you may not see frequent updates. However, this is not an
+indication of stagnation but of stability. If you ever find something missing or
+encounter an issue, don't hesitate to open an issue – your feedback and
+contributions are always welcome.
 
 ## Alternatives
 
-For comparison, please have a look at these Elixir libraries:
+For comparison, consider exploring these Elixir libraries:
 
 - [Canada](https://hex.pm/packages/canada)
 - [Canary](https://hex.pm/packages/canary)
 - [Bodyguard](https://hex.pm/packages/bodyguard)
 - [Speakeasy](https://hex.pm/packages/speakeasy)
 
-You might also find the article
-[Authorization for Phoenix Contexts](https://dockyard.com/blog/2017/08/01/authorization-for-phoenix-contexts) helpful.
+The article
+[Authorization for Phoenix Contexts](https://dockyard.com/blog/2017/08/01/authorization-for-phoenix-contexts)
+may also be a helpful resource.
