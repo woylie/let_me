@@ -68,8 +68,20 @@ defmodule LetMe.Builder do
     error_reason = Keyword.fetch!(opts, :error_reason)
     rule_clauses = Enum.map(rules, &permit_function_clause(&1, check_module))
 
+    typespec =
+      rules
+      |> Map.keys()
+      |> Enum.reduce(&{:|, [], [&1, &2]})
+
     quote do
+      @typedoc """
+      Valid actions to be passed to the various `authorize` functions. These are auto-generated
+      from the defined policy rules.
+      """
+      @type action() :: unquote(typespec)
+
       @impl LetMe.Policy
+      @spec authorize?(action(), any, any, keyword) :: boolean()
       def authorize?(action, subject, object \\ nil, opts \\ [])
 
       unquote(rule_clauses)
@@ -85,6 +97,8 @@ defmodule LetMe.Builder do
       end
 
       @impl LetMe.Policy
+      @spec authorize(action(), any, any, keyword) ::
+              :ok | {:error, unquote(error_reason)}
       def authorize(action, subject, object \\ nil, opts \\ []) do
         if authorize?(action, subject, object, opts),
           do: :ok,
@@ -92,6 +106,7 @@ defmodule LetMe.Builder do
       end
 
       @impl LetMe.Policy
+      @spec authorize!(action(), any, any, keyword) :: :ok
       def authorize!(action, subject, object \\ nil, opts \\ []) do
         if authorize?(action, subject, object, opts),
           do: :ok,
