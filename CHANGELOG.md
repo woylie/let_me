@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## [1.2.1] - 2023-06-28
+
+### Changed
+
+- Define `action` type when you `use LetMe.Policy`.
+- Add type specifications for generated `authorize` functions.
+
 ## [1.2.0] - 2023-06-19
 
 ### Added
