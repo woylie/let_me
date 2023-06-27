@@ -3,7 +3,8 @@ defmodule MyApp.PolicyShort do
 
   use LetMe.Policy,
     check_module: MyApp.Checks,
-    error_reason: :forbidden
+    error_reason: :forbidden,
+    error_message: "What were you thinking?"
 
   object :article do
     action :create do

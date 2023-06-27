@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changed
+
+- You can now override the exception message used by
+  `c:LetMe.Policy.authorize!/4` (e.g.
+  `use LetMe.Policy, error_message: "Not today, chap."`).
+
 ## [1.2.1] - 2023-06-28
 
 ### Changed

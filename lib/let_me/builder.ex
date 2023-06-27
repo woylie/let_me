@@ -66,6 +66,7 @@ defmodule LetMe.Builder do
   def authorize_functions(%{} = rules, opts) do
     check_module = Keyword.fetch!(opts, :check_module)
     error_reason = Keyword.fetch!(opts, :error_reason)
+    error_message = Keyword.fetch!(opts, :error_message)
     rule_clauses = Enum.map(rules, &permit_function_clause(&1, check_module))
 
     typespec =
@@ -110,7 +111,7 @@ defmodule LetMe.Builder do
       def authorize!(action, subject, object \\ nil, opts \\ []) do
         if authorize?(action, subject, object, opts),
           do: :ok,
-          else: raise(LetMe.UnauthorizedError)
+          else: raise(LetMe.UnauthorizedError, message: unquote(error_message))
       end
     end
   end
