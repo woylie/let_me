@@ -715,6 +715,12 @@ defmodule LetMe.PolicyTest do
       assert PolicyShort.authorize(:article_create, %{role: :nobody}) ==
                {:error, :forbidden}
     end
+
+    test "can configure error message" do
+      assert_raise LetMe.UnauthorizedError, "What were you thinking?", fn ->
+        PolicyShort.authorize!(:article_create, %{role: :nobody})
+      end
+    end
   end
 
   describe "authorize!/4" do

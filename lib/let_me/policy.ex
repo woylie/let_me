@@ -49,6 +49,8 @@ defmodule LetMe.Policy do
     to `__MODULE__.Checks`.
   - `error_reason` - The error reason used by the `c:authorize/4` callback.
     Defaults to `:unauthorized`.
+  - `error_message` - The error message used by the `c:authorize!/4`. Defaults
+    to "unauthorized".
 
   ## Check module
 
@@ -451,7 +453,8 @@ defmodule LetMe.Policy do
     opts =
       Keyword.validate!(opts,
         check_module: Module.concat(__CALLER__.module, Checks),
-        error_reason: :unauthorized
+        error_reason: :unauthorized,
+        error_message: "unauthorized"
       )
 
     quote do
