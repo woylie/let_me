@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [1.2.2] - 2023-06-28
+
 ### Changed
 
 - You can now override the exception message used by
