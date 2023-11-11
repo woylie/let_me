@@ -238,8 +238,8 @@ defmodule LetMe.Policy do
         }
       ]
 
-  If you registered the schema module with `LetMe.Policy.object/3`, you can also
-  pass the schema module or the struct instead of a tuple.
+  If you registered the schema module with `LetMe.Policy.object/3`, you can
+  pass the struct without tagging it with the object name.
 
       iex> rules = MyApp.Policy.list_rules()
       iex> MyApp.Policy.filter_allowed_actions(

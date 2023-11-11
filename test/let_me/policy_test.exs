@@ -289,6 +289,14 @@ defmodule LetMe.PolicyTest do
       assert [%Rule{name: :article_update}, %Rule{name: :article_view}] =
                Policy.filter_allowed_actions(rules, %{id: 1}, object)
     end
+
+    test "can filter by passing the struct only" do
+      rules = Policy.list_rules()
+      object = %Article{user_id: 1}
+
+      assert [%Rule{name: :article_view}] =
+               Policy.filter_allowed_actions(rules, %{id: 2}, object)
+    end
   end
 
   describe "get_rule/1" do
