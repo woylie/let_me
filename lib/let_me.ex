@@ -121,6 +121,9 @@ defmodule LetMe do
   object name, and the second element is the actual object, e.g.
   `{:article, %Article{}}`.
 
+  If you registered the schema module with `LetMe.Policy.object/3`, you can
+  pass the struct without tagging it with the object name, e.g. `%Article{}`.
+
   This function is used internally by `c:LetMe.Policy.filter_allowed_actions/3`.
 
   ## Example
