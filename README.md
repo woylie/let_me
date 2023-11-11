@@ -24,7 +24,7 @@ Add LetMe to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:let_me, "~> 1.2.2"}
+    {:let_me, "~> 1.2.3"}
   ]
 end
 ```

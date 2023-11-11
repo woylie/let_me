@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## [1.2.3] - 2023-11-11
+
+### Changed
+
+- Updated documentation.
+
 ## [1.2.2] - 2023-06-28
 
 ### Changed

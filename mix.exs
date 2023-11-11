@@ -2,7 +2,7 @@ defmodule LetMe.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/woylie/let_me"
-  @version "1.2.2"
+  @version "1.2.3"
 
   def project do
     [
