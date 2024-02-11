@@ -28,6 +28,17 @@ defmodule MyApp.Checks do
 
   def has_valid_reason(_, _), do: false
 
+  # Simulates an extarnal lookup
+  def lookup_true(_, _) do
+    :ets.update_counter(:lookups, :counter, {2, 1})
+    true
+  end
+
+  def lookup_false(_, _) do
+    :ets.update_counter(:lookups, :counter, {2, 1})
+    false
+  end
+
   # pre-hooks
 
   def preload_groups(%{} = subject, %{} = object) do
