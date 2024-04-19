@@ -209,6 +209,10 @@ defmodule LetMe do
     do_redact(object, subject, redact_value, opts)
   end
 
+  defp do_redact(objects, subject, redact_value, opts) when is_list(objects) do
+    Enum.map(objects, &do_redact(&1, subject, redact_value, opts))
+  end
+
   defp do_redact(%module{} = object, subject, redact_value, opts) do
     redacted_fields = module.redacted_fields(object, subject, opts)
     replace_keys(redacted_fields, subject, redact_value, object, opts)
@@ -230,6 +234,22 @@ defmodule LetMe do
 
       %{__struct__: Ecto.Association.NotLoaded} ->
         replace_keys(rest, subject, value, acc, opts)
+
+      list when is_list(list) ->
+        replace_keys(
+          rest,
+          subject,
+          value,
+          Map.put(
+            acc,
+            key,
+            Enum.map(
+              list,
+              &replace_keys(nested_redacted_fields, subject, value, &1, opts)
+            )
+          ),
+          opts
+        )
 
       %{} = nested_map ->
         replace_keys(
@@ -260,6 +280,15 @@ defmodule LetMe do
 
       %{__struct__: Ecto.Association.NotLoaded} ->
         replace_keys(rest, subject, value, acc, opts)
+
+      list when is_list(list) ->
+        replace_keys(
+          rest,
+          subject,
+          value,
+          Map.put(acc, key, do_redact(list, subject, value, opts)),
+          opts
+        )
 
       %^module{} = nested_map ->
         replace_keys(
