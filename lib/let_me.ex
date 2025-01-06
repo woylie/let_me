@@ -111,7 +111,7 @@ defmodule LetMe do
        when is_atom(name),
        do: true
 
-  defp matches_check?(_, {name, _opts}) when is_atom(name), do: false
+  defp matches_check?(_, {name, _}) when is_atom(name), do: false
 
   @doc """
   Takes a list of rules and only returns the rules that would evaluate to `true`
