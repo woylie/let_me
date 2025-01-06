@@ -67,7 +67,7 @@ defmodule LetMe.Schema do
       end
   """
 
-  defmacro __using__(_opts) do
+  defmacro __using__(_) do
     quote do
       @behaviour LetMe.Schema
 
