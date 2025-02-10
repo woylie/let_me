@@ -69,6 +69,13 @@ defmodule LetMe.PolicyTest do
       action :with_metadata do
         metadata :desc_ja, "指定されたユーザーに対して、指定された機能を無効にします。"
       end
+
+      action :lazy_eval do
+        allow :lookup_false
+        allow :lookup_false
+        allow :lookup_true
+        allow :lookup_false
+      end
     end
 
     object :complex, MyApp.Blog.Article do
@@ -472,6 +479,17 @@ defmodule LetMe.PolicyTest do
                %{user_id: 2}
              ) == false
     end
+
+    test "evaluates rule checks lazily" do
+      :ets.new(:lookups, [:set, :named_table])
+      :ets.insert(:lookups, {:counter, 0})
+
+      # Should only increment counter by 3
+      TestPolicy.authorize?(:simple_lazy_eval, %{})
+
+      assert :ets.lookup(:lookups, :counter) == [counter: 3]
+    end
+
 
     test "returns false and logs warning if rule does not exist" do
       assert capture_log([level: :warning], fn ->
