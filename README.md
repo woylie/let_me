@@ -59,12 +59,14 @@ defmodule MyApp.Policy do
     action :create do
       allow role: :editor
       allow role: :writer
+      desc "Create a new article"
     end
 
     # Viewing articles is always allowed, unless the user is banned.
     action :read do
       allow true
       deny :banned
+      desc "Read an article"
     end
 
     # Updating an article is allowed if (the user role is `editor`) OR
@@ -72,11 +74,13 @@ defmodule MyApp.Policy do
     action :update do
       allow role: :editor
       allow [:own_resource, role: :writer]
+      desc "Update an article"
     end
 
     # Deleting an article is allowed if the user is an editor.
     action :delete do
       allow role: :editor
+      desc "Delete an article"
     end
   end
 end
@@ -235,7 +239,7 @@ iex> MyApp.Policy.list_rules()
       [role: :writer]
     ],
     deny: [],
-    description: nil,
+    description: "Create a new article",
     name: :article_create,
     object: :article,
     pre_hooks: [],
