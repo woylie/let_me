@@ -1,6 +1,7 @@
 # LetMe
 
 [![CI](https://github.com/woylie/let_me/workflows/CI/badge.svg)](https://github.com/woylie/let_me/actions) [![Hex](https://img.shields.io/hexpm/v/let_me)](https://hex.pm/packages/let_me) [![Hex Docs](https://img.shields.io/badge/hex-docs-green)](https://hexdocs.pm/let_me/readme.html) [![Coverage Status](https://coveralls.io/repos/github/woylie/let_me/badge.svg)](https://coveralls.io/github/woylie/let_me)
+[![libs.tech recommends](https://libs.tech/project/511481349/badge.svg)](https://libs.tech/project/511481349/let_me)
 
 LetMe is a user-friendly authorization library for Elixir. Designed with a
 simple and expressive Domain Specific Language (DSL), it provides an intuitive
