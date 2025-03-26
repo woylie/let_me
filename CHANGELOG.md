@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## [1.2.5] - 2025-03-26
+
+### Changed
+
+- Improve documentation.
+
 ## [1.2.4] - 2024-04-22
 
 ### Fixed
