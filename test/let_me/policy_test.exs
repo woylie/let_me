@@ -490,7 +490,6 @@ defmodule LetMe.PolicyTest do
       assert :ets.lookup(:lookups, :counter) == [counter: 3]
     end
 
-
     test "returns false and logs warning if rule does not exist" do
       assert capture_log([level: :warning], fn ->
                assert TestPolicy.authorize?(:does_not_exist, %{}) ==
