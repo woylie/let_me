@@ -2,7 +2,7 @@ defmodule LetMe.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/woylie/let_me"
-  @version "1.2.3"
+  @version "1.2.5"
 
   def project do
     [
@@ -45,11 +45,11 @@ defmodule LetMe.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:castore, "~> 1.0", only: :test},
-      {:credo, "~> 1.7.0", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.4.1", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
-      {:excoveralls, "~> 0.10", only: :test}
+      {:castore, "== 1.0.13", only: :test},
+      {:credo, "== 1.7.12", only: [:dev, :test], runtime: false},
+      {:dialyxir, "== 1.4.5", only: [:dev, :test], runtime: false},
+      {:ex_doc, "== 0.38.1", only: :dev, runtime: false},
+      {:excoveralls, "== 0.18.5", only: :test}
     ]
   end
 

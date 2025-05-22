@@ -268,17 +268,23 @@ defmodule LetMe.PolicyTest do
                Policy.filter_allowed_actions(rules, %{id: 2}, object)
 
       assert [%Rule{name: :article_create}, %Rule{name: :article_view}] =
-               Policy.filter_allowed_actions(
-                 rules,
-                 %{id: 2, role: :writer},
-                 object
+               Enum.sort_by(
+                 Policy.filter_allowed_actions(
+                   rules,
+                   %{id: 2, role: :writer},
+                   object
+                 ),
+                 & &1.name
                )
 
       assert [%Rule{name: :article_create}, %Rule{name: :article_view}] =
-               Policy.filter_allowed_actions(
-                 rules,
-                 %{id: 2, role: :admin},
-                 object
+               Enum.sort_by(
+                 Policy.filter_allowed_actions(
+                   rules,
+                   %{id: 2, role: :admin},
+                   object
+                 ),
+                 & &1.name
                )
 
       assert [
@@ -291,10 +297,13 @@ defmodule LetMe.PolicyTest do
                  %{id: 1, role: :admin},
                  object
                )
-               |> Enum.sort()
+               |> Enum.sort_by(& &1.name)
 
       assert [%Rule{name: :article_update}, %Rule{name: :article_view}] =
-               Policy.filter_allowed_actions(rules, %{id: 1}, object)
+               Enum.sort_by(
+                 Policy.filter_allowed_actions(rules, %{id: 1}, object),
+                 & &1.name
+               )
     end
 
     test "can filter by passing the struct only" do

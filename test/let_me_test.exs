@@ -18,15 +18,35 @@ defmodule LetMeTest do
   defmodule Person do
     use LetMe.Schema
 
-    defstruct [:name, :email, :phone_number, :pet, :spouse, :age, :locale]
+    defstruct [
+      :name,
+      :email,
+      :phone_number,
+      :all_pets,
+      :pet,
+      :spouse,
+      :age,
+      :locale
+    ]
 
     @impl LetMe.Schema
     def redacted_fields(_, :nested_fields, _) do
-      [:name, :phone_number, spouse: [:email, pet: [:weight]]]
+      [
+        :name,
+        :phone_number,
+        all_pets: [:age, :email],
+        spouse: [:email, pet: [:weight]]
+      ]
     end
 
     def redacted_fields(_, :nested_schemas, _) do
-      [:name, :phone_number, spouse: __MODULE__, pet: LetMeTest.Pet]
+      [
+        :name,
+        :phone_number,
+        spouse: __MODULE__,
+        pet: LetMeTest.Pet,
+        all_pets: LetMeTest.Pet
+      ]
     end
   end
 
@@ -92,6 +112,22 @@ defmodule LetMeTest do
                  phone_number: :redacted,
                  age: 25,
                  locale: "es",
+                 all_pets: [
+                   %Pet{
+                     name: "Jad",
+                     email: :redacted,
+                     phone_number: "597",
+                     weight: 6,
+                     age: :redacted
+                   },
+                   %Pet{
+                     name: "Betty",
+                     email: :redacted,
+                     phone_number: "987",
+                     weight: 8,
+                     age: :redacted
+                   }
+                 ],
                  pet: %Pet{
                    name: "Betty",
                    email: "betty@pet",
@@ -126,6 +162,22 @@ defmodule LetMeTest do
                  phone_number: :redacted,
                  age: 25,
                  locale: "es",
+                 all_pets: [
+                   %Pet{
+                     name: "Jad",
+                     email: :redacted,
+                     phone_number: "597",
+                     weight: 6,
+                     age: :redacted
+                   },
+                   %Pet{
+                     name: "Betty",
+                     email: :redacted,
+                     phone_number: "987",
+                     weight: 8,
+                     age: :redacted
+                   }
+                 ],
                  pet: %Pet{
                    name: "Betty",
                    email: :redacted,
@@ -157,6 +209,7 @@ defmodule LetMeTest do
         phone_number: "123",
         age: 25,
         locale: "es",
+        all_pets: [],
         pet: %Pet{
           name: "Betty",
           email: "betty@pet",
@@ -174,6 +227,7 @@ defmodule LetMeTest do
                  phone_number: :redacted,
                  age: 25,
                  locale: "es",
+                 all_pets: [],
                  pet: %Pet{
                    name: "Betty",
                    email: "betty@pet",
@@ -191,6 +245,7 @@ defmodule LetMeTest do
                  phone_number: :redacted,
                  age: 25,
                  locale: "es",
+                 all_pets: [],
                  pet: %Pet{
                    name: "Betty",
                    email: :redacted,
@@ -207,7 +262,7 @@ defmodule LetMeTest do
     end
 
     test "handles nil value in nested field" do
-      person = %{person() | spouse: nil}
+      person = %{person() | spouse: nil, all_pets: nil}
       assert %Person{spouse: nil} = LetMe.redact(person, :nested_fields)
       assert %Person{spouse: nil} = LetMe.redact(person, :nested_schemas)
     end
@@ -247,6 +302,22 @@ defmodule LetMeTest do
       phone_number: "123",
       age: 25,
       locale: "es",
+      all_pets: [
+        %Pet{
+          name: "Jad",
+          email: "jad@pet",
+          phone_number: "597",
+          weight: 6,
+          age: 4
+        },
+        %Pet{
+          name: "Betty",
+          email: "betty@pet",
+          phone_number: "987",
+          weight: 8,
+          age: 7
+        }
+      ],
       pet: %Pet{
         name: "Betty",
         email: "betty@pet",
