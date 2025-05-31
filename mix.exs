@@ -48,7 +48,7 @@ defmodule LetMe.MixProject do
       {:castore, "== 1.0.14", only: :test},
       {:credo, "== 1.7.12", only: [:dev, :test], runtime: false},
       {:dialyxir, "== 1.4.5", only: [:dev, :test], runtime: false},
-      {:ex_doc, "== 0.38.1", only: :dev, runtime: false},
+      {:ex_doc, "== 0.38.2", only: :dev, runtime: false},
       {:excoveralls, "== 0.18.5", only: :test}
     ]
   end
