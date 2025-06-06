@@ -96,8 +96,11 @@ doesn't enforce a particular authorization model or check implementation.
 The checks passed to `LetMe.Policy.allow/1` reference functions in your own
 check module (by default `__MODULE__.Checks`, so in the given example, this
 would be `MyApp.Policy.Checks`). Each function in your check module should
-accept the subject, the object, and optionally an extra argument. They must
-return a boolean value indicating the result of the check.
+accept the subject, the object, and optionally an extra argument. If no options
+are passed to `allow` or `deny` (e.g. `deny :banned`), the check function must
+be a 2-arity function. If an option is passed (e.g. `allow role: :writer`), the
+function must be a 3-arity function. All check functions must return a boolean
+value indicating the result of the check.
 
 For the policy example provided earlier, a corresponding check module could look
 like this:
@@ -110,7 +113,7 @@ defmodule MyApp.Policy.Checks do
   @doc """
   Returns `true` if the `banned` flag is set on the user.
   """
-  def banned(%Scope{current_user: %User{banned: banned}}, _, _), do: banned
+  def banned(%Scope{current_user: %User{banned: banned}}, _), do: banned
 
   @doc """
   Checks whether the user ID of the object matches the ID of the current user.
@@ -119,10 +122,9 @@ defmodule MyApp.Policy.Checks do
   """
   def own_resource(
     %Scope{current_user: User{id: id}},
-    %{user_id: id},
-    _opts
+    %{user_id: id}
   ) when is_binary(id), do: true
-  def own_resource(_, _, _), do: false
+  def own_resource(_, _), do: false
 
   @doc """
   Checks whether the user role matches the role passed as an option.
