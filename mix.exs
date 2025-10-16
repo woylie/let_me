@@ -13,13 +13,6 @@ defmodule LetMe.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test,
-        "coveralls.github": :test
-      ],
       dialyzer: [
         plt_file: {:no_warn, ".plts/dialyzer.plt"}
       ],
@@ -34,6 +27,18 @@ defmodule LetMe.MixProject do
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  def cli do
+    [
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.github": :test
+      ]
+    ]
+  end
 
   # Run "mix help compile.app" to learn about applications.
   def application do
