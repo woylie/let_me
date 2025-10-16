@@ -1,7 +1,7 @@
 name: CI
 
 env:
-  ELIXIR_VERSION: "1.18"
+  ELIXIR_VERSION: "1.19"
   OTP_VERSION: "28"
 
 on:
