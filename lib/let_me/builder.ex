@@ -113,6 +113,19 @@ defmodule LetMe.Builder do
           do: :ok,
           else: raise(LetMe.UnauthorizedError, message: unquote(error_message))
       end
+
+      defp evaluate_check(check) do
+        case check do
+          {mod, fun, args} when is_atom(fun) and is_list(args) ->
+            apply(mod, fun, args)
+
+          true ->
+            true
+
+          false ->
+            false
+        end
+      end
     end
   end
 
@@ -129,9 +142,7 @@ defmodule LetMe.Builder do
     combined_condition =
       case {allow_condition, deny_condition} do
         {false, _} -> false
-        {_, true} -> false
         {_, false} -> allow_condition
-        {true, _} -> quote(do: !unquote(deny_condition))
         _ -> quote(do: !unquote(deny_condition) && unquote(allow_condition))
       end
 
@@ -192,12 +203,18 @@ defmodule LetMe.Builder do
   defp build_conditions([], _), do: false
 
   defp build_conditions([checks], check_module) do
-    build_check(checks, check_module)
+    quote do
+      unquote(build_check(checks, check_module))
+      |> then(&evaluate_check/1)
+    end
   end
 
   defp build_conditions(conditions, check_module) when is_list(conditions) do
     quote do
-      Enum.any?(unquote(Enum.map(conditions, &build_check(&1, check_module))))
+      Enum.any?(
+        unquote(Enum.map(conditions, &build_check(&1, check_module))),
+        &evaluate_check/1
+      )
     end
   end
 
@@ -209,7 +226,10 @@ defmodule LetMe.Builder do
 
   defp build_check(checks, check_module) when is_list(checks) do
     quote do
-      Enum.all?(unquote(Enum.map(checks, &build_check(&1, check_module))))
+      Enum.all?(
+        unquote(Enum.map(checks, &build_check(&1, check_module))),
+        &evaluate_check/1
+      )
     end
   end
 
@@ -227,18 +247,19 @@ defmodule LetMe.Builder do
 
   defp build_check(function, check_module) when is_atom(function) do
     quote do
-      apply(unquote(check_module), unquote(function), [subject, object])
+      {unquote(check_module), unquote(function), [subject, object]}
     end
   end
 
   defp build_check({function, opts}, check_module)
        when is_atom(function) do
     quote do
-      apply(unquote(check_module), unquote(function), [
-        subject,
-        object,
-        unquote(opts)
-      ])
+      {unquote(check_module), unquote(function),
+       [
+         subject,
+         object,
+         unquote(opts)
+       ]}
     end
   end
 end
