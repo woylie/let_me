@@ -63,6 +63,7 @@ defmodule LetMe.Builder do
     end
   end
 
+  # credo:disable-for-next-line
   def authorize_functions(%{} = rules, opts) do
     check_module = Keyword.fetch!(opts, :check_module)
     error_reason = Keyword.fetch!(opts, :error_reason)
@@ -98,12 +99,24 @@ defmodule LetMe.Builder do
       end
 
       @impl LetMe.Policy
-      @spec authorize(action(), any, any, keyword) ::
-              :ok | {:error, unquote(error_reason)}
-      def authorize(action, subject, object \\ nil, opts \\ []) do
-        if authorize?(action, subject, object, opts),
-          do: :ok,
-          else: {:error, unquote(error_reason)}
+      if unquote(error_reason) == :struct do
+        @spec authorize(action(), any, any, keyword) ::
+                :ok | {:error, LetMe.UnauthorizedError.t()}
+        def authorize(action, subject, object \\ nil, opts \\ []) do
+          if authorize?(action, subject, object, opts),
+            do: :ok,
+            else:
+              {:error,
+               %LetMe.UnauthorizedError{message: unquote(error_message)}}
+        end
+      else
+        @spec authorize(action(), any, any, keyword) ::
+                :ok | {:error, unquote(error_reason)}
+        def authorize(action, subject, object \\ nil, opts \\ []) do
+          if authorize?(action, subject, object, opts),
+            do: :ok,
+            else: {:error, unquote(error_reason)}
+        end
       end
 
       @impl LetMe.Policy
