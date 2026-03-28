@@ -200,10 +200,6 @@ defmodule LetMe.Builder do
     end
   end
 
-  def evaluate_conditions([], _, _, _) do
-    false
-  end
-
   def evaluate_conditions([checks], check_module, subject, object) do
     evaluate_checks(checks, check_module, subject, object)
   end

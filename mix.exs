@@ -11,6 +11,7 @@ defmodule LetMe.MixProject do
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
+      aliases: aliases(),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
       dialyzer: [
@@ -35,7 +36,8 @@ defmodule LetMe.MixProject do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
-        "coveralls.github": :test
+        "coveralls.github": :test,
+        precommit: :test
       ]
     ]
   end
@@ -82,6 +84,18 @@ defmodule LetMe.MixProject do
       skip_undefined_reference_warnings_on: ["CHANGELOG.md"],
       groups_for_extras: [
         Cheatsheets: ~r/cheatsheets\/.?/
+      ]
+    ]
+  end
+
+  defp aliases do
+    [
+      precommit: [
+        "compile --warning-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "credo",
+        "coveralls"
       ]
     ]
   end
