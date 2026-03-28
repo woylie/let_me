@@ -137,6 +137,123 @@ defmodule LetMe.PolicyTest do
         allow [:same_group, :same_pet]
       end
     end
+
+    object :lazy do
+      action :two_allow_checks_first_false do
+        allow lazy_check: {:allow_1, false},
+              lazy_check: {:allow_2, true}
+      end
+
+      action :two_allow_checks_both_true do
+        allow lazy_check: {:allow_1, true},
+              lazy_check: {:allow_2, true}
+      end
+
+      action :two_allow_rules_first_true do
+        allow lazy_check: {:allow_1_1, true},
+              lazy_check: {:allow_1_2, true}
+
+        allow lazy_check: {:allow_2_1, true},
+              lazy_check: {:allow_2_2, false}
+      end
+
+      action :two_deny_checks_first_false do
+        allow true
+
+        deny lazy_check: {:deny_1, false},
+             lazy_check: {:deny_2, true}
+      end
+
+      action :two_deny_checks_both_true do
+        allow true
+
+        deny lazy_check: {:deny_1, true},
+             lazy_check: {:deny_2, true}
+      end
+
+      action :two_deny_rules_first_true do
+        allow true
+
+        deny lazy_check: {:deny_1_1, true},
+             lazy_check: {:deny_1_2, true}
+
+        deny lazy_check: {:deny_2_1, true},
+             lazy_check: {:deny_2_2, false}
+      end
+
+      action :two_deny_and_two_allow_checks do
+        allow lazy_check: {:allow_1, true},
+              lazy_check: {:allow_2, true}
+
+        deny lazy_check: {:deny_1, true},
+             lazy_check: {:deny_2, true}
+      end
+    end
+  end
+
+  describe "lazy evaluation" do
+    @describetag :this
+    test "does not evaluate second allow check if first one is false" do
+      assert TestPolicy.authorize?(:lazy_two_allow_checks_first_false, %{}) ==
+               false
+
+      assert_receive {:check, :allow_1}
+      refute_receive {:check, :allow_2}
+    end
+
+    test "evaluates all allow checks" do
+      assert TestPolicy.authorize?(:lazy_two_allow_checks_both_true, %{}) ==
+               true
+
+      assert_receive {:check, :allow_1}
+      assert_receive {:check, :allow_2}
+    end
+
+    test "does not evaluate second allow rule if first one is true" do
+      assert TestPolicy.authorize?(:lazy_two_allow_rules_first_true, %{}) ==
+               true
+
+      assert_receive {:check, :allow_1_1}
+      assert_receive {:check, :allow_1_2}
+      refute_receive {:check, :allow_2_1}
+      refute_receive {:check, :allow_2_2}
+    end
+
+    test "does not evaluate second deny check if first one is false" do
+      assert TestPolicy.authorize?(:lazy_two_deny_checks_first_false, %{}) ==
+               true
+
+      assert_receive {:check, :deny_1}
+      refute_receive {:check, :deny_2}
+    end
+
+    test "evaluates all deny checks" do
+      assert TestPolicy.authorize?(:lazy_two_deny_checks_both_true, %{}) ==
+               false
+
+      assert_receive {:check, :deny_1}
+      assert_receive {:check, :deny_2}
+    end
+
+    test "does not evaluate second deny rule if first one is true" do
+      assert TestPolicy.authorize?(:lazy_two_deny_rules_first_true, %{}) ==
+               false
+
+      assert_receive {:check, :deny_1_1}
+      assert_receive {:check, :deny_1_2}
+      refute_receive {:check, :deny_2_1}
+      refute_receive {:check, :deny_2_2}
+    end
+
+    test "does evaluate allow rules if deny rule is true" do
+      assert TestPolicy.authorize?(:lazy_two_deny_and_two_allow_checks, %{}) ==
+               false
+
+      assert_receive {:check, :deny_1}
+      assert_receive {:check, :deny_2}
+      refute_receive {:check, :allow_1}
+      refute_receive {:check, :allow_2}
+    end
   end
 
   describe "list_rules" do
