@@ -529,7 +529,7 @@ defmodule LetMe.Policy do
       """
     end
 
-    # coveralls-ignore-end
+    # coveralls-ignore-stop
 
     :ok
   end
@@ -566,7 +566,7 @@ defmodule LetMe.Policy do
           """
         end
 
-      # coveralls-ignore-end
+      # coveralls-ignore-stop
 
       _ ->
         :ok
