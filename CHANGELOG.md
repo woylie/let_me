@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Changed
+
+- Evaluate authorization checks lazily.
+- Allow  `error_reason` option of `LetMe.Policy` to be set to `:struct`, which
+  lets `c:LetMe.Policy.authorize/4` return a `LetMe.UnauthorizedError` struct
+  on error.
+
 ## [1.2.5] - 2025-03-26
 
 ### Changed

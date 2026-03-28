@@ -8,6 +8,7 @@ defmodule LetMe.PolicyTest do
   alias MyApp.Blog.Article
   alias MyApp.Policy
   alias MyApp.PolicyShort
+  alias MyApp.PolicyStruct
   alias MyApp.TestPolicy
 
   defmodule TestPolicy do
@@ -854,6 +855,13 @@ defmodule LetMe.PolicyTest do
       assert_raise LetMe.UnauthorizedError, "What were you thinking?", fn ->
         PolicyShort.authorize!(:article_create, %{role: :nobody})
       end
+    end
+
+    test "returns error struct if configured" do
+      # PolicyShort module sets error_reason to :struct
+      assert PolicyStruct.authorize(:article_create, %{role: :nobody}) ==
+               {:error,
+                %LetMe.UnauthorizedError{message: "What were you thinking?"}}
     end
   end
 

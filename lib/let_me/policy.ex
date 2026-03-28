@@ -48,7 +48,8 @@ defmodule LetMe.Policy do
   - `check_module` - The module where the check functions are defined. Defaults
     to `__MODULE__.Checks`.
   - `error_reason` - The error reason used by the `c:authorize/4` callback.
-    Defaults to `:unauthorized`.
+    Defaults to `:unauthorized`. If set to `:struct`, a
+    `LetMe.UnauthorizedError` struct is returned.
   - `error_message` - The error message used by the `c:authorize!/4`. Defaults
     to "unauthorized".
 
@@ -383,7 +384,8 @@ defmodule LetMe.Policy do
       {:error, :unauthorized}
 
   The error reason can be customized by setting the `:error_reason` option when
-  using the module.
+  using the module. If set to `:struct`, the return value is
+  `{:error, LetMe.UnauthorizedError.t()}`.
 
   The last parameter is a set of arguments that can be defined dynamically
   which will be passed into any `pre_hook`s defined on the resource's policy.
