@@ -129,9 +129,7 @@ defmodule LetMe.Builder do
     combined_condition =
       case {allow_condition, deny_condition} do
         {false, _} -> false
-        {_, true} -> false
         {_, false} -> allow_condition
-        {true, _} -> quote(do: !unquote(deny_condition))
         _ -> quote(do: !unquote(deny_condition) && unquote(allow_condition))
       end
 
@@ -191,54 +189,61 @@ defmodule LetMe.Builder do
 
   defp build_conditions([], _), do: false
 
-  defp build_conditions([checks], check_module) do
-    build_check(checks, check_module)
-  end
-
   defp build_conditions(conditions, check_module) when is_list(conditions) do
     quote do
-      Enum.any?(unquote(Enum.map(conditions, &build_check(&1, check_module))))
-    end
-  end
-
-  defp build_check([], _), do: false
-
-  defp build_check([check], check_module) do
-    build_check(check, check_module)
-  end
-
-  defp build_check(checks, check_module) when is_list(checks) do
-    quote do
-      Enum.all?(unquote(Enum.map(checks, &build_check(&1, check_module))))
-    end
-  end
-
-  defp build_check(true, _) do
-    quote do
-      true
-    end
-  end
-
-  defp build_check(false, _) do
-    quote do
-      false
-    end
-  end
-
-  defp build_check(function, check_module) when is_atom(function) do
-    quote do
-      apply(unquote(check_module), unquote(function), [subject, object])
-    end
-  end
-
-  defp build_check({function, opts}, check_module)
-       when is_atom(function) do
-    quote do
-      apply(unquote(check_module), unquote(function), [
+      LetMe.Builder.evaluate_conditions(
+        unquote(conditions),
+        unquote(check_module),
         subject,
-        object,
-        unquote(opts)
-      ])
+        object
+      )
     end
+  end
+
+  def evaluate_conditions([], _, _, _) do
+    false
+  end
+
+  def evaluate_conditions([checks], check_module, subject, object) do
+    evaluate_checks(checks, check_module, subject, object)
+  end
+
+  def evaluate_conditions(conditions, check_module, subject, object) do
+    Enum.any?(conditions, &evaluate_checks(&1, check_module, subject, object))
+  end
+
+  defp evaluate_checks([], _, _, _) do
+    false
+  end
+
+  defp evaluate_checks([check], check_module, subject, object) do
+    evaluate_check(check, check_module, subject, object)
+  end
+
+  defp evaluate_checks(checks, check_module, subject, object)
+       when is_list(checks) do
+    Enum.all?(checks, &evaluate_check(&1, check_module, subject, object))
+  end
+
+  defp evaluate_checks(check, check_module, subject, object) do
+    evaluate_check(check, check_module, subject, object)
+  end
+
+  defp evaluate_check(true, _, _, _) do
+    true
+  end
+
+  defp evaluate_check(false, _, _, _) do
+    false
+  end
+
+  defp evaluate_check(function, check_module, subject, object)
+       when is_atom(function) do
+    apply(check_module, function, [subject, object])
+  end
+
+  defp evaluate_check({function, opts}, check_module, subject, object)
+       when is_atom(function) do
+    apply(check_module, function, [subject, object, opts])
   end
 end

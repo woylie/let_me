@@ -28,6 +28,11 @@ defmodule MyApp.Checks do
 
   def has_valid_reason(_, _), do: false
 
+  def lazy_check(_, _, {tag, value}) do
+    send(self(), {:check, tag})
+    value
+  end
+
   # pre-hooks
 
   def preload_groups(%{} = subject, %{} = object) do
