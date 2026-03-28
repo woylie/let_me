@@ -13,6 +13,9 @@ defmodule MyApp.Checks do
   def role(%{role: role}, _, role), do: true
   def role(_, _, _), do: false
 
+  def role_with_reason(%{role: role}, _, role), do: :ok
+  def role_with_reason(%{role: role}, _, _), do: {:error, "#{role} not allowed"}
+
   def same_group(%{group_id: id}, %{group_id: id}), do: true
   def same_group(%{group_id: _}, %{group_id: _}), do: false
 
@@ -21,6 +24,9 @@ defmodule MyApp.Checks do
 
   def same_user(%{id: id}, %{id: id}), do: true
   def same_user(_, _), do: false
+
+  def user_suspended(%{state: :suspended}, _), do: {:ok, "user suspended"}
+  def user_suspended(_, _), do: :error
 
   def has_valid_reason(_, %{reason: reason})
       when reason in ["valid", "also_valid"],

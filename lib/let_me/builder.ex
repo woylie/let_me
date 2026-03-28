@@ -248,11 +248,22 @@ defmodule LetMe.Builder do
 
   defp evaluate_check(function, check_module, subject, object)
        when is_atom(function) do
-    apply(check_module, function, [subject, object])
+    check_module
+    |> apply(function, [subject, object])
+    |> to_boolean()
   end
 
   defp evaluate_check({function, opts}, check_module, subject, object)
        when is_atom(function) do
-    apply(check_module, function, [subject, object, opts])
+    check_module
+    |> apply(function, [subject, object, opts])
+    |> to_boolean()
+  end
+
+  defp to_boolean(bool) when is_boolean(bool), do: bool
+  defp to_boolean(:ok), do: true
+  defp to_boolean({:ok, _}), do: true
+  defp to_boolean(:error), do: false
+  defp to_boolean({:error, _}), do: false
   end
 end

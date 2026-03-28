@@ -70,6 +70,11 @@ defmodule LetMe.PolicyTest do
       action :with_metadata do
         metadata :desc_ja, "指定されたユーザーに対して、指定された機能を無効にします。"
       end
+
+      action :with_reason do
+        allow role_with_reason: :admin
+        deny :user_suspended
+      end
     end
 
     object :complex, MyApp.Blog.Article do
@@ -827,6 +832,23 @@ defmodule LetMe.PolicyTest do
         end
 
       assert error.message =~ "Invalid pre-hook options"
+    end
+
+    test "handles ok/error tuples" do
+      assert TestPolicy.authorize?(
+               :simple_with_reason,
+               %{role: :admin, state: :active}
+             ) == true
+
+      assert TestPolicy.authorize?(
+               :simple_with_reason,
+               %{role: :admin, state: :suspended}
+             ) == false
+
+      assert TestPolicy.authorize?(
+               :simple_with_reason,
+               %{role: :writer, state: :active}
+             ) == false
     end
   end
 
