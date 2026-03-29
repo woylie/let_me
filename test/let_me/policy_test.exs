@@ -6,7 +6,7 @@ defmodule LetMe.PolicyTest do
 
   alias LetMe.AllOf
   alias LetMe.AnyOf
-  alias LetMe.CheckResult
+  alias LetMe.Check
   alias LetMe.Literal
   alias LetMe.Rule
   alias LetMe.UnauthorizedError
@@ -522,7 +522,7 @@ defmodule LetMe.PolicyTest do
                %{id: 1},
                %{user_id: 2}
              ) == %UnauthorizedError{
-               allow_checks: %CheckResult{
+               allow_checks: %Check{
                  arg: nil,
                  name: :own_resource,
                  result: false
@@ -548,7 +548,7 @@ defmodule LetMe.PolicyTest do
                %{role: :writer}
              ) == %UnauthorizedError{
                message: "unauthorized",
-               allow_checks: %CheckResult{
+               allow_checks: %Check{
                  name: :role,
                  arg: :editor,
                  result: false
@@ -590,7 +590,7 @@ defmodule LetMe.PolicyTest do
                :simple_allow_true_combined,
                %{role: :writer}
              ) == %UnauthorizedError{
-               allow_checks: %CheckResult{
+               allow_checks: %Check{
                  arg: :admin,
                  name: :role,
                  result: false
@@ -622,7 +622,7 @@ defmodule LetMe.PolicyTest do
              ) == %UnauthorizedError{
                message: "unauthorized",
                allow_checks: nil,
-               deny_checks: %CheckResult{
+               deny_checks: %Check{
                  name: :same_user,
                  arg: nil,
                  result: true
@@ -647,7 +647,7 @@ defmodule LetMe.PolicyTest do
              ) == %UnauthorizedError{
                message: "unauthorized",
                allow_checks: nil,
-               deny_checks: %CheckResult{
+               deny_checks: %Check{
                  name: :role,
                  arg: :writer,
                  result: true
@@ -717,7 +717,7 @@ defmodule LetMe.PolicyTest do
                %{role: :writer}
              ) == %UnauthorizedError{
                message: "unauthorized",
-               allow_checks: %CheckResult{
+               allow_checks: %Check{
                  name: :role,
                  arg: :admin,
                  result: false
@@ -743,7 +743,7 @@ defmodule LetMe.PolicyTest do
                %{id: 1},
                %{user_id: 2}
              ) == %UnauthorizedError{
-               allow_checks: %CheckResult{
+               allow_checks: %Check{
                  name: :own_resource,
                  arg: nil,
                  result: false
@@ -758,7 +758,7 @@ defmodule LetMe.PolicyTest do
                %{id: 1},
                %{user_id: 2}
              ) == %UnauthorizedError{
-               allow_checks: %CheckResult{
+               allow_checks: %Check{
                  name: :own_resource,
                  arg: nil,
                  result: false
@@ -798,7 +798,7 @@ defmodule LetMe.PolicyTest do
                %{id: 1, role: :editor},
                %{user_id: 2}
              ) == %UnauthorizedError{
-               allow_checks: %CheckResult{
+               allow_checks: %Check{
                  name: :own_resource,
                  arg: nil,
                  result: false
@@ -815,8 +815,8 @@ defmodule LetMe.PolicyTest do
              ) == %UnauthorizedError{
                allow_checks: %AllOf{
                  clauses: [
-                   %CheckResult{name: :own_resource, arg: nil, result: true},
-                   %CheckResult{name: :role, arg: :editor, result: false}
+                   %Check{name: :own_resource, arg: nil, result: true},
+                   %Check{name: :role, arg: :editor, result: false}
                  ]
                },
                deny_checks: nil,
@@ -829,7 +829,7 @@ defmodule LetMe.PolicyTest do
                %{id: 1, role: :writer},
                %{user_id: 2}
              ) == %UnauthorizedError{
-               allow_checks: %CheckResult{
+               allow_checks: %Check{
                  name: :own_resource,
                  arg: nil,
                  result: false
@@ -865,8 +865,8 @@ defmodule LetMe.PolicyTest do
              ) == %UnauthorizedError{
                allow_checks: %AnyOf{
                  clauses: [
-                   %CheckResult{name: :role, arg: :editor, result: false},
-                   %CheckResult{name: :own_resource, arg: nil, result: false}
+                   %Check{name: :role, arg: :editor, result: false},
+                   %Check{name: :own_resource, arg: nil, result: false}
                  ]
                },
                deny_checks: nil,
@@ -886,8 +886,8 @@ defmodule LetMe.PolicyTest do
                allow_checks: nil,
                deny_checks: %AllOf{
                  clauses: [
-                   %CheckResult{name: :same_user, arg: nil, result: true},
-                   %CheckResult{name: :role, arg: :writer, result: true}
+                   %Check{name: :same_user, arg: nil, result: true},
+                   %Check{name: :role, arg: :writer, result: true}
                  ]
                },
                message: "unauthorized"
@@ -919,7 +919,7 @@ defmodule LetMe.PolicyTest do
                %{id: 1}
              ) == %LetMe.UnauthorizedError{
                allow_checks: nil,
-               deny_checks: %CheckResult{
+               deny_checks: %Check{
                  arg: nil,
                  name: :same_user,
                  result: true
@@ -939,7 +939,7 @@ defmodule LetMe.PolicyTest do
                %{id: 1}
              ) == %UnauthorizedError{
                allow_checks: nil,
-               deny_checks: %CheckResult{
+               deny_checks: %Check{
                  arg: nil,
                  name: :same_user,
                  result: true
@@ -956,8 +956,8 @@ defmodule LetMe.PolicyTest do
                allow_checks: nil,
                deny_checks: %AnyOf{
                  clauses: [
-                   %CheckResult{name: :same_user, arg: nil, result: false},
-                   %CheckResult{name: :role, arg: :writer, result: true}
+                   %Check{name: :same_user, arg: nil, result: false},
+                   %Check{name: :role, arg: :writer, result: true}
                  ]
                },
                message: "unauthorized"
@@ -1095,7 +1095,7 @@ defmodule LetMe.PolicyTest do
                %{role: :admin, state: :suspended}
              ) == %UnauthorizedError{
                allow_checks: nil,
-               deny_checks: %CheckResult{
+               deny_checks: %Check{
                  arg: nil,
                  name: :user_suspended,
                  result: {:ok, "user suspended"}
@@ -1108,12 +1108,12 @@ defmodule LetMe.PolicyTest do
                :simple_with_reason,
                %{role: :writer, state: :active}
              ) == %UnauthorizedError{
-               allow_checks: %CheckResult{
+               allow_checks: %Check{
                  arg: :admin,
                  name: :role_with_reason,
                  result: {:error, "writer not allowed"}
                },
-               deny_checks: %CheckResult{
+               deny_checks: %Check{
                  arg: nil,
                  name: :user_suspended,
                  result: :error

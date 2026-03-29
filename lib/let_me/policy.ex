@@ -362,7 +362,7 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.authorize(:article_update, user_2, article)
       {:error, %LetMe.UnauthorizedError{
         message: "unauthorized",
-        allow_checks: %LetMe.CheckResult{
+        allow_checks: %LetMe.Check{
           arg: nil,
           name: :own_resource,
           result: false
@@ -388,12 +388,12 @@ defmodule LetMe.Policy do
         %LetMe.UnauthorizedError{
           allow_checks: %LetMe.AnyOf{
             clauses: [
-              %LetMe.CheckResult{
+              %LetMe.Check{
                 name: :role,
                 arg: :admin,
                 result: false
               },
-              %LetMe.CheckResult{
+              %LetMe.Check{
                 name: :role,
                 arg: :client,
                 result: false

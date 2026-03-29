@@ -89,7 +89,7 @@ defmodule LetMe.MixProject do
         Structs: [
           LetMe.AllOf,
           LetMe.AnyOf,
-          LetMe.CheckResult,
+          LetMe.Check,
           LetMe.Literal,
           LetMe.Rule
         ]

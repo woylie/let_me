@@ -4,10 +4,10 @@ defmodule LetMe.AnyOf do
   """
 
   alias LetMe.AllOf
-  alias LetMe.CheckResult
+  alias LetMe.Check
   alias LetMe.Literal
 
-  @type t :: %__MODULE__{clauses: [CheckResult.t() | Literal.t() | AllOf.t()]}
+  @type t :: %__MODULE__{clauses: [Check.t() | Literal.t() | AllOf.t()]}
 
   defstruct clauses: []
 end

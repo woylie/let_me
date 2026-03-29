@@ -5,7 +5,7 @@ defmodule LetMe.UnauthorizedError do
 
   alias LetMe.AllOf
   alias LetMe.AnyOf
-  alias LetMe.CheckResult
+  alias LetMe.Check
   alias LetMe.Literal
 
   @default_message "unauthorized"
@@ -26,7 +26,7 @@ defmodule LetMe.UnauthorizedError do
           deny_checks: checks
         }
 
-  @type checks :: CheckResult.t() | Literal.t() | AnyOf.t() | AllOf.t() | nil
+  @type checks :: Check.t() | Literal.t() | AnyOf.t() | AllOf.t() | nil
 
   defexception [:message, :allow_checks, :deny_checks]
 
@@ -67,7 +67,7 @@ defmodule LetMe.UnauthorizedError do
   end
 
   defp to_check({{name, arg}, result}) do
-    %CheckResult{name: name, arg: arg, result: result}
+    %Check{name: name, arg: arg, result: result}
   end
 
   defp to_check(bool) when is_boolean(bool) do
@@ -75,6 +75,6 @@ defmodule LetMe.UnauthorizedError do
   end
 
   defp to_check({name, result}) do
-    %CheckResult{name: name, result: result}
+    %Check{name: name, result: result}
   end
 end
