@@ -4,11 +4,14 @@ defmodule LetMe.PolicyTest do
 
   import ExUnit.CaptureLog
 
+  alias LetMe.AllOf
+  alias LetMe.AnyOf
+  alias LetMe.CheckResult
+  alias LetMe.Literal
   alias LetMe.Rule
+  alias LetMe.UnauthorizedError
   alias MyApp.Blog.Article
   alias MyApp.Policy
-  alias MyApp.PolicyShort
-  alias MyApp.PolicyStruct
   alias MyApp.TestPolicy
 
   defmodule TestPolicy do
@@ -67,8 +70,18 @@ defmodule LetMe.PolicyTest do
         allow []
       end
 
+      action :empty_list_with_additional_rule do
+        allow role: :admin
+        allow []
+      end
+
       action :with_metadata do
         metadata :desc_ja, "指定されたユーザーに対して、指定された機能を無効にします。"
+      end
+
+      action :with_reason do
+        allow role_with_reason: :admin
+        deny :user_suspended
       end
     end
 
@@ -193,7 +206,6 @@ defmodule LetMe.PolicyTest do
   end
 
   describe "lazy evaluation" do
-    @describetag :this
     test "does not evaluate second allow check if first one is false" do
       assert TestPolicy.authorize?(:lazy_two_allow_checks_first_false, %{}) ==
                false
@@ -481,114 +493,219 @@ defmodule LetMe.PolicyTest do
     end
   end
 
-  describe "authorize?/4" do
+  describe "authorize" do
     test "evaluates a single allow check without options" do
-      assert TestPolicy.authorize?(
-               :simple_allow_without_options,
-               %{id: 1},
-               %{user_id: 1}
-             ) == true
+      assert_authorized TestPolicy,
+                        :simple_allow_without_options,
+                        %{id: 1},
+                        %{user_id: 1}
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :simple_allow_without_options,
                %{id: 1},
                %{user_id: 2}
-             ) == false
+             ) == %UnauthorizedError{
+               allow_checks: %CheckResult{
+                 arg: nil,
+                 name: :own_resource,
+                 result: false
+               },
+               deny_checks: nil,
+               message: "unauthorized"
+             }
     end
 
     test "evaluates a single allow check with options" do
-      assert TestPolicy.authorize?(
-               :simple_allow_with_options,
-               %{role: :editor}
-             ) == true
+      assert_authorized TestPolicy,
+                        :simple_allow_with_options,
+                        %{role: :editor}
 
       assert TestPolicy.authorize?(
                :simple_allow_with_options,
                %{role: :writer}
              ) == false
+
+      assert unauthorized_error(
+               TestPolicy,
+               :simple_allow_with_options,
+               %{role: :writer}
+             ) == %UnauthorizedError{
+               message: "unauthorized",
+               allow_checks: %CheckResult{
+                 name: :role,
+                 arg: :editor,
+                 result: false
+               },
+               deny_checks: nil
+             }
     end
 
     test "evaluates a boolean as an allow check" do
-      assert TestPolicy.authorize?(:simple_allow_true, %{}) == true
+      assert_authorized TestPolicy, :simple_allow_true, %{}
       assert TestPolicy.authorize?(:simple_allow_false, %{}) == false
+
+      assert unauthorized_error(TestPolicy, :simple_allow_false, %{}) ==
+               %UnauthorizedError{
+                 message: "unauthorized",
+                 allow_checks: %Literal{result: false},
+                 deny_checks: nil
+               }
     end
 
     test "evaluates a single deny check without options" do
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :simple_deny_without_options,
                %{id: 1},
                %{id: 1}
-             ) == false
+             ) == %UnauthorizedError{
+               message: "unauthorized",
+               allow_checks: nil,
+               deny_checks: %CheckResult{
+                 name: :same_user,
+                 arg: nil,
+                 result: true
+               }
+             }
 
-      assert TestPolicy.authorize?(
-               :simple_deny_without_options,
-               %{id: 1},
-               %{id: 2}
-             ) == true
+      assert_authorized TestPolicy,
+                        :simple_deny_without_options,
+                        %{id: 1},
+                        %{id: 2}
     end
 
     test "evaluates a single deny check with options" do
-      assert TestPolicy.authorize?(
-               :simple_deny_with_options,
-               %{role: :editor}
-             ) == true
+      assert_authorized TestPolicy,
+                        :simple_deny_with_options,
+                        %{role: :editor}
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :simple_deny_with_options,
                %{role: :writer}
-             ) == false
+             ) == %UnauthorizedError{
+               message: "unauthorized",
+               allow_checks: nil,
+               deny_checks: %CheckResult{
+                 name: :role,
+                 arg: :writer,
+                 result: true
+               }
+             }
     end
 
     test "evaluates a boolean as a deny check" do
-      assert TestPolicy.authorize?(:simple_deny_true, %{}) == false
-      assert TestPolicy.authorize?(:simple_deny_false, %{}) == true
+      assert unauthorized_error(TestPolicy, :simple_deny_true, %{}) ==
+               %UnauthorizedError{
+                 message: "unauthorized",
+                 allow_checks: nil,
+                 deny_checks: %Literal{result: true}
+               }
+
+      assert_authorized TestPolicy, :simple_deny_false, %{}
     end
 
     test "deny check without any allow checks is always false" do
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :simple_no_allow,
                %{id: 1},
                %{id: 1}
-             ) == false
+             ) == %UnauthorizedError{
+               message: "unauthorized",
+               allow_checks: %Literal{result: false},
+               deny_checks: nil
+             }
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :simple_no_allow,
                %{id: 1},
                %{id: 2}
-             ) == false
+             ) == %UnauthorizedError{
+               message: "unauthorized",
+               allow_checks: %Literal{result: false},
+               deny_checks: nil
+             }
     end
 
-    test "action without any checks is always false" do
-      assert TestPolicy.authorize?(:simple_no_checks, %{}) == false
+    test "action without any checks is always unauthorized" do
+      assert unauthorized_error(TestPolicy, :simple_no_checks, %{}) ==
+               %UnauthorizedError{
+                 message: "unauthorized",
+                 allow_checks: %Literal{result: false},
+                 deny_checks: nil
+               }
 
-      assert TestPolicy.authorize?(:simple_empty_list_check, %{}) ==
-               false
+      assert unauthorized_error(TestPolicy, :simple_empty_list_check, %{}) ==
+               %UnauthorizedError{
+                 message: "unauthorized",
+                 allow_checks: %Literal{result: false},
+                 deny_checks: nil
+               }
+    end
+
+    test "rule without checks is filtered if combined with other rule" do
+      assert_authorized TestPolicy,
+                        :simple_empty_list_with_additional_rule,
+                        %{role: :admin}
+
+      assert unauthorized_error(
+               TestPolicy,
+               :simple_empty_list_with_additional_rule,
+               %{role: :writer}
+             ) == %UnauthorizedError{
+               message: "unauthorized",
+               allow_checks: %CheckResult{
+                 name: :role,
+                 arg: :admin,
+                 result: false
+               },
+               deny_checks: nil
+             }
     end
 
     test "action with list of names results in multiple rules" do
-      assert TestPolicy.authorize?(
-               :simple_list_of_actions_1,
-               %{id: 1},
-               %{user_id: 1}
-             ) == true
+      assert_authorized TestPolicy,
+                        :simple_list_of_actions_1,
+                        %{id: 1},
+                        %{user_id: 1}
 
-      assert TestPolicy.authorize?(
-               :simple_list_of_actions_2,
-               %{id: 1},
-               %{user_id: 1}
-             ) == true
+      assert_authorized TestPolicy,
+                        :simple_list_of_actions_2,
+                        %{id: 1},
+                        %{user_id: 1}
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :simple_list_of_actions_1,
                %{id: 1},
                %{user_id: 2}
-             ) == false
+             ) == %UnauthorizedError{
+               allow_checks: %CheckResult{
+                 name: :own_resource,
+                 arg: nil,
+                 result: false
+               },
+               deny_checks: nil,
+               message: "unauthorized"
+             }
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :simple_list_of_actions_2,
                %{id: 1},
                %{user_id: 2}
-             ) == false
+             ) == %UnauthorizedError{
+               allow_checks: %CheckResult{
+                 name: :own_resource,
+                 arg: nil,
+                 result: false
+               },
+               deny_checks: nil,
+               message: "unauthorized"
+             }
     end
 
     test "returns false and logs warning if rule does not exist" do
@@ -596,117 +713,195 @@ defmodule LetMe.PolicyTest do
                assert TestPolicy.authorize?(:does_not_exist, %{}) ==
                         false
              end) =~ "Permission checked for rule that does not exist"
+
+      assert capture_log([level: :warning], fn ->
+               assert TestPolicy.authorize(:does_not_exist, %{}) ==
+                        {:error,
+                         %UnauthorizedError{
+                           allow_checks: nil,
+                           deny_checks: nil,
+                           message: "unauthorized"
+                         }}
+             end) =~ "Permission checked for rule that does not exist"
     end
 
     test "evaluates a list of allow checks with AND" do
       # allow [:own_resource, role: :editor]
-      assert TestPolicy.authorize?(
-               :complex_multiple_allow_checks,
-               %{id: 1, role: :editor},
-               %{user_id: 1}
-             ) == true
+      assert_authorized TestPolicy,
+                        :complex_multiple_allow_checks,
+                        %{id: 1, role: :editor},
+                        %{user_id: 1}
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :complex_multiple_allow_checks,
                %{id: 1, role: :editor},
                %{user_id: 2}
-             ) == false
+             ) == %UnauthorizedError{
+               allow_checks: %CheckResult{
+                 name: :own_resource,
+                 arg: nil,
+                 result: false
+               },
+               deny_checks: nil,
+               message: "unauthorized"
+             }
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :complex_multiple_allow_checks,
                %{id: 1, role: :writer},
                %{user_id: 1}
-             ) == false
+             ) == %UnauthorizedError{
+               allow_checks: %AllOf{
+                 clauses: [
+                   %CheckResult{name: :own_resource, arg: nil, result: true},
+                   %CheckResult{name: :role, arg: :editor, result: false}
+                 ]
+               },
+               deny_checks: nil,
+               message: "unauthorized"
+             }
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :complex_multiple_allow_checks,
                %{id: 1, role: :writer},
                %{user_id: 2}
-             ) == false
+             ) == %UnauthorizedError{
+               allow_checks: %CheckResult{
+                 name: :own_resource,
+                 arg: nil,
+                 result: false
+               },
+               deny_checks: nil,
+               message: "unauthorized"
+             }
     end
 
     test "evaluates a multiple allow conditions with OR" do
       # allow role: :editor
       # allow :own_resource
-      assert TestPolicy.authorize?(
-               :complex_multiple_allow_conditions,
-               %{id: 1, role: :editor},
-               %{user_id: 1}
-             ) == true
+      assert_authorized TestPolicy,
+                        :complex_multiple_allow_conditions,
+                        %{id: 1, role: :editor},
+                        %{user_id: 1}
 
-      assert TestPolicy.authorize?(
-               :complex_multiple_allow_conditions,
-               %{id: 1, role: :editor},
-               %{user_id: 2}
-             ) == true
+      assert_authorized TestPolicy,
+                        :complex_multiple_allow_conditions,
+                        %{id: 1, role: :editor},
+                        %{user_id: 2}
 
-      assert TestPolicy.authorize?(
-               :complex_multiple_allow_conditions,
-               %{id: 1, role: :writer},
-               %{user_id: 1}
-             ) == true
+      assert_authorized TestPolicy,
+                        :complex_multiple_allow_conditions,
+                        %{id: 1, role: :writer},
+                        %{user_id: 1}
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :complex_multiple_allow_conditions,
                %{id: 1, role: :writer},
                %{user_id: 2}
-             ) == false
+             ) == %UnauthorizedError{
+               allow_checks: %AnyOf{
+                 clauses: [
+                   %CheckResult{name: :role, arg: :editor, result: false},
+                   %CheckResult{name: :own_resource, arg: nil, result: false}
+                 ]
+               },
+               deny_checks: nil,
+               message: "unauthorized"
+             }
     end
 
     test "evaluates a list of deny checks with AND" do
       # deny [:same_user, role: :writer]
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :complex_multiple_deny_checks,
                %{id: 1, role: :writer},
                %{id: 1}
-             ) == false
+             ) == %UnauthorizedError{
+               allow_checks: nil,
+               deny_checks: %AllOf{
+                 clauses: [
+                   %CheckResult{name: :same_user, arg: nil, result: true},
+                   %CheckResult{name: :role, arg: :writer, result: true}
+                 ]
+               },
+               message: "unauthorized"
+             }
 
-      assert TestPolicy.authorize?(
-               :complex_multiple_deny_checks,
-               %{id: 1, role: :writer},
-               %{id: 2}
-             ) == true
+      assert_authorized TestPolicy,
+                        :complex_multiple_deny_checks,
+                        %{id: 1, role: :writer},
+                        %{id: 2}
 
-      assert TestPolicy.authorize?(
-               :complex_multiple_deny_checks,
-               %{id: 1, role: :editor},
-               %{id: 1}
-             ) == true
+      assert_authorized TestPolicy,
+                        :complex_multiple_deny_checks,
+                        %{id: 1, role: :editor},
+                        %{id: 1}
 
-      assert TestPolicy.authorize?(
-               :complex_multiple_deny_checks,
-               %{id: 1, role: :editor},
-               %{id: 2}
-             ) == true
+      assert_authorized TestPolicy,
+                        :complex_multiple_deny_checks,
+                        %{id: 1, role: :editor},
+                        %{id: 2}
     end
 
     test "evaluates a multiple deny conditions with OR" do
       # deny :same_user
       # deny role: :writer
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :complex_multiple_deny_conditions,
                %{id: 1, role: :editor},
                %{id: 1}
-             ) == false
+             ) == %LetMe.UnauthorizedError{
+               allow_checks: nil,
+               deny_checks: %CheckResult{
+                 arg: nil,
+                 name: :same_user,
+                 result: true
+               },
+               message: "unauthorized"
+             }
 
-      assert TestPolicy.authorize?(
-               :complex_multiple_deny_conditions,
-               %{id: 1, role: :editor},
-               %{id: 2}
-             ) == true
+      assert_authorized TestPolicy,
+                        :complex_multiple_deny_conditions,
+                        %{id: 1, role: :editor},
+                        %{id: 2}
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :complex_multiple_deny_conditions,
                %{id: 1, role: :writer},
                %{id: 1}
-             ) == false
+             ) == %UnauthorizedError{
+               allow_checks: nil,
+               deny_checks: %CheckResult{
+                 arg: nil,
+                 name: :same_user,
+                 result: true
+               },
+               message: "unauthorized"
+             }
 
-      assert TestPolicy.authorize?(
+      assert unauthorized_error(
+               TestPolicy,
                :complex_multiple_deny_conditions,
                %{id: 1, role: :writer},
                %{id: 2}
-             ) == false
+             ) == %UnauthorizedError{
+               allow_checks: nil,
+               deny_checks: %AnyOf{
+                 clauses: [
+                   %CheckResult{name: :same_user, arg: nil, result: false},
+                   %CheckResult{name: :role, arg: :writer, result: true}
+                 ]
+               },
+               message: "unauthorized"
+             }
     end
 
     test "can configure check module with use option" do
@@ -820,7 +1015,7 @@ defmodule LetMe.PolicyTest do
             object :some_object do
               action :single_mfa_prehook do
                 pre_hooks {TestHooks, :preload_handsomeness, %{factor: 2}}
-                allow true
+                allow :own_resource
               end
             end
           end
@@ -828,40 +1023,43 @@ defmodule LetMe.PolicyTest do
 
       assert error.message =~ "Invalid pre-hook options"
     end
-  end
 
-  describe "authorize/4" do
-    test "evaluates a single allow check without options" do
-      assert TestPolicy.authorize(
-               :simple_allow_without_options,
-               %{id: 1},
-               %{user_id: 1}
-             ) == :ok
+    test "handles ok/error tuples" do
+      assert_authorized TestPolicy,
+                        :simple_with_reason,
+                        %{role: :admin, state: :active}
 
-      assert TestPolicy.authorize(
-               :simple_allow_without_options,
-               %{id: 1},
-               %{user_id: 2}
-             ) == {:error, :unauthorized}
-    end
+      assert unauthorized_error(
+               TestPolicy,
+               :simple_with_reason,
+               %{role: :admin, state: :suspended}
+             ) == %UnauthorizedError{
+               allow_checks: nil,
+               deny_checks: %CheckResult{
+                 arg: nil,
+                 name: :user_suspended,
+                 result: {:ok, "user suspended"}
+               },
+               message: "unauthorized"
+             }
 
-    test "can configure error reason" do
-      # PolicyShort module is configured to use :forbidden
-      assert PolicyShort.authorize(:article_create, %{role: :nobody}) ==
-               {:error, :forbidden}
-    end
-
-    test "can configure error message" do
-      assert_raise LetMe.UnauthorizedError, "What were you thinking?", fn ->
-        PolicyShort.authorize!(:article_create, %{role: :nobody})
-      end
-    end
-
-    test "returns error struct if configured" do
-      # PolicyShort module sets error_reason to :struct
-      assert PolicyStruct.authorize(:article_create, %{role: :nobody}) ==
-               {:error,
-                %LetMe.UnauthorizedError{message: "What were you thinking?"}}
+      assert unauthorized_error(
+               TestPolicy,
+               :simple_with_reason,
+               %{role: :writer, state: :active}
+             ) == %UnauthorizedError{
+               allow_checks: %CheckResult{
+                 arg: :admin,
+                 name: :role_with_reason,
+                 result: {:error, "writer not allowed"}
+               },
+               deny_checks: %CheckResult{
+                 arg: nil,
+                 name: :user_suspended,
+                 result: :error
+               },
+               message: "unauthorized"
+             }
     end
   end
 
@@ -897,5 +1095,16 @@ defmodule LetMe.PolicyTest do
                       ]}, []}
                 ]}
     end
+  end
+
+  defp assert_authorized(policy, action, subject, object \\ nil) do
+    assert policy.authorize?(action, subject, object) == true
+    assert policy.authorize(action, subject, object) == :ok
+  end
+
+  defp unauthorized_error(policy, action, subject, object \\ nil) do
+    assert policy.authorize?(action, subject, object) == false
+    assert {:error, err} = policy.authorize(action, subject, object)
+    err
   end
 end

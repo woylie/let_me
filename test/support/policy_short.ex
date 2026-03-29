@@ -1,10 +1,7 @@
 defmodule MyApp.PolicyShort do
   @moduledoc false
 
-  use LetMe.Policy,
-    check_module: MyApp.Checks,
-    error_reason: :forbidden,
-    error_message: "What were you thinking?"
+  use LetMe.Policy, check_module: MyApp.Checks
 
   object :article do
     action :create do

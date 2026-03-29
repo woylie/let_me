@@ -47,11 +47,6 @@ defmodule LetMe.Policy do
 
   - `check_module` - The module where the check functions are defined. Defaults
     to `__MODULE__.Checks`.
-  - `error_reason` - The error reason used by the `c:authorize/4` callback.
-    Defaults to `:unauthorized`. If set to `:struct`, a
-    `LetMe.UnauthorizedError` struct is returned.
-  - `error_message` - The error message used by the `c:authorize!/4`. Defaults
-    to "unauthorized".
 
   ## Check module
 
@@ -365,7 +360,14 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.authorize(:article_update, user_1, article)
       :ok
       iex> MyApp.Policy.authorize(:article_update, user_2, article)
-      {:error, :unauthorized}
+      {:error, %LetMe.UnauthorizedError{
+        message: "unauthorized",
+        allow_checks: %LetMe.CheckResult{
+          arg: nil,
+          name: :own_resource,
+          result: false
+        }
+      }}
 
   If the checks don't require the object, it can be omitted.
 
@@ -381,7 +383,27 @@ defmodule LetMe.Policy do
       :ok
       iex> user = %{id: 2, role: :user}
       iex> MyApp.Policy.authorize(:user_list, user)
-      {:error, :unauthorized}
+      {
+        :error,
+        %LetMe.UnauthorizedError{
+          allow_checks: %LetMe.AnyOf{
+            clauses: [
+              %LetMe.CheckResult{
+                name: :role,
+                arg: :admin,
+                result: false
+              },
+              %LetMe.CheckResult{
+                name: :role,
+                arg: :client,
+                result: false
+              }
+            ]
+          },
+          deny_checks: nil,
+          message: "unauthorized"
+        }
+      }
 
   The error reason can be customized by setting the `:error_reason` option when
   using the module. If set to `:struct`, the return value is
@@ -454,9 +476,7 @@ defmodule LetMe.Policy do
   defmacro __using__(opts \\ []) do
     opts =
       Keyword.validate!(opts,
-        check_module: Module.concat(__CALLER__.module, Checks),
-        error_reason: :unauthorized,
-        error_message: "unauthorized"
+        check_module: Module.concat(__CALLER__.module, Checks)
       )
 
     quote do
@@ -552,9 +572,9 @@ defmodule LetMe.Policy do
           checks
           |> Enum.frequencies()
           |> Enum.filter(fn {_, count} -> count > 1 end)
+          # coveralls-ignore-start
           |> Enum.map(&elem(&1, 0))
 
-        # coveralls-ignore-start
         if duplicate_checks != [] do
           raise """
           duplicate authorization checks
@@ -885,6 +905,7 @@ defmodule LetMe.Policy do
   """
   @spec metadata(atom(), term()) :: Macro.t()
   defmacro metadata(key, value) do
+    # coveralls-ignore-start
     unless is_atom(key) do
       raise """
       Invalid metadata key.
@@ -892,6 +913,8 @@ defmodule LetMe.Policy do
       Expected an atom, got: #{inspect(key)}
       """
     end
+
+    # coveralls-ignore-stop
 
     quote do
       current_meta = get_acc_attribute(__MODULE__, :metadata)

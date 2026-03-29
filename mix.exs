@@ -84,6 +84,15 @@ defmodule LetMe.MixProject do
       skip_undefined_reference_warnings_on: ["CHANGELOG.md"],
       groups_for_extras: [
         Cheatsheets: ~r/cheatsheets\/.?/
+      ],
+      groups_for_modules: [
+        Structs: [
+          LetMe.AllOf,
+          LetMe.AnyOf,
+          LetMe.CheckResult,
+          LetMe.Literal,
+          LetMe.Rule
+        ]
       ]
     ]
   end

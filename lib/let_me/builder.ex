@@ -66,9 +66,7 @@ defmodule LetMe.Builder do
   # credo:disable-for-next-line
   def authorize_functions(%{} = rules, opts) do
     check_module = Keyword.fetch!(opts, :check_module)
-    error_reason = Keyword.fetch!(opts, :error_reason)
-    error_message = Keyword.fetch!(opts, :error_message)
-    rule_clauses = Enum.map(rules, &permit_function_clause(&1, check_module))
+    rule_clauses = Enum.map(rules, &authorize_function_clause(&1, check_module))
 
     typespec =
       rules
@@ -84,72 +82,142 @@ defmodule LetMe.Builder do
 
       @impl LetMe.Policy
       @spec authorize?(action(), any, any, keyword) :: boolean()
-      def authorize?(action, subject, object \\ nil, opts \\ [])
-
-      unquote(rule_clauses)
-
-      def authorize?(action, _, _, _) when is_atom(action) do
-        Logger.warning(
-          "Permission checked for rule that does not exist: #{action}",
-          action: action,
-          policy_module: unquote(check_module)
-        )
-
-        false
+      def authorize?(action, subject, object \\ nil, opts \\ []) do
+        case do_authorize(action, subject, object, opts) do
+          :ok -> true
+          {:error, _, _} -> false
+        end
       end
 
       @impl LetMe.Policy
-      if unquote(error_reason) == :struct do
-        @spec authorize(action(), any, any, keyword) ::
-                :ok | {:error, LetMe.UnauthorizedError.t()}
-        def authorize(action, subject, object \\ nil, opts \\ []) do
-          if authorize?(action, subject, object, opts),
-            do: :ok,
-            else:
-              {:error,
-               %LetMe.UnauthorizedError{message: unquote(error_message)}}
-        end
-      else
-        @spec authorize(action(), any, any, keyword) ::
-                :ok | {:error, unquote(error_reason)}
-        def authorize(action, subject, object \\ nil, opts \\ []) do
-          if authorize?(action, subject, object, opts),
-            do: :ok,
-            else: {:error, unquote(error_reason)}
+      @spec authorize(action(), any, any, keyword) ::
+              :ok | {:error, LetMe.UnauthorizedError.t()}
+      def authorize(action, subject, object \\ nil, opts \\ []) do
+        case do_authorize(action, subject, object, opts) do
+          :ok ->
+            :ok
+
+          {:error, allow_checks, deny_checks} ->
+            {:error, LetMe.UnauthorizedError.new(allow_checks, deny_checks)}
         end
       end
 
       @impl LetMe.Policy
       @spec authorize!(action(), any, any, keyword) :: :ok
       def authorize!(action, subject, object \\ nil, opts \\ []) do
-        if authorize?(action, subject, object, opts),
-          do: :ok,
-          else: raise(LetMe.UnauthorizedError, message: unquote(error_message))
+        case do_authorize(action, subject, object, opts) do
+          :ok ->
+            :ok
+
+          {:error, allow_checks, deny_checks} ->
+            raise LetMe.UnauthorizedError.new(allow_checks, deny_checks)
+        end
+      end
+
+      unquote(rule_clauses)
+
+      defp do_authorize(action, _, _, _) when is_atom(action) do
+        Logger.warning(
+          "Permission checked for rule that does not exist: #{action}",
+          action: action,
+          policy_module: unquote(check_module)
+        )
+
+        {:error, [], []}
       end
     end
   end
 
-  defp permit_function_clause(
+  defp authorize_function_clause(
          {rule_name, %LetMe.Rule{} = rule},
          check_module
        ) do
-    pre_hook_calls = build_pre_hook_calls(rule.pre_hooks, check_module)
     allow_condition = build_conditions(rule.allow, check_module)
     deny_condition = build_conditions(rule.deny, check_module)
 
-    # check for conditions that are always true or false to prevent
-    # "this check/guard will always yield the same result" warning
-    combined_condition =
-      case {allow_condition, deny_condition} do
-        {false, _} -> false
-        {_, false} -> allow_condition
-        _ -> quote(do: !unquote(deny_condition) && unquote(allow_condition))
-      end
+    case combine_conditions(allow_condition, deny_condition) do
+      true ->
+        quote do
+          defp do_authorize(unquote(rule_name), _, _, _) do
+            :ok
+          end
+        end
 
+      :deny_true ->
+        quote do
+          defp do_authorize(unquote(rule_name), _, _, _) do
+            {:error, [], [[true]]}
+          end
+        end
+
+      :allow_false ->
+        quote do
+          defp do_authorize(unquote(rule_name), _, _, _) do
+            {:error, [[false]], []}
+          end
+        end
+
+      combined_condition ->
+        pre_hook_calls = build_pre_hook_calls(rule.pre_hooks, check_module)
+
+        quote do
+          defp do_authorize(unquote(rule_name), subject, object, opts) do
+            unquote(pre_hook_calls)
+            unquote(combined_condition)
+          end
+        end
+    end
+  end
+
+  # allow false -> always unauthorized
+  defp combine_conditions(false, _), do: :allow_false
+
+  # deny true -> always unauthorized
+  defp combine_conditions(_, true), do: :deny_true
+
+  # allow true, deny false -> always authorized
+  defp combine_conditions(true, false), do: true
+
+  # allow true with deny checks -> only check deny conditions
+  defp combine_conditions(true, deny_condition) do
     quote do
-      def authorize?(unquote(rule_name), subject, object, opts) do
-        unquote(pre_hook_calls)
-        unquote(combined_condition)
+      case unquote(deny_condition) do
+        {false, _} ->
+          :ok
+
+        {true, deny_checks} ->
+          {:error, [], deny_checks}
+      end
+    end
+  end
+
+  # deny false with allow conditions -> only check allow conditions
+  defp combine_conditions(allow_condition, false) do
+    quote do
+      case unquote(allow_condition) do
+        {true, _} ->
+          :ok
+
+        {false, allow_checks} ->
+          {:error, allow_checks, []}
+      end
+    end
+  end
+
+  defp combine_conditions(allow_condition, deny_condition) do
+    quote do
+      case unquote(deny_condition) do
+        {true, deny_checks} ->
+          {:error, [], deny_checks}
+
+        {false, deny_checks} ->
+          case unquote(allow_condition) do
+            {true, _} ->
+              :ok
+
+            {false, allow_checks} ->
+              {:error, allow_checks, deny_checks}
+          end
       end
     end
   end
@@ -184,75 +252,45 @@ defmodule LetMe.Builder do
         Enum.reduce(
           unquote(Macro.escape(functions)),
           {subject, object},
-          fn {module, function, args}, {subject, object} ->
-            args =
-              args
-              |> List.flatten()
-              |> Keyword.merge(opts)
-              |> case do
-                [] -> []
-                args -> [args]
-              end
-
-            apply(module, function, [subject, object] ++ args)
-          end
+          &LetMe.Builder.prehook_reducer(&1, &2, opts)
         )
     end
+  end
+
+  def prehook_reducer({module, function, args}, {subject, object}, opts) do
+    args =
+      args
+      |> List.flatten()
+      |> Keyword.merge(opts)
+      |> case do
+        [] -> []
+        args -> [args]
+      end
+
+    apply(module, function, [subject, object] ++ args)
   end
 
   defp build_conditions([], _), do: false
 
   defp build_conditions(conditions, check_module) when is_list(conditions) do
-    quote do
-      LetMe.Builder.evaluate_conditions(
-        unquote(conditions),
-        unquote(check_module),
-        subject,
-        object
-      )
+    conditions = Enum.reject(conditions, &(&1 == []))
+
+    cond do
+      conditions == [] ->
+        false
+
+      Enum.any?(conditions, &(&1 == true)) ->
+        true
+
+      true ->
+        quote do
+          LetMe.Evaluator.evaluate_conditions(
+            unquote(conditions),
+            unquote(check_module),
+            subject,
+            object
+          )
+        end
     end
-  end
-
-  def evaluate_conditions([checks], check_module, subject, object) do
-    evaluate_checks(checks, check_module, subject, object)
-  end
-
-  def evaluate_conditions(conditions, check_module, subject, object) do
-    Enum.any?(conditions, &evaluate_checks(&1, check_module, subject, object))
-  end
-
-  defp evaluate_checks([], _, _, _) do
-    false
-  end
-
-  defp evaluate_checks([check], check_module, subject, object) do
-    evaluate_check(check, check_module, subject, object)
-  end
-
-  defp evaluate_checks(checks, check_module, subject, object)
-       when is_list(checks) do
-    Enum.all?(checks, &evaluate_check(&1, check_module, subject, object))
-  end
-
-  defp evaluate_checks(check, check_module, subject, object) do
-    evaluate_check(check, check_module, subject, object)
-  end
-
-  defp evaluate_check(true, _, _, _) do
-    true
-  end
-
-  defp evaluate_check(false, _, _, _) do
-    false
-  end
-
-  defp evaluate_check(function, check_module, subject, object)
-       when is_atom(function) do
-    apply(check_module, function, [subject, object])
-  end
-
-  defp evaluate_check({function, opts}, check_module, subject, object)
-       when is_atom(function) do
-    apply(check_module, function, [subject, object, opts])
   end
 end
