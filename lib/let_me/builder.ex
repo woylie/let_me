@@ -110,7 +110,9 @@ defmodule LetMe.Builder do
             :ok
 
           {:error, allow_checks, deny_checks} ->
-            raise LetMe.UnauthorizedError.new(allow_checks, deny_checks)
+            raise LetMe.UnauthorizedError,
+              allow_checks: allow_checks,
+              deny_checks: deny_checks
         end
       end
 

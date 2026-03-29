@@ -22,9 +22,11 @@ defmodule LetMe.UnauthorizedError do
   """
   @type t :: %__MODULE__{
           message: String.t(),
-          allow_checks: CheckResult.t() | Literal.t() | AnyOf.t() | AllOf.t(),
-          deny_checks: CheckResult.t() | Literal.t() | AnyOf.t() | AllOf.t()
+          allow_checks: checks,
+          deny_checks: checks
         }
+
+  @type checks :: CheckResult.t() | Literal.t() | AnyOf.t() | AllOf.t() | nil
 
   defexception [:message, :allow_checks, :deny_checks]
 
@@ -32,8 +34,13 @@ defmodule LetMe.UnauthorizedError do
     exception.message || @default_message
   end
 
+  @spec new(String.t()) :: __MODULE__.t()
+  def new(message \\ @default_message) do
+    %__MODULE__{message: message}
+  end
+
   @doc false
-  def new(allow_checks \\ [], deny_checks \\ []) do
+  def new(allow_checks, deny_checks) do
     %__MODULE__{
       message: @default_message,
       allow_checks: convert_checks(allow_checks),
