@@ -39,6 +39,22 @@ defmodule LetMe.PolicyTest do
         allow false
       end
 
+      action :allow_true_singleton do
+        allow [true]
+      end
+
+      action :allow_false_singleton do
+        allow [false]
+      end
+
+      action :allow_true_combined do
+        allow [{:role, :admin}, true]
+      end
+
+      action :allow_false_combined do
+        allow [{:role, :admin}, false]
+      end
+
       action :deny_without_options do
         allow true
         deny :same_user
@@ -543,7 +559,7 @@ defmodule LetMe.PolicyTest do
 
     test "evaluates a boolean as an allow check" do
       assert_authorized TestPolicy, :simple_allow_true, %{}
-      assert TestPolicy.authorize?(:simple_allow_false, %{}) == false
+      assert_authorized TestPolicy, :simple_allow_true_singleton, %{}
 
       assert unauthorized_error(TestPolicy, :simple_allow_false, %{}) ==
                %UnauthorizedError{
@@ -551,6 +567,50 @@ defmodule LetMe.PolicyTest do
                  allow_checks: %Literal{result: false},
                  deny_checks: nil
                }
+
+      assert unauthorized_error(
+               TestPolicy,
+               :simple_allow_false_singleton,
+               %{}
+             ) == %UnauthorizedError{
+               message: "unauthorized",
+               allow_checks: %Literal{result: false},
+               deny_checks: nil
+             }
+    end
+
+    test "removes true from AllOf if combined with other checks" do
+      # allOf(true, something) == allOf(something)
+      assert_authorized TestPolicy,
+                        :simple_allow_true_combined,
+                        %{role: :admin}
+
+      assert unauthorized_error(
+               TestPolicy,
+               :simple_allow_true_combined,
+               %{role: :writer}
+             ) == %UnauthorizedError{
+               allow_checks: %CheckResult{
+                 arg: :admin,
+                 name: :role,
+                 result: false
+               },
+               deny_checks: nil,
+               message: "unauthorized"
+             }
+    end
+
+    test "removes checks from AnyOf if combined with false" do
+      # allOf(false, something) == false
+      assert unauthorized_error(
+               TestPolicy,
+               :simple_allow_false_combined,
+               %{role: :admin}
+             ) == %UnauthorizedError{
+               allow_checks: %Literal{result: false},
+               deny_checks: nil,
+               message: "unauthorized"
+             }
     end
 
     test "evaluates a single deny check without options" do

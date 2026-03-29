@@ -74,10 +74,6 @@ defmodule LetMe.UnauthorizedError do
     %Literal{result: bool}
   end
 
-  defp to_check({bool, bool}) when is_boolean(bool) do
-    %Literal{result: bool}
-  end
-
   defp to_check({name, result}) do
     %CheckResult{name: name, result: result}
   end
