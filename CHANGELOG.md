@@ -5,9 +5,47 @@
 ### Changed
 
 - Evaluate authorization checks lazily.
-- Allow  `error_reason` option of `LetMe.Policy` to be set to `:struct`, which
-  lets `c:LetMe.Policy.authorize/4` return a `LetMe.UnauthorizedError` struct
-  on error.
+- Change `c:LetMe.Policy.authorize/4` to return an
+  `{:error, LetMe.UnauthorizedError.t()}` tuple when authorization checks
+  fail.
+- Add information about the performed checks and check results to
+  `LetMe.UnauthorizedError.t()`.
+- Support check functions that return `:ok`, `:error`, `{:ok, term}`, or
+  `{:error, term}`.
+- Remove `error_reason` and `error_message` options from `LetMe.Policy`.
+
+### How to upgrade
+
+Remove `error_reason` and `error_message` options from `use LetMe.Policy`:
+
+```diff
+use LetMe.Policy,
+-   error_reason: :forbidden,
+-   error_message: "Forbidden"
+```
+
+Update all pattern matches on `{:error, :unauthorized}` or your custom error
+reason. Update your type specifications accordingly.
+
+```diff
+@spec update_article(Scope.t(), Article.t(), map) ::
+-   {:ok, Article.t()} | {:error, :unauthorized}
++   {:ok, Article.t()} | {:error, LetMe.Unauthorized.t()}
+def update_article(scope, article, params)
+  with MyApp.Policy.authorize(:article_update, scope, article) do
+    # ...
+  end
+end
+
+case update_article(scope, article, params) do
+  {:ok, article} ->
+    # ...
+
+-   {:error, :unauthorized} ->
++   {:error, %LetMe.UnauthorizedError{}} ->
+    # ...
+end
+```
 
 ## [1.2.5] - 2025-03-26
 
