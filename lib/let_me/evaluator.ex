@@ -35,10 +35,6 @@ defmodule LetMe.Evaluator do
     end
   end
 
-  defp evaluate_check(false, _, _, _) do
-    false
-  end
-
   defp evaluate_check(function, check_module, subject, object)
        when is_atom(function) do
     apply(check_module, function, [subject, object])

@@ -275,7 +275,10 @@ defmodule LetMe.Builder do
   defp build_conditions([], _), do: false
 
   defp build_conditions(conditions, check_module) when is_list(conditions) do
-    conditions = Enum.reject(conditions, &(&1 == []))
+    conditions =
+      conditions
+      |> Enum.reject(&(&1 == []))
+      |> Enum.map(&optimize_checks/1)
 
     cond do
       conditions == [] ->
@@ -283,6 +286,9 @@ defmodule LetMe.Builder do
 
       Enum.any?(conditions, &(&1 == true)) ->
         true
+
+      Enum.all?(conditions, &(&1 == false)) ->
+        false
 
       true ->
         quote do
@@ -294,5 +300,22 @@ defmodule LetMe.Builder do
           )
         end
     end
+  end
+
+  defp optimize_checks([true]), do: true
+
+  defp optimize_checks(checks) when is_list(checks) do
+    # checks are combined with AND
+    if Enum.any?(checks, &(&1 == false)) do
+      # A AND false == false
+      false
+    else
+      # A AND true == A
+      Enum.reject(checks, &(&1 == true))
+    end
+  end
+
+  defp optimize_checks(check) do
+    check
   end
 end
