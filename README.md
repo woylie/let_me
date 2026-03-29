@@ -525,9 +525,6 @@ This library might not be the best fit if:
   only describes which checks to run and how to apply them; you'll still write
   the actual checks as regular functions).
 - Introspection isn't a priority for you.
-- You need to provide details on why an authorization request fails. Checks in
-  LetMe currently return only a boolean value, meaning users receive a generic
-  error without knowing which exact check failed.
 
 ## Status
 
