@@ -1,4 +1,4 @@
-defmodule LetMe.CheckResult do
+defmodule LetMe.Check do
   @moduledoc """
   Struct that represents the evaluation result of a single check function.
   """

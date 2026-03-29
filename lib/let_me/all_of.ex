@@ -3,10 +3,10 @@ defmodule LetMe.AllOf do
   Struct that represents a combination of checks that all must be true.
   """
 
-  alias LetMe.CheckResult
+  alias LetMe.Check
   alias LetMe.Literal
 
-  @type t :: %__MODULE__{clauses: [CheckResult.t() | Literal.t()]}
+  @type t :: %__MODULE__{clauses: [Check.t() | Literal.t()]}
 
   defstruct clauses: []
 end
