@@ -40,7 +40,7 @@ jobs:
           mix deps.get
       - name: Run Tests
         run: mix coveralls.github --warnings-as-errors
-        
+
   tests:
     runs-on: ubuntu-24.04
     name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
