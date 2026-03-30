@@ -66,6 +66,7 @@ defmodule LetMe.Builder do
   # credo:disable-for-next-line
   def authorize_functions(%{} = rules, opts) do
     check_module = Keyword.fetch!(opts, :check_module)
+    error = Keyword.fetch!(opts, :error)
 
     authorize_clauses =
       Enum.map(rules, &authorize_function_clause(&1, check_module))
@@ -105,12 +106,22 @@ defmodule LetMe.Builder do
       @spec authorize(action(), any, any, keyword) ::
               :ok | {:error, LetMe.UnauthorizedError.t()}
       def authorize(action, subject, object \\ nil, opts \\ []) do
-        case do_authorize(action, subject, object, opts) do
-          %{passed?: true} ->
-            :ok
+        case Keyword.pop(opts, :error, unquote(error)) do
+          {:detailed, opts} ->
+            case do_authorize(action, subject, object, opts) do
+              %{passed?: true} ->
+                :ok
 
-          %{passed?: false} = expr ->
-            {:error, LetMe.UnauthorizedError.with_expression(expr)}
+              %{passed?: false} = expr ->
+                {:error, LetMe.UnauthorizedError.with_expression(expr)}
+            end
+
+          {error_reason, opts} ->
+            if authorize?(action, subject, object, opts) do
+              :ok
+            else
+              {:error, error_reason}
+            end
         end
       end
 

@@ -16,7 +16,7 @@ defmodule LetMe.PolicyTest do
   alias MyApp.TestPolicy
 
   defmodule TestPolicy do
-    use LetMe.Policy, check_module: MyApp.Checks
+    use LetMe.Policy, check_module: MyApp.Checks, error: :detailed
     alias LetMe.TestHooks
 
     object :simple do
@@ -1239,6 +1239,28 @@ defmodule LetMe.PolicyTest do
                },
                message: "unauthorized"
              }
+    end
+
+    test "can customize error response" do
+      # TestPolicy uses detailed errors (error: :detailed)
+      assert {:error, %UnauthorizedError{}} =
+               TestPolicy.authorize(:simple_allow_false, %{})
+
+      # PolicyShort uses default error
+      assert {:error, :unauthorized} =
+               MyApp.PolicyShort.authorize(:article_create, %{})
+
+      # override default at runtime
+
+      assert {:error, :unauthorized} =
+               TestPolicy.authorize(:simple_allow_false, %{}, %{},
+                 error: :unauthorized
+               )
+
+      assert {:error, %UnauthorizedError{}} =
+               MyApp.PolicyShort.authorize(:article_create, %{}, %{},
+                 error: :detailed
+               )
     end
   end
 

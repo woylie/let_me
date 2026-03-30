@@ -47,6 +47,15 @@ defmodule LetMe.Policy do
 
   - `check_module` - The module where the check functions are defined. Defaults
     to `__MODULE__.Checks`.
+  - `error` - If set to `:detailed`, `c:LetMe.Policy.authorize/4` collects the
+    evaluated policy expressions and returns an
+    `{:error, LetMe.UnauthorizedError.t()}` tuple if the policy check fails.
+    Any other value will be used unchanged in the error tuple. To prevent
+    unnecessary work, it is recommended to only set the option to `:detailed` if
+    you do something with the collected expressions, e.g. for logging policy
+    decisions or to inform the user about why a policy check failed. It is also
+    possible to override the default by passing the option directly to the
+    authorize function. Defaults to `:unauthorized`.
 
   ## Check module
 
@@ -421,6 +430,13 @@ defmodule LetMe.Policy do
 
   The last parameter is a set of arguments that can be defined dynamically
   which will be passed into any `pre_hook`s defined on the resource's policy.
+
+  The option `error` is reserved for LetMe and allows you to override the
+  default error response. If set to `:detailed`, the evaluated policy
+  expressions are collected and an `{:error, LetMe.UnauthorizedError.t()}` tuple
+  is returned if the policy check fails. Any other error value will be used
+  unchanged in the error tuple. The default option value can be set on
+  `use LetMe.Policy`.
   """
   @callback authorize(atom, any, any, keyword) :: :ok | {:error, any}
 
@@ -490,7 +506,8 @@ defmodule LetMe.Policy do
   defmacro __using__(opts \\ []) do
     opts =
       Keyword.validate!(opts,
-        check_module: Module.concat(__CALLER__.module, Checks)
+        check_module: Module.concat(__CALLER__.module, Checks),
+        error: :unauthorized
       )
 
     quote do
