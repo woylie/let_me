@@ -7,7 +7,14 @@ defmodule LetMe do
   the `LetMe.Policy` module.
   """
 
+  alias LetMe.AllOf
+  alias LetMe.AnyOf
+  alias LetMe.Check
+  alias LetMe.Literal
+  alias LetMe.Not
   alias LetMe.Rule
+
+  @type expression :: AllOf.t() | AnyOf.t() | Check.t() | Literal.t() | Not.t()
 
   @doc """
   Takes a list of rules and a list of filter options and returns a filtered
