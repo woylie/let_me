@@ -53,7 +53,7 @@ defmodule LetMe.UnauthorizedError do
 
   defp convert_checks(checks) do
     %AnyOf{
-      clauses:
+      children:
         checks
         |> Enum.reverse()
         |> Enum.map(&wrap_all_of/1)
@@ -63,7 +63,7 @@ defmodule LetMe.UnauthorizedError do
   defp wrap_all_of([check]), do: to_check(check)
 
   defp wrap_all_of(checks) do
-    %AllOf{clauses: checks |> Enum.reverse() |> Enum.map(&to_check/1)}
+    %AllOf{children: checks |> Enum.reverse() |> Enum.map(&to_check/1)}
   end
 
   defp to_check({{name, arg}, result}) do

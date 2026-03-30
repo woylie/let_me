@@ -387,7 +387,7 @@ defmodule LetMe.Policy do
         :error,
         %LetMe.UnauthorizedError{
           allow_checks: %LetMe.AnyOf{
-            clauses: [
+            children: [
               %LetMe.Check{
                 name: :role,
                 arg: :admin,
