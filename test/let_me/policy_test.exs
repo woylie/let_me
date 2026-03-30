@@ -564,7 +564,7 @@ defmodule LetMe.PolicyTest do
       assert unauthorized_error(TestPolicy, :simple_allow_false, %{}) ==
                %UnauthorizedError{
                  message: "unauthorized",
-                 allow_checks: %Literal{result: false},
+                 allow_checks: %Literal{passed?: false},
                  deny_checks: nil
                }
 
@@ -574,7 +574,7 @@ defmodule LetMe.PolicyTest do
                %{}
              ) == %UnauthorizedError{
                message: "unauthorized",
-               allow_checks: %Literal{result: false},
+               allow_checks: %Literal{passed?: false},
                deny_checks: nil
              }
     end
@@ -607,7 +607,7 @@ defmodule LetMe.PolicyTest do
                :simple_allow_false_combined,
                %{role: :admin}
              ) == %UnauthorizedError{
-               allow_checks: %Literal{result: false},
+               allow_checks: %Literal{passed?: false},
                deny_checks: nil,
                message: "unauthorized"
              }
@@ -660,7 +660,7 @@ defmodule LetMe.PolicyTest do
                %UnauthorizedError{
                  message: "unauthorized",
                  allow_checks: nil,
-                 deny_checks: %Literal{result: true}
+                 deny_checks: %Literal{passed?: true}
                }
 
       assert_authorized TestPolicy, :simple_deny_false, %{}
@@ -674,7 +674,7 @@ defmodule LetMe.PolicyTest do
                %{id: 1}
              ) == %UnauthorizedError{
                message: "unauthorized",
-               allow_checks: %Literal{result: false},
+               allow_checks: %Literal{passed?: false},
                deny_checks: nil
              }
 
@@ -685,7 +685,7 @@ defmodule LetMe.PolicyTest do
                %{id: 2}
              ) == %UnauthorizedError{
                message: "unauthorized",
-               allow_checks: %Literal{result: false},
+               allow_checks: %Literal{passed?: false},
                deny_checks: nil
              }
     end
@@ -694,14 +694,14 @@ defmodule LetMe.PolicyTest do
       assert unauthorized_error(TestPolicy, :simple_no_checks, %{}) ==
                %UnauthorizedError{
                  message: "unauthorized",
-                 allow_checks: %Literal{result: false},
+                 allow_checks: %Literal{passed?: false},
                  deny_checks: nil
                }
 
       assert unauthorized_error(TestPolicy, :simple_empty_list_check, %{}) ==
                %UnauthorizedError{
                  message: "unauthorized",
-                 allow_checks: %Literal{result: false},
+                 allow_checks: %Literal{passed?: false},
                  deny_checks: nil
                }
     end
