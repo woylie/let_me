@@ -83,10 +83,9 @@ defmodule LetMe.Builder do
       @impl LetMe.Policy
       @spec authorize?(action(), any, any, keyword) :: boolean()
       def authorize?(action, subject, object \\ nil, opts \\ []) do
-        case do_authorize(action, subject, object, opts) do
-          :ok -> true
-          {:error, _, _} -> false
-        end
+        # todo: use evaluate_expression (without acc)
+        %{passed?: passed?} = do_authorize(action, subject, object, opts)
+        passed?
       end
 
       @impl LetMe.Policy
@@ -94,11 +93,11 @@ defmodule LetMe.Builder do
               :ok | {:error, LetMe.UnauthorizedError.t()}
       def authorize(action, subject, object \\ nil, opts \\ []) do
         case do_authorize(action, subject, object, opts) do
-          :ok ->
+          %{passed?: true} ->
             :ok
 
-          {:error, allow_checks, deny_checks} ->
-            {:error, LetMe.UnauthorizedError.new(allow_checks, deny_checks)}
+          %{passed?: false} = expr ->
+            {:error, LetMe.UnauthorizedError.with_expression(expr)}
         end
       end
 
@@ -106,11 +105,11 @@ defmodule LetMe.Builder do
       @spec authorize!(action(), any, any, keyword) :: :ok
       def authorize!(action, subject, object \\ nil, opts \\ []) do
         case do_authorize(action, subject, object, opts) do
-          :ok ->
+          %{passed?: true} ->
             :ok
 
-          {:error, allow_checks, deny_checks} ->
-            raise LetMe.UnauthorizedError.new(allow_checks, deny_checks)
+          %{passed?: false} = expr ->
+            raise LetMe.UnauthorizedError.with_expression(expr)
         end
       end
 
@@ -123,102 +122,38 @@ defmodule LetMe.Builder do
           policy_module: unquote(check_module)
         )
 
-        {:error, [], []}
+        %LetMe.Literal{passed?: false}
       end
     end
   end
 
   defp authorize_function_clause(
-         {rule_name, %LetMe.Rule{} = rule},
+         {rule_name, %LetMe.Rule{expression: expression, pre_hooks: pre_hooks}},
          check_module
        ) do
-    allow_condition = build_conditions(rule.allow, check_module)
-    deny_condition = build_conditions(rule.deny, check_module)
-
-    case combine_conditions(allow_condition, deny_condition) do
-      true ->
+    case expression do
+      %LetMe.Literal{} = literal ->
         quote do
           defp do_authorize(unquote(rule_name), _, _, _) do
-            :ok
+            unquote(Macro.escape(literal))
           end
         end
 
-      :deny_true ->
-        quote do
-          defp do_authorize(unquote(rule_name), _, _, _) do
-            {:error, [], [[true]]}
-          end
-        end
-
-      :allow_false ->
-        quote do
-          defp do_authorize(unquote(rule_name), _, _, _) do
-            {:error, [[false]], []}
-          end
-        end
-
-      combined_condition ->
-        pre_hook_calls = build_pre_hook_calls(rule.pre_hooks, check_module)
+      expression ->
+        pre_hook_calls = build_pre_hook_calls(pre_hooks, check_module)
 
         quote do
           defp do_authorize(unquote(rule_name), subject, object, opts) do
             unquote(pre_hook_calls)
-            unquote(combined_condition)
+
+            LetMe.Evaluator.evaluate_expression_acc(
+              unquote(Macro.escape(expression)),
+              unquote(check_module),
+              subject,
+              object
+            )
           end
         end
-    end
-  end
-
-  # allow false -> always unauthorized
-  defp combine_conditions(false, _), do: :allow_false
-
-  # deny true -> always unauthorized
-  defp combine_conditions(_, true), do: :deny_true
-
-  # allow true, deny false -> always authorized
-  defp combine_conditions(true, false), do: true
-
-  # allow true with deny checks -> only check deny conditions
-  defp combine_conditions(true, deny_condition) do
-    quote do
-      case unquote(deny_condition) do
-        {false, _} ->
-          :ok
-
-        {true, deny_checks} ->
-          {:error, [], deny_checks}
-      end
-    end
-  end
-
-  # deny false with allow conditions -> only check allow conditions
-  defp combine_conditions(allow_condition, false) do
-    quote do
-      case unquote(allow_condition) do
-        {true, _} ->
-          :ok
-
-        {false, allow_checks} ->
-          {:error, allow_checks, []}
-      end
-    end
-  end
-
-  defp combine_conditions(allow_condition, deny_condition) do
-    quote do
-      case unquote(deny_condition) do
-        {true, deny_checks} ->
-          {:error, [], deny_checks}
-
-        {false, deny_checks} ->
-          case unquote(allow_condition) do
-            {true, _} ->
-              :ok
-
-            {false, allow_checks} ->
-              {:error, allow_checks, deny_checks}
-          end
-      end
     end
   end
 
@@ -268,52 +203,5 @@ defmodule LetMe.Builder do
       end
 
     apply(module, function, [subject, object] ++ args)
-  end
-
-  defp build_conditions([], _), do: false
-
-  defp build_conditions(conditions, check_module) when is_list(conditions) do
-    conditions =
-      conditions
-      |> Enum.reject(&(&1 == []))
-      |> Enum.map(&optimize_checks/1)
-
-    cond do
-      conditions == [] ->
-        false
-
-      Enum.any?(conditions, &(&1 == true)) ->
-        true
-
-      Enum.all?(conditions, &(&1 == false)) ->
-        false
-
-      true ->
-        quote do
-          LetMe.Evaluator.evaluate_conditions(
-            unquote(conditions),
-            unquote(check_module),
-            subject,
-            object
-          )
-        end
-    end
-  end
-
-  defp optimize_checks([true]), do: true
-
-  defp optimize_checks(checks) when is_list(checks) do
-    # checks are combined with AND
-    if Enum.any?(checks, &(&1 == false)) do
-      # A AND false == false
-      false
-    else
-      # A AND true == A
-      Enum.reject(checks, &(&1 == true))
-    end
-  end
-
-  defp optimize_checks(check) do
-    check
   end
 end

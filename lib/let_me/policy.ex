@@ -381,10 +381,11 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.authorize(:article_update, user_2, article)
       {:error, %LetMe.UnauthorizedError{
         message: "unauthorized",
-        allow_checks: %LetMe.Check{
+        expression: %LetMe.Check{
           arg: nil,
           name: :own_resource,
-          result: false
+          result: false,
+          passed?: false
         }
       }}
 
@@ -405,21 +406,23 @@ defmodule LetMe.Policy do
       {
         :error,
         %LetMe.UnauthorizedError{
-          allow_checks: %LetMe.AnyOf{
+          expression: %LetMe.AnyOf{
             children: [
               %LetMe.Check{
                 name: :role,
                 arg: :admin,
-                result: false
+                result: false,
+                passed?: false
               },
               %LetMe.Check{
                 name: :role,
                 arg: :client,
-                result: false
+                result: false,
+                passed?: false
               }
-            ]
+            ],
+            passed?: false
           },
-          deny_checks: nil,
           message: "unauthorized"
         }
       }
@@ -564,6 +567,9 @@ defmodule LetMe.Policy do
         [_ | _] = checks ->
           %LetMe.AllOf{children: Enum.map(checks, &to_check_or_literal/1)}
 
+        [] ->
+          %LetMe.Literal{passed?: false}
+
         check ->
           to_check_or_literal(check)
       end)
@@ -575,11 +581,11 @@ defmodule LetMe.Policy do
     %LetMe.Literal{passed?: bool}
   end
 
-  defp to_check_or_literal({name, arg}) do
+  defp to_check_or_literal({name, arg}) when is_atom(name) do
     %LetMe.Check{name: name, arg: arg}
   end
 
-  defp to_check_or_literal(name) do
+  defp to_check_or_literal(name) when is_atom(name) do
     %LetMe.Check{name: name}
   end
 

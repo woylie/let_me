@@ -36,6 +36,7 @@ defmodule LetMe.Rule do
   @type t :: %__MODULE__{
           action: atom,
           expression: LetMe.expression(),
+          # todo: remove allow/deny
           allow: [check | [check]],
           deny: [check | [check]],
           description: String.t() | nil,

@@ -3,6 +3,7 @@ defmodule LetMe.Check do
   Struct that represents the evaluation result of a single check function.
   """
 
+  # todo: typedoc
   @type t :: %__MODULE__{
           name: atom,
           arg: term,

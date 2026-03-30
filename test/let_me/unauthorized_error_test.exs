@@ -7,16 +7,14 @@ defmodule LetMe.UnauthorizedErrorTest do
     test "returns an UnauthorizedError struct with default message" do
       assert UnauthorizedError.new() == %UnauthorizedError{
                message: "unauthorized",
-               allow_checks: nil,
-               deny_checks: nil
+               expression: nil
              }
     end
 
     test "returns an UnauthorizedError struct with custom message" do
       assert UnauthorizedError.new("forbidden") == %UnauthorizedError{
                message: "forbidden",
-               allow_checks: nil,
-               deny_checks: nil
+               expression: nil
              }
     end
   end
