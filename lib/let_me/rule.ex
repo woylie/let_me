@@ -35,6 +35,7 @@ defmodule LetMe.Rule do
   """
   @type t :: %__MODULE__{
           action: atom,
+          expression: LetMe.expression(),
           allow: [check | [check]],
           deny: [check | [check]],
           description: String.t() | nil,
@@ -83,6 +84,7 @@ defmodule LetMe.Rule do
   @enforce_keys [:action, :name, :object]
 
   defstruct action: nil,
+            expression: nil,
             allow: [],
             deny: [],
             description: nil,

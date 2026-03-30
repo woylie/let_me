@@ -8,6 +8,7 @@ defmodule LetMe.PolicyTest do
   alias LetMe.AnyOf
   alias LetMe.Check
   alias LetMe.Literal
+  alias LetMe.Not
   alias LetMe.Rule
   alias LetMe.UnauthorizedError
   alias MyApp.Blog.Article
@@ -287,10 +288,16 @@ defmodule LetMe.PolicyTest do
 
   describe "list_rules" do
     test "returns all rules" do
-      assert Enum.sort(Policy.list_rules()) ==
-               Enum.sort([
+      assert Enum.sort_by(Policy.list_rules(), & &1.name) ==
+               [
                  %Rule{
                    action: :create,
+                   expression: %AnyOf{
+                     children: [
+                       %Check{name: :role, arg: :admin},
+                       %Check{name: :role, arg: :writer}
+                     ]
+                   },
                    allow: [[role: :admin], [role: :writer]],
                    deny: [],
                    name: :article_create,
@@ -299,6 +306,7 @@ defmodule LetMe.PolicyTest do
                  },
                  %Rule{
                    action: :update,
+                   expression: %Check{name: :own_resource},
                    allow: [:own_resource],
                    deny: [],
                    name: :article_update,
@@ -307,6 +315,7 @@ defmodule LetMe.PolicyTest do
                  },
                  %Rule{
                    action: :view,
+                   expression: %Literal{passed?: true},
                    allow: [true],
                    description:
                      "allows to view an article and the list of articles",
@@ -317,6 +326,12 @@ defmodule LetMe.PolicyTest do
                  },
                  %Rule{
                    action: :delete,
+                   expression: %AllOf{
+                     children: [
+                       %Not{expression: %Check{name: :same_user}},
+                       %Check{name: :role, arg: :admin}
+                     ]
+                   },
                    allow: [[role: :admin]],
                    deny: [:same_user],
                    name: :user_delete,
@@ -329,6 +344,12 @@ defmodule LetMe.PolicyTest do
                  },
                  %Rule{
                    action: :list,
+                   expression: %AnyOf{
+                     children: [
+                       %Check{name: :role, arg: :admin},
+                       %Check{name: :role, arg: :client}
+                     ]
+                   },
                    allow: [role: :admin, role: :client],
                    deny: [],
                    name: :user_list,
@@ -337,6 +358,7 @@ defmodule LetMe.PolicyTest do
                  },
                  %Rule{
                    action: :remove,
+                   expression: %Check{name: :role, arg: :super_admin},
                    allow: [[role: :super_admin]],
                    deny: [],
                    name: :user_remove,
@@ -346,6 +368,18 @@ defmodule LetMe.PolicyTest do
                  },
                  %Rule{
                    action: :view,
+                   expression: %AnyOf{
+                     children: [
+                       %Check{name: :role, arg: :admin},
+                       %AllOf{
+                         children: [
+                           %Check{name: :role, arg: :client},
+                           %Check{name: :same_company}
+                         ]
+                       },
+                       %Check{name: :same_user}
+                     ]
+                   },
                    allow: [
                      {:role, :admin},
                      [{:role, :client}, :same_company],
@@ -356,7 +390,7 @@ defmodule LetMe.PolicyTest do
                    object: :user,
                    pre_hooks: []
                  }
-               ])
+               ]
     end
 
     test "filters by object" do
@@ -458,6 +492,12 @@ defmodule LetMe.PolicyTest do
     test "returns rule" do
       assert Policy.get_rule(:article_create) == %Rule{
                action: :create,
+               expression: %LetMe.AnyOf{
+                 children: [
+                   %Check{name: :role, arg: :admin},
+                   %Check{name: :role, arg: :writer}
+                 ]
+               },
                allow: [[role: :admin], [role: :writer]],
                deny: [],
                name: :article_create,
@@ -477,6 +517,13 @@ defmodule LetMe.PolicyTest do
                {:ok,
                 %Rule{
                   action: :create,
+                  expression: %AnyOf{
+                    children: [
+                      %Check{name: :role, arg: :admin},
+                      %Check{name: :role, arg: :writer}
+                    ],
+                    passed?: nil
+                  },
                   allow: [[role: :admin], [role: :writer]],
                   deny: [],
                   name: :article_create,
@@ -494,6 +541,12 @@ defmodule LetMe.PolicyTest do
     test "returns rule" do
       assert Policy.fetch_rule!(:article_create) == %Rule{
                action: :create,
+               expression: %AnyOf{
+                 children: [
+                   %Check{name: :role, arg: :admin},
+                   %Check{name: :role, arg: :writer}
+                 ]
+               },
                allow: [[role: :admin], [role: :writer]],
                deny: [],
                name: :article_create,

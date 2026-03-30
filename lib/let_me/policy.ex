@@ -181,6 +181,12 @@ defmodule LetMe.Policy do
       [
         %LetMe.Rule{
           action: :create,
+          expression: %LetMe.AnyOf{
+            children: [
+              %LetMe.Check{name: :role, arg: :admin},
+              %LetMe.Check{name: :role, arg: :writer}
+            ]
+          },
           allow: [[role: :admin], [role: :writer]],
           deny: [],
           name: :article_create,
@@ -189,6 +195,7 @@ defmodule LetMe.Policy do
         },
         %LetMe.Rule{
           action: :update,
+          expression: %LetMe.Check{name: :own_resource},
           allow: [:own_resource],
           deny: [],
           name: :article_update,
@@ -225,6 +232,7 @@ defmodule LetMe.Policy do
       [
         %LetMe.Rule{
           action: :view,
+          expression: %LetMe.Literal{passed?: true},
           allow: [true],
           deny: [],
           description: "allows to view an article and the list of articles",
@@ -246,6 +254,7 @@ defmodule LetMe.Policy do
       [
         %LetMe.Rule{
           action: :view,
+          expression: %LetMe.Literal{passed?: true},
           allow: [true],
           deny: [],
           description: "allows to view an article and the list of articles",
@@ -270,6 +279,12 @@ defmodule LetMe.Policy do
       {:ok,
        %LetMe.Rule{
          action: :create,
+         expression: %LetMe.AnyOf{
+           children: [
+             %LetMe.Check{name: :role, arg: :admin},
+             %LetMe.Check{name: :role, arg: :writer}
+           ],
+         },
          allow: [[role: :admin], [role: :writer]],
          deny: [],
          name: :article_create,
@@ -292,6 +307,10 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.fetch_rule!(:article_create)
       %LetMe.Rule{
         action: :create,
+        expression: %LetMe.AnyOf{children: [
+          %LetMe.Check{name: :role, arg: :admin},
+          %LetMe.Check{name: :role, arg: :writer}
+        ]},
         allow: [[role: :admin], [role: :writer]],
         deny: [],
         name: :article_create,
@@ -461,6 +480,12 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.get_rule(:article_create)
       %LetMe.Rule{
         action: :create,
+        expression: %LetMe.AnyOf{
+          children: [
+            %LetMe.Check{name: :role, arg: :admin},
+            %LetMe.Check{name: :role, arg: :writer}
+          ]
+        },
         allow: [[role: :admin], [role: :writer]],
         deny: [],
         name: :article_create,
@@ -508,6 +533,7 @@ defmodule LetMe.Policy do
       env.module
       |> Module.get_attribute(:rules)
       |> Enum.reverse()
+      |> Enum.map(&put_expression/1)
       |> Enum.into(%{}, &{:"#{&1.object}_#{&1.action}", &1})
 
     introspection_functions = LetMe.Builder.introspection_functions(rules)
@@ -519,6 +545,42 @@ defmodule LetMe.Policy do
       unquote(authorize_functions)
       unquote(schema_functions)
     end
+  end
+
+  defp put_expression(%Rule{allow: allow, deny: deny} = rule) do
+    expression = %LetMe.AllOf{
+      children: [
+        %LetMe.Not{expression: nested_list_to_expression(deny)},
+        nested_list_to_expression(allow)
+      ]
+    }
+
+    %{rule | expression: LetMe.Optimizer.optimize(expression)}
+  end
+
+  defp nested_list_to_expression(conditions) when is_list(conditions) do
+    children =
+      Enum.map(conditions, fn
+        [_ | _] = checks ->
+          %LetMe.AllOf{children: Enum.map(checks, &to_check_or_literal/1)}
+
+        check ->
+          to_check_or_literal(check)
+      end)
+
+    %LetMe.AnyOf{children: children}
+  end
+
+  defp to_check_or_literal(bool) when is_boolean(bool) do
+    %LetMe.Literal{passed?: bool}
+  end
+
+  defp to_check_or_literal({name, arg}) do
+    %LetMe.Check{name: name, arg: arg}
+  end
+
+  defp to_check_or_literal(name) do
+    %LetMe.Check{name: name}
   end
 
   defmacro __after_compile__(env, _) do
