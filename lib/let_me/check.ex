@@ -3,8 +3,13 @@ defmodule LetMe.Check do
   Struct that represents the evaluation result of a single check function.
   """
 
-  @type t :: %__MODULE__{name: atom, arg: term, result: result()}
-  @type result :: boolean | :ok | :error | {:ok, term} | {:error, term}
+  @type t :: %__MODULE__{
+          name: atom,
+          arg: term,
+          result: result(),
+          passed?: boolean | nil
+        }
+  @type result :: boolean | :ok | :error | {:ok, term} | {:error, term} | nil
 
-  defstruct [:name, :arg, :result]
+  defstruct [:name, :arg, :result, :passed?]
 end

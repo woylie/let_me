@@ -7,7 +7,10 @@ defmodule LetMe.AnyOf do
   alias LetMe.Check
   alias LetMe.Literal
 
-  @type t :: %__MODULE__{children: [Check.t() | Literal.t() | AllOf.t()]}
+  @type t :: %__MODULE__{
+          children: [Check.t() | Literal.t() | AllOf.t()],
+          passed?: boolean | nil
+        }
 
-  defstruct children: []
+  defstruct [:passed?, children: []]
 end
