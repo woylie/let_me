@@ -66,7 +66,12 @@ defmodule LetMe.Builder do
   # credo:disable-for-next-line
   def authorize_functions(%{} = rules, opts) do
     check_module = Keyword.fetch!(opts, :check_module)
-    rule_clauses = Enum.map(rules, &authorize_function_clause(&1, check_module))
+
+    authorize_clauses =
+      Enum.map(rules, &authorize_function_clause(&1, check_module))
+
+    authorize_acc_clauses =
+      Enum.map(rules, &authorize_acc_function_clause(&1, check_module))
 
     typespec =
       rules
@@ -82,10 +87,18 @@ defmodule LetMe.Builder do
 
       @impl LetMe.Policy
       @spec authorize?(action(), any, any, keyword) :: boolean()
-      def authorize?(action, subject, object \\ nil, opts \\ []) do
-        # todo: use evaluate_expression (without acc)
-        %{passed?: passed?} = do_authorize(action, subject, object, opts)
-        passed?
+      def authorize?(action, subject, object \\ nil, opts \\ [])
+
+      unquote(authorize_clauses)
+
+      def authorize?(action, _, _, _) when is_atom(action) do
+        Logger.warning(
+          "Permission checked for rule that does not exist: #{action}",
+          action: action,
+          policy_module: unquote(check_module)
+        )
+
+        false
       end
 
       @impl LetMe.Policy
@@ -113,7 +126,7 @@ defmodule LetMe.Builder do
         end
       end
 
-      unquote(rule_clauses)
+      unquote(authorize_acc_clauses)
 
       defp do_authorize(action, _, _, _) when is_atom(action) do
         Logger.warning(
@@ -128,6 +141,36 @@ defmodule LetMe.Builder do
   end
 
   defp authorize_function_clause(
+         {rule_name, %LetMe.Rule{expression: expression, pre_hooks: pre_hooks}},
+         check_module
+       ) do
+    case expression do
+      %LetMe.Literal{passed?: passed?} ->
+        quote do
+          def authorize?(unquote(rule_name), _, _, _) do
+            unquote(passed?)
+          end
+        end
+
+      expression ->
+        pre_hook_calls = build_pre_hook_calls(pre_hooks, check_module)
+
+        quote do
+          def authorize?(unquote(rule_name), subject, object, opts) do
+            unquote(pre_hook_calls)
+
+            LetMe.Evaluator.evaluate_expression(
+              unquote(Macro.escape(expression)),
+              unquote(check_module),
+              subject,
+              object
+            )
+          end
+        end
+    end
+  end
+
+  defp authorize_acc_function_clause(
          {rule_name, %LetMe.Rule{expression: expression, pre_hooks: pre_hooks}},
          check_module
        ) do
