@@ -7,7 +7,7 @@ defmodule LetMe.AnyOf do
   alias LetMe.Check
   alias LetMe.Literal
 
-  @type t :: %__MODULE__{clauses: [Check.t() | Literal.t() | AllOf.t()]}
+  @type t :: %__MODULE__{children: [Check.t() | Literal.t() | AllOf.t()]}
 
-  defstruct clauses: []
+  defstruct children: []
 end

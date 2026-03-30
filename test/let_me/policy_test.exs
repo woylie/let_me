@@ -814,7 +814,7 @@ defmodule LetMe.PolicyTest do
                %{user_id: 1}
              ) == %UnauthorizedError{
                allow_checks: %AllOf{
-                 clauses: [
+                 children: [
                    %Check{name: :own_resource, arg: nil, result: true},
                    %Check{name: :role, arg: :editor, result: false}
                  ]
@@ -864,7 +864,7 @@ defmodule LetMe.PolicyTest do
                %{user_id: 2}
              ) == %UnauthorizedError{
                allow_checks: %AnyOf{
-                 clauses: [
+                 children: [
                    %Check{name: :role, arg: :editor, result: false},
                    %Check{name: :own_resource, arg: nil, result: false}
                  ]
@@ -885,7 +885,7 @@ defmodule LetMe.PolicyTest do
              ) == %UnauthorizedError{
                allow_checks: nil,
                deny_checks: %AllOf{
-                 clauses: [
+                 children: [
                    %Check{name: :same_user, arg: nil, result: true},
                    %Check{name: :role, arg: :writer, result: true}
                  ]
@@ -955,7 +955,7 @@ defmodule LetMe.PolicyTest do
              ) == %UnauthorizedError{
                allow_checks: nil,
                deny_checks: %AnyOf{
-                 clauses: [
+                 children: [
                    %Check{name: :same_user, arg: nil, result: false},
                    %Check{name: :role, arg: :writer, result: true}
                  ]
