@@ -1,14 +1,12 @@
 defmodule LetMe.AnyOf do
   @moduledoc """
   Struct that represents a combination of checks one of which must be true.
+
+  An `AnyOf` without children evaluates to `false`.
   """
 
-  alias LetMe.AllOf
-  alias LetMe.Check
-  alias LetMe.Literal
-
   @type t :: %__MODULE__{
-          children: [Check.t() | Literal.t() | AllOf.t()],
+          children: [LetMe.expression()],
           passed?: boolean | nil
         }
 

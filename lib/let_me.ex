@@ -1,7 +1,7 @@
 defmodule LetMe do
   @moduledoc """
-  LetMe is library for defining and evaluating authorization rules and handling
-  query scopes and field redactions.
+  LetMe is a library for defining and evaluating authorization rules and
+  handling query scopes and field redactions.
 
   This module only defines auxiliary functions. The main functionality lies in
   the `LetMe.Policy` module.

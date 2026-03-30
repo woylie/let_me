@@ -92,6 +92,7 @@ defmodule LetMe.MixProject do
           LetMe.AnyOf,
           LetMe.Check,
           LetMe.Literal,
+          LetMe.Not,
           LetMe.Rule
         ]
       ]

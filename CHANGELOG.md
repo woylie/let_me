@@ -7,6 +7,9 @@
 - Add `LetMe.AllOf`, `LetMe.AnyOf`, `LetMe.Check`, `LetMe.Literal`, and
   `LetMe.Not` structs and `t:LetMe.expression/0` type to represent policy
   expressions.
+- Add `error` option to `use LetMe.Policy`, `c:LetMe.Policy.authorize/4` to
+  switch between simple error responses and detailed error structs with the
+  evaluated expression.
 
 ### Changed
 
@@ -31,15 +34,21 @@
 
 ### How to upgrade
 
-Remove the `error_reason` and `error_message` options from `use LetMe.Policy`:
+Replace the `error_reason` and `error_message` options with the `error` option:
 
 ```diff
 - use LetMe.Policy, error_reason: :forbidden, error_message: "Forbidden"
-+ use LetMe.Policy
++ use LetMe.Policy, error: :forbidden
 ```
 
-Update all pattern matches on `{:error, :unauthorized}` or your custom error
-reason. Update your type specifications accordingly.
+You can opt-in to detailed error structs by setting the value to `:detailed`.
+
+```elixir
+use LetMe.Policy, error: :detailed
+```
+
+If you do that, change all pattern matches on `{:error, :unauthorized}` or your
+custom error reason and update your type specifications accordingly.
 
 ```diff
 @spec update_article(Scope.t(), Article.t(), map) ::

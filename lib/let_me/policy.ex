@@ -43,19 +43,34 @@ defmodule LetMe.Policy do
 
   ### Options
 
-  These options can be passed when using this module:
+  `use LetMe.Policy` accepts two options, both of which are optional.
 
-  - `check_module` - The module where the check functions are defined. Defaults
-    to `__MODULE__.Checks`.
-  - `error` - If set to `:detailed`, `c:LetMe.Policy.authorize/4` collects the
-    evaluated policy expressions and returns an
-    `{:error, LetMe.UnauthorizedError.t()}` tuple if the policy check fails.
-    Any other value will be used unchanged in the error tuple. To prevent
-    unnecessary work, it is recommended to only set the option to `:detailed` if
-    you do something with the collected expressions, e.g. for logging policy
-    decisions or to inform the user about why a policy check failed. It is also
-    possible to override the default by passing the option directly to the
-    authorize function. Defaults to `:unauthorized`.
+  #### check_module
+
+  The module where the check functions are defined. Defaults to
+  `__MODULE__.Checks`.
+
+  #### error
+
+  If set to `:detailed`, `c:LetMe.Policy.authorize/4` collects the
+  evaluated policy expressions and returns an
+  `{:error, LetMe.UnauthorizedError.t()}` tuple if the policy check fails.
+
+  Any other value will be used unchanged in the error tuple.
+
+  While `c:LetMePolicy.authorize!/4` always raises a `LetMe.UnauthorizedError`
+  on error, the exception struct only contains the expression if `error` is
+  `:detailed`.
+
+  To prevent unnecessary work, it is recommended to only set the option to
+  `:detailed` if you do something with the collected expressions, e.g. for
+  logging policy decisions or to inform the user about why a policy check
+  failed.
+
+  It is also possible to override the default by passing the option directly to
+  the authorize functions.
+
+  The default value is `:unauthorized`.
 
   ## Check module
 
@@ -370,6 +385,9 @@ defmodule LetMe.Policy do
   `:article_create`. To authorize the action, we need to pass the rule name, the
   subject (current user) and the object (the article to be updated).
 
+  This example assumes that the `error` option is set to `:detailed`
+  (see below).
+
       iex> article = %{id: 80, user_id: 1}
       iex> user_1 = %{id: 1}
       iex> user_2 = %{id: 2}
@@ -424,19 +442,52 @@ defmodule LetMe.Policy do
         }
       }
 
-  The error reason can be customized by setting the `:error_reason` option when
-  using the module. If set to `:struct`, the return value is
-  `{:error, LetMe.UnauthorizedError.t()}`.
+  ## Error format
 
-  The last parameter is a set of arguments that can be defined dynamically
-  which will be passed into any `pre_hook`s defined on the resource's policy.
+  By default, `{:error, :unauthorized}` is returned if the policy check fails.
+  You can customize the error by passing the `error` option to the function.
 
-  The option `error` is reserved for LetMe and allows you to override the
-  default error response. If set to `:detailed`, the evaluated policy
-  expressions are collected and an `{:error, LetMe.UnauthorizedError.t()}` tuple
-  is returned if the policy check fails. Any other error value will be used
-  unchanged in the error tuple. The default option value can be set on
-  `use LetMe.Policy`.
+  ```elixir
+  MyApp.Policy.authorize(:article_update, scope, object, error: :forbidden)
+
+  {:error, :forbidden}
+  ```
+
+  You can also set a default as an option for `use LetMe.Policy` (see module
+  documentation).
+
+  To obtain a `LetMe.UnauthorizedError` struct with detailed evaluation
+  information, set `error: :detailed`.
+
+  ```elixir
+  MyApp.Policy.authorize(:article_update, scope, object, error: :detailed)
+
+  %LetMe.UnauthorizedError{
+    message: "unauthorized",
+    expression: %LetMe.AnyOf{
+      children: [
+        %LetMe.Check{
+          name: :role,
+          arg: :editor,
+          result: false,
+          passed?: false
+        },
+        %LetMe.Check{
+          name: :role,
+          arg: :writer,
+          result: false,
+          passed?: false
+        }
+      ]
+    }
+  }
+  ```
+
+  ## Additional options
+
+  All options except `:error` are passed into any `pre_hook`s defined on the
+  resource's policy. This can be used to dynamically pass additional
+  information.
   """
   @callback authorize(atom, any, any, keyword) :: :ok | {:error, any}
 
@@ -455,6 +506,19 @@ defmodule LetMe.Policy do
       :ok
       iex> MyApp.Policy.authorize!(:article_update, user_2, article)
       ** (LetMe.UnauthorizedError) unauthorized
+
+  ## Error details
+
+  If you require detailed information about the performed checks under the
+  `expression` field in the `LetMe.UnauthorizedError` exception struct, you can
+  set the `error` option to `:detailed`.
+
+      MyApp.Policy.authorize!(:article_update, scope, object, error: :detailed)
+
+  With any other option values, the `expression` field will be `nil`.
+
+  You can also set the default error option on `use LetMe.Policy` (see module
+  documentation).
   """
   @callback authorize!(atom, any, any, keyword) :: :ok
 

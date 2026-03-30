@@ -5,6 +5,10 @@
 LetMe is an authorization library for Elixir that allows you to define your
 authorization rules with a Domain Specific Language (DSL).
 
+All policy expressions are optimized at compile time and evaluated lazily. You
+can opt-in to receive detailed information about the checks that were evaluated
+in case an authorization check fails.
+
 It also provides introspection function that enable you to answer questions
 such as:
 
@@ -38,8 +42,8 @@ you run `mix format`.
 ## Policy module
 
 You define your authorization rules in a policy module using the LetMe macros.
-These rules are then compiled into functions for both authorization checks and
-introspection.
+These rules are then compiled into policy expressions and functions for both
+authorization checks and introspection.
 
 For instance, here's how you might define a policy for a simple article CRUD
 interface:
@@ -113,7 +117,7 @@ defmodule MyApp.Policy.Checks do
   @doc """
   Returns `true` if the `banned` flag is set on the user.
   """
-  def banned(%Scope{current_user: %User{banned: banned}}, _), do: banned
+  def banned(%Scope{user: %User{banned: banned}}, _), do: banned
 
   @doc """
   Checks whether the user ID of the object matches the ID of the current user.
@@ -121,7 +125,7 @@ defmodule MyApp.Policy.Checks do
   Assumes that the object has a `:user_id` field.
   """
   def own_resource(
-    %Scope{current_user: User{id: id}},
+    %Scope{user: User{id: id}},
     %{user_id: id}
   ) when is_binary(id), do: true
   def own_resource(_, _), do: false
@@ -137,7 +141,7 @@ defmodule MyApp.Policy.Checks do
 
       allow {:role, :editor}
   """
-  def role(%Scope{current_user: %User{role: role}}, _object, role), do: true
+  def role(%Scope{user: %User{role: role}}, _object, role), do: true
   def role(_, _, _), do: false
 end
 ```
@@ -195,7 +199,7 @@ defmodule MyApp.Blog do
     end
   end
 
-  def create_article(%Scope{current_user: %User{} = current_user}, params) do
+  def create_article(%Scope{user: %User{} = current_user}, params) do
     with :ok <- Policy.authorize(:article_create, current_user) do
       %Article{}
       |> Article.changeset(params)
@@ -204,7 +208,7 @@ defmodule MyApp.Blog do
   end
 
   def update_article(
-    %Scope{current_user: %User{} = current_user},
+    %Scope{user: %User{} = current_user},
     %Article{} = article,
     params
   ) do
@@ -216,7 +220,7 @@ defmodule MyApp.Blog do
   end
 
   def delete_article(
-    %Scope{current_user: %User{} = current_user},
+    %Scope{user: %User{} = current_user},
     %Article{} = article
   ) do
     with :ok <- Policy.authorize(:article_delete, current_user, article) do
@@ -229,6 +233,52 @@ end
 Every context function takes the `Scope` struct as the first argument. Before
 performing any actions on the articles, we first ensure the current user
 is authorized to perform the intended action.
+
+#### Error responses
+
+By default, the `c:LetMe.Policy.authorize/4` function returns
+`{:error, :unauthorized}` if an authorization check fails.
+
+```elixir
+iex> MyApp.Policy.authorize(:article_read, scope)
+{:error, :unauthorized}
+```
+
+You can obtain a `LetMe.UnauthorizedError` struct with the details about the
+evaluated checks instead by setting the `error` option on `LetMe.Policy` to
+`:detailed`:
+
+```elixir
+use LetMe.Policy, error: :detailed
+```
+
+You can also override the default value at runtime:
+
+```elixir
+iex> MyApp.Policy.authorize(:article_update, scope, object, error: :detailed)
+%LetMe.UnauthorizedError{
+  message: "unauthorized",
+  expression: %LetMe.AnyOf{
+    children: [
+      %LetMe.Check{
+        name: :role,
+        arg: :editor,
+        result: false,
+        passed?: false
+      },
+      %LetMe.Check{
+        name: :role,
+        arg: :writer,
+        result: false,
+        passed?: false
+      }
+    ]
+  }
+}
+
+iex> MyApp.Policy.authorize(:article_update, scope, object, error: :forbidden)
+{:error, :forbidden}
+```
 
 #### Typespecs
 
@@ -371,7 +421,7 @@ additional options.
 With this setup, your list and fetch functions can be updated as follows:
 
 ```elixir
-def list_articles(%Scope{current_user: %User{} = current_user} = scope) do
+def list_articles(%Scope{user: %User{} = current_user} = scope) do
   with :ok <- Policy.authorize(:article_read, scope) do
     articles =
       Article
@@ -383,7 +433,7 @@ def list_articles(%Scope{current_user: %User{} = current_user} = scope) do
 end
 
 def fetch_article(
-  %Scope{current_user: %User{} = current_user} = scope,
+  %Scope{user: %User{} = current_user} = scope,
   id
 ) do
   with :ok <- Policy.authorize(:article_read, current_user, id) do
@@ -459,7 +509,7 @@ any redacted fields and add a select clause that includes only the unredacted
 fields.
 
 ```elixir
-def list_users(%Scope{current_user: %User{} = current_user} = scope) do
+def list_users(%Scope{user: %User{} = current_user} = scope) do
   fields = User.__schema__(:fields)
   filtered_fields = LetMe.reject_redacted_fields(fields, %User{}, current_user)
 
