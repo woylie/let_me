@@ -187,8 +187,6 @@ defmodule LetMe.Policy do
               %LetMe.Check{name: :role, arg: :writer}
             ]
           },
-          allow: [[role: :admin], [role: :writer]],
-          deny: [],
           name: :article_create,
           object: :article,
           pre_hooks: []
@@ -196,8 +194,6 @@ defmodule LetMe.Policy do
         %LetMe.Rule{
           action: :update,
           expression: %LetMe.Check{name: :own_resource},
-          allow: [:own_resource],
-          deny: [],
           name: :article_update,
           object: :article,
           pre_hooks: [:preload_groups]
@@ -233,8 +229,6 @@ defmodule LetMe.Policy do
         %LetMe.Rule{
           action: :view,
           expression: %LetMe.Literal{passed?: true},
-          allow: [true],
-          deny: [],
           description: "allows to view an article and the list of articles",
           name: :article_view,
           object: :article,
@@ -255,8 +249,6 @@ defmodule LetMe.Policy do
         %LetMe.Rule{
           action: :view,
           expression: %LetMe.Literal{passed?: true},
-          allow: [true],
-          deny: [],
           description: "allows to view an article and the list of articles",
           name: :article_view,
           object: :article,
@@ -285,8 +277,6 @@ defmodule LetMe.Policy do
              %LetMe.Check{name: :role, arg: :writer}
            ],
          },
-         allow: [[role: :admin], [role: :writer]],
-         deny: [],
          name: :article_create,
          object: :article,
          pre_hooks: []
@@ -311,8 +301,6 @@ defmodule LetMe.Policy do
           %LetMe.Check{name: :role, arg: :admin},
           %LetMe.Check{name: :role, arg: :writer}
         ]},
-        allow: [[role: :admin], [role: :writer]],
-        deny: [],
         name: :article_create,
         object: :article,
         pre_hooks: []
@@ -489,8 +477,6 @@ defmodule LetMe.Policy do
             %LetMe.Check{name: :role, arg: :writer}
           ]
         },
-        allow: [[role: :admin], [role: :writer]],
-        deny: [],
         name: :article_create,
         object: :article,
         pre_hooks: []
@@ -536,7 +522,6 @@ defmodule LetMe.Policy do
       env.module
       |> Module.get_attribute(:rules)
       |> Enum.reverse()
-      |> Enum.map(&put_expression/1)
       |> Enum.into(%{}, &{:"#{&1.object}_#{&1.action}", &1})
 
     introspection_functions = LetMe.Builder.introspection_functions(rules)
@@ -550,49 +535,9 @@ defmodule LetMe.Policy do
     end
   end
 
-  defp put_expression(%Rule{allow: allow, deny: deny} = rule) do
-    expression = %LetMe.AllOf{
-      children: [
-        %LetMe.Not{expression: nested_list_to_expression(deny)},
-        nested_list_to_expression(allow)
-      ]
-    }
-
-    %{rule | expression: LetMe.Optimizer.optimize(expression)}
-  end
-
-  defp nested_list_to_expression(conditions) when is_list(conditions) do
-    children =
-      Enum.map(conditions, fn
-        [_ | _] = checks ->
-          %LetMe.AllOf{children: Enum.map(checks, &to_check_or_literal/1)}
-
-        [] ->
-          %LetMe.Literal{passed?: false}
-
-        check ->
-          to_check_or_literal(check)
-      end)
-
-    %LetMe.AnyOf{children: children}
-  end
-
-  defp to_check_or_literal(bool) when is_boolean(bool) do
-    %LetMe.Literal{passed?: bool}
-  end
-
-  defp to_check_or_literal({name, arg}) when is_atom(name) do
-    %LetMe.Check{name: name, arg: arg}
-  end
-
-  defp to_check_or_literal(name) when is_atom(name) do
-    %LetMe.Check{name: name}
-  end
-
   defmacro __after_compile__(env, _) do
     rules = Module.get_attribute(env.module, :rules)
     validate_no_duplicate_rules!(rules, env.module)
-    validate_no_duplicate_checks!(rules, env.module)
   end
 
   defp validate_no_duplicate_rules!(rules, module) do
@@ -622,45 +567,6 @@ defmodule LetMe.Policy do
     # coveralls-ignore-stop
 
     :ok
-  end
-
-  defp validate_no_duplicate_checks!(rules, module) do
-    Enum.each(rules, fn rule ->
-      do_validate_no_duplicate_checks!(rule, :allow, module)
-      do_validate_no_duplicate_checks!(rule, :deny, module)
-    end)
-  end
-
-  defp do_validate_no_duplicate_checks!(rule, field, module) do
-    rule
-    |> Map.fetch!(field)
-    |> Enum.each(fn
-      checks when is_list(checks) ->
-        duplicate_checks =
-          checks
-          |> Enum.frequencies()
-          |> Enum.filter(fn {_, count} -> count > 1 end)
-          # coveralls-ignore-start
-          |> Enum.map(&elem(&1, 0))
-
-        if duplicate_checks != [] do
-          raise """
-          duplicate authorization checks
-
-          The policy module #{module} has duplicate authorization checks.
-
-              object: #{rule.object}
-              action: #{rule.action}
-              macro: #{field}/1
-              #{inspect(duplicate_checks)}
-          """
-        end
-
-      # coveralls-ignore-stop
-
-      _ ->
-        :ok
-    end)
   end
 
   @doc """
@@ -932,8 +838,7 @@ defmodule LetMe.Policy do
 
       %LetMe.Rule{
         action: :create,
-        allow: [[role: :writer]],
-        deny: [],
+        expression: %LetMe.Check{name: :role, arg: :writer},
         description: "Allows a user to create a new article.",
         name: :article_create,
         object: :article,
@@ -959,8 +864,7 @@ defmodule LetMe.Policy do
 
       %LetMe.Rule{
         action: :create,
-        allow: [[role: :writer]],
-        deny: [],
+        expression: %LetMe.Check{name: :role, arg: :writer},
         description: "Allows a user to create a new article.",
         name: :article_create,
         object: :article,
@@ -1042,18 +946,64 @@ defmodule LetMe.Policy do
       unquote(block)
 
       for action <- Module.get_attribute(__MODULE__, :actions, []) do
-        Module.put_attribute(__MODULE__, :rules, %Rule{
-          action: action.name,
-          allow: action.allow,
-          deny: action.deny,
-          description: action.description,
-          name: :"#{unquote(name)}_#{action.name}",
-          object: unquote(name),
-          pre_hooks: action.pre_hooks,
-          metadata: action.metadata
-        })
+        Module.put_attribute(
+          __MODULE__,
+          :rules,
+          LetMe.Policy.put_expression(
+            %Rule{
+              action: action.name,
+              description: action.description,
+              name: :"#{unquote(name)}_#{action.name}",
+              object: unquote(name),
+              pre_hooks: action.pre_hooks,
+              metadata: action.metadata
+            },
+            action.allow,
+            action.deny
+          )
+        )
       end
     end
+  end
+
+  @doc false
+  def put_expression(%Rule{} = rule, allow, deny) do
+    expression = %LetMe.AllOf{
+      children: [
+        %LetMe.Not{expression: nested_list_to_expression(deny)},
+        nested_list_to_expression(allow)
+      ]
+    }
+
+    %{rule | expression: LetMe.Optimizer.optimize(expression)}
+  end
+
+  defp nested_list_to_expression(conditions) when is_list(conditions) do
+    children =
+      Enum.map(conditions, fn
+        [_ | _] = checks ->
+          %LetMe.AllOf{children: Enum.map(checks, &to_check_or_literal/1)}
+
+        [] ->
+          %LetMe.Literal{passed?: false}
+
+        check ->
+          to_check_or_literal(check)
+      end)
+
+    %LetMe.AnyOf{children: children}
+  end
+
+  defp to_check_or_literal(bool) when is_boolean(bool) do
+    %LetMe.Literal{passed?: bool}
+  end
+
+  defp to_check_or_literal({name, arg}) when is_atom(name) do
+    %LetMe.Check{name: name, arg: arg}
+  end
+
+  defp to_check_or_literal(name) when is_atom(name) do
+    %LetMe.Check{name: name}
   end
 
   @doc """

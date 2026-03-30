@@ -247,11 +247,12 @@ iex> MyApp.Policy.list_rules()
 [
   %LetMe.Rule{
     action: :create,
-    allow: [
-      [role: :admin],
-      [role: :writer]
-    ],
-    deny: [],
+    expression: %LetMe.AnyOf{
+      children: [
+        %LetMe.Check{name: :role, arg: :admin},
+        %LetMe.Check{name: :role, arg: :writer}
+      ]
+    },
     description: "Create a new article",
     name: :article_create,
     object: :article,
@@ -268,10 +269,12 @@ To find a specific rule by its name:
 iex> MyApp.Policy.get_rule(:article_create)
 %LetMe.Rule{
   action: :create,
-  allow: [
-    [role: :admin],
-    [role: :writer]
-  ],
+  expression: %LetMe.AnyOf{
+    children: [
+      %LetMe.Check{name: :role, arg: :admin},
+      %LetMe.Check{name: :role, arg: :writer}
+    ]
+  },
   name: :article_create,
   object: :article,
   # ...
@@ -281,7 +284,7 @@ iex> MyApp.Policy.get_rule(:article_create)
 To list all actions associated with a particular role (or any other check):
 
 ```elixir
-iex> MyApp.Policy.list_rules(allow: {:role, :writer})
+iex> MyApp.Policy.list_rules(check: {:role, :writer})
 [
   %LetMe.Rule{
     action: :create,
@@ -320,10 +323,7 @@ end
 iex> MyApp.Policy.get_rule(:user_disable)
 %LetMe.Rule{
   action: :disable,
-  allow: [
-    [role: :admin]
-  ],
-  deny: [],
+  expression: %LetMe.Check{name: :role, arg: :admin},
   description: nil,
   name: :user_disable,
   object: :user,

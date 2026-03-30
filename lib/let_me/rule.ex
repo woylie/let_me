@@ -7,38 +7,18 @@ defmodule LetMe.Rule do
   Struct for an authorization rule.
 
   - `action` - The action (verb) to be performed on the object, e.g. `:update`.
-  - `allow` - A list of lists of checks to run to determine whether the action
-    is allowed. The outer list contains the alternatives (one for each `allow`
-    call; combined with `OR`). The inner lists are the checks for each `allow`
-    (combined with `AND`).
+  - `expression` - A logical expression to determine whether the action is
+    allowed.
   - `description` - A human-readable description of the action.
-  - `deny` - A list of lists of checks to run to determine whether the action is
-    explicitly denied. Same format as in `allow`. If any of these checks returns
-    `true`, the end result of the authorization request is immediately `false`,
-    even if any of the checks in the `allow` field would return `true`.
   - `name` - The name of the rule. Is always `{object}_{action}`.
   - `object` - The object that the action is performed on, e.g. `:article`.
   - `pre_hooks` - Functions to run in order to hydrate the subject and/or object
-    before running the allow and deny checks.
+    before running the expression.
   - `metadata` - A list of relevant metadata useful for extending functionality.
-
-  The list entries in the outer list of the `allow` and `deny` fields are
-  combined with a logical `OR`. If one of the entries is a list of checks, those
-  checks are combined with a logical `AND`.
-
-  ## Examples
-
-  - `[{role: :editor}, {role: :writer}]` - role is editor OR role is writer
-  - `[[{role: :editor}], [{role: :writer}]]` - same as above
-  - `[[{role: :editor}], [{role: :writer}, {:own_resource}]]` -
-     (role is editor OR (role is writer AND object is the user's own resource))
   """
   @type t :: %__MODULE__{
           action: atom,
           expression: LetMe.expression(),
-          # todo: remove allow/deny
-          allow: [check | [check]],
-          deny: [check | [check]],
           description: String.t() | nil,
           name: atom,
           object: atom,
@@ -86,8 +66,6 @@ defmodule LetMe.Rule do
 
   defstruct action: nil,
             expression: nil,
-            allow: [],
-            deny: [],
             description: nil,
             name: nil,
             object: nil,

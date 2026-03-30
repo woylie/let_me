@@ -298,8 +298,6 @@ defmodule LetMe.PolicyTest do
                        %Check{name: :role, arg: :writer}
                      ]
                    },
-                   allow: [[role: :admin], [role: :writer]],
-                   deny: [],
                    name: :article_create,
                    object: :article,
                    pre_hooks: []
@@ -307,8 +305,6 @@ defmodule LetMe.PolicyTest do
                  %Rule{
                    action: :update,
                    expression: %Check{name: :own_resource},
-                   allow: [:own_resource],
-                   deny: [],
                    name: :article_update,
                    object: :article,
                    pre_hooks: [:preload_groups]
@@ -316,10 +312,8 @@ defmodule LetMe.PolicyTest do
                  %Rule{
                    action: :view,
                    expression: %Literal{passed?: true},
-                   allow: [true],
                    description:
                      "allows to view an article and the list of articles",
-                   deny: [],
                    name: :article_view,
                    object: :article,
                    pre_hooks: []
@@ -332,8 +326,6 @@ defmodule LetMe.PolicyTest do
                        %Check{name: :role, arg: :admin}
                      ]
                    },
-                   allow: [[role: :admin]],
-                   deny: [:same_user],
                    name: :user_delete,
                    object: :user,
                    pre_hooks: [],
@@ -350,8 +342,6 @@ defmodule LetMe.PolicyTest do
                        %Check{name: :role, arg: :client}
                      ]
                    },
-                   allow: [role: :admin, role: :client],
-                   deny: [],
                    name: :user_list,
                    object: :user,
                    pre_hooks: []
@@ -359,8 +349,6 @@ defmodule LetMe.PolicyTest do
                  %Rule{
                    action: :remove,
                    expression: %Check{name: :role, arg: :super_admin},
-                   allow: [[role: :super_admin]],
-                   deny: [],
                    name: :user_remove,
                    object: :user,
                    pre_hooks: [],
@@ -380,12 +368,6 @@ defmodule LetMe.PolicyTest do
                        %Check{name: :same_user}
                      ]
                    },
-                   allow: [
-                     {:role, :admin},
-                     [{:role, :client}, :same_company],
-                     :same_user
-                   ],
-                   deny: [],
                    name: :user_view,
                    object: :user,
                    pre_hooks: []
@@ -408,17 +390,20 @@ defmodule LetMe.PolicyTest do
 
     test "filters by allow check name without options" do
       assert [%Rule{action: :update, object: :article}] =
-               Policy.list_rules(allow: :own_resource)
+               Policy.list_rules(check: :own_resource)
     end
 
     test "filters by allow check name with options" do
       assert [%Rule{action: :create, object: :article}] =
-               Policy.list_rules(allow: {:role, :writer})
+               Policy.list_rules(check: {:role, :writer})
     end
 
-    test "filters by deny check name without options" do
-      assert [%Rule{action: :delete, object: :user}] =
-               Policy.list_rules(deny: :same_user)
+    test "finds allow and deny checks by name without options" do
+      assert [
+               %Rule{action: :delete, object: :user},
+               %Rule{action: :view, object: :user}
+             ] =
+               Policy.list_rules(check: :same_user)
     end
 
     test "filters by metadata key" do
@@ -498,8 +483,6 @@ defmodule LetMe.PolicyTest do
                    %Check{name: :role, arg: :writer}
                  ]
                },
-               allow: [[role: :admin], [role: :writer]],
-               deny: [],
                name: :article_create,
                object: :article,
                pre_hooks: []
@@ -524,8 +507,6 @@ defmodule LetMe.PolicyTest do
                     ],
                     passed?: nil
                   },
-                  allow: [[role: :admin], [role: :writer]],
-                  deny: [],
                   name: :article_create,
                   object: :article,
                   pre_hooks: []
@@ -547,8 +528,6 @@ defmodule LetMe.PolicyTest do
                    %Check{name: :role, arg: :writer}
                  ]
                },
-               allow: [[role: :admin], [role: :writer]],
-               deny: [],
                name: :article_create,
                object: :article,
                pre_hooks: []
