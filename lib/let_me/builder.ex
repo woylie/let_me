@@ -104,7 +104,7 @@ defmodule LetMe.Builder do
 
       @impl LetMe.Policy
       @spec authorize(action(), any, any, keyword) ::
-              :ok | {:error, LetMe.UnauthorizedError.t()}
+              :ok | {:error, LetMe.UnauthorizedError.t() | term}
       def authorize(action, subject, object \\ nil, opts \\ []) do
         case Keyword.pop(opts, :error, unquote(error)) do
           {:detailed, opts} ->
