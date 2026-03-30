@@ -1280,6 +1280,52 @@ defmodule LetMe.PolicyTest do
         )
       end
     end
+
+    test "can opt-in to / out of detailed errors" do
+      # TestPolicy uses detailed errors (error: :detailed)
+      assert %LetMe.UnauthorizedError{expression: %LetMe.Literal{}} =
+               assert_raise(
+                 LetMe.UnauthorizedError,
+                 "unauthorized",
+                 fn ->
+                   TestPolicy.authorize!(:simple_allow_false, %{})
+                 end
+               )
+
+      # PolicyShort uses default error
+      assert %LetMe.UnauthorizedError{expression: nil} =
+               assert_raise(
+                 LetMe.UnauthorizedError,
+                 "unauthorized",
+                 fn ->
+                   MyApp.PolicyShort.authorize!(:article_create, %{})
+                 end
+               )
+
+      # override default at runtime
+
+      assert %LetMe.UnauthorizedError{expression: nil} =
+               assert_raise(
+                 LetMe.UnauthorizedError,
+                 "unauthorized",
+                 fn ->
+                   TestPolicy.authorize!(:simple_allow_false, %{}, %{},
+                     error: :unauthorized
+                   )
+                 end
+               )
+
+      assert %LetMe.UnauthorizedError{expression: %LetMe.AnyOf{}} =
+               assert_raise(
+                 LetMe.UnauthorizedError,
+                 "unauthorized",
+                 fn ->
+                   MyApp.PolicyShort.authorize!(:article_create, %{}, %{},
+                     error: :detailed
+                   )
+                 end
+               )
+    end
   end
 
   describe "typespec generation" do

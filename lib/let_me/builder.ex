@@ -128,12 +128,22 @@ defmodule LetMe.Builder do
       @impl LetMe.Policy
       @spec authorize!(action(), any, any, keyword) :: :ok
       def authorize!(action, subject, object \\ nil, opts \\ []) do
-        case do_authorize(action, subject, object, opts) do
-          %{passed?: true} ->
-            :ok
+        case Keyword.pop(opts, :error, unquote(error)) do
+          {:detailed, opts} ->
+            case do_authorize(action, subject, object, opts) do
+              %{passed?: true} ->
+                :ok
 
-          %{passed?: false} = expr ->
-            raise LetMe.UnauthorizedError.with_expression(expr)
+              %{passed?: false} = expr ->
+                raise LetMe.UnauthorizedError.with_expression(expr)
+            end
+
+          {error_reason, opts} ->
+            if authorize?(action, subject, object, opts) do
+              :ok
+            else
+              raise LetMe.UnauthorizedError.new()
+            end
         end
       end
 
