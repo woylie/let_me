@@ -152,7 +152,7 @@ defmodule LetMe.Optimizer do
     factored_branches =
       Enum.map(all_ofs, fn %AllOf{children: children} ->
         case children -- common_expressions do
-          [] -> %Literal{passed?: false}
+          [] -> %Literal{passed?: true}
           [child] -> child
           children -> %AllOf{children: children}
         end

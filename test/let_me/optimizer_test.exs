@@ -311,6 +311,7 @@ defmodule LetMe.OptimizerTest do
   end
 
   test "factorizes AnyOf and folds single child left behind" do
+    # (A and B) or A = A
     assert Optimizer.optimize(%AnyOf{
              children: [
                %AllOf{
@@ -325,12 +326,7 @@ defmodule LetMe.OptimizerTest do
                  ]
                }
              ]
-           }) == %AllOf{
-             children: [
-               %Check{name: :check1},
-               %Check{name: :check2}
-             ]
-           }
+           }) == %Check{name: :check1}
   end
 
   test "does not factorize AnyOf with single AllOf child" do
@@ -355,5 +351,22 @@ defmodule LetMe.OptimizerTest do
                %Check{name: :check3}
              ]
            }
+  end
+
+  test "anyof(allof(A), allof(A)) = A" do
+    assert Optimizer.optimize(%AnyOf{
+             children: [
+               %AllOf{
+                 children: [
+                   %Check{name: :check1}
+                 ]
+               },
+               %AllOf{
+                 children: [
+                   %Check{name: :check1}
+                 ]
+               }
+             ]
+           }) == %Check{name: :check1}
   end
 end
