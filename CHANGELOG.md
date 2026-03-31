@@ -8,8 +8,8 @@
   `LetMe.Not` structs and `t:LetMe.expression/0` type to represent policy
   expressions.
 - Add `error` option to `use LetMe.Policy`, `c:LetMe.Policy.authorize/4` to
-  switch between simple error responses and detailed error structs with the
-  evaluated expression.
+  switch between error structs without evaluation details, error structs with
+  evaluation details, and arbitrary custom error values.
 
 ### Changed
 
@@ -41,7 +41,8 @@ Replace the `error_reason` and `error_message` options with the `error` option:
 + use LetMe.Policy, error: :forbidden
 ```
 
-You can opt-in to detailed error structs by setting the value to `:detailed`.
+You can opt-in to detailed error structs by setting the value to `:detailed`
+or simple error structs by setting the value to `:simple`.
 
 ```elixir
 use LetMe.Policy, error: :detailed

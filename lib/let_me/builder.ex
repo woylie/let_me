@@ -116,6 +116,13 @@ defmodule LetMe.Builder do
                 {:error, LetMe.UnauthorizedError.with_expression(expr)}
             end
 
+          {:simple, opts} ->
+            if authorize?(action, subject, object, opts) do
+              :ok
+            else
+              {:error, LetMe.UnauthorizedError.new()}
+            end
+
           {error_reason, opts} ->
             if authorize?(action, subject, object, opts) do
               :ok

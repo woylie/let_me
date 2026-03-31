@@ -56,6 +56,9 @@ defmodule LetMe.Policy do
   evaluated policy expressions and returns an
   `{:error, LetMe.UnauthorizedError.t()}` tuple if the policy check fails.
 
+  If set to `:simple`, `c:LetMe.Policy.authorize/4` returns an
+  `{:error, LetMe.UnauthorizedError.t()}` tuple without expression.
+
   Any other value will be used unchanged in the error tuple.
 
   While `c:LetMePolicy.authorize!/4` always raises a `LetMe.UnauthorizedError`
@@ -480,6 +483,18 @@ defmodule LetMe.Policy do
         }
       ]
     }
+  }
+  ```
+
+  To obtain a `LetMe.UnauthorizedError` struct without the expression, set
+  `error: :simple`.
+
+  ```elixir
+  MyApp.Policy.authorize(:article_update, scope, object, error: :simple)
+
+  %LetMe.UnauthorizedError{
+    message: "unauthorized",
+    expression: nil
   }
   ```
 

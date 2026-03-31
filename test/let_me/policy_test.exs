@@ -1243,7 +1243,7 @@ defmodule LetMe.PolicyTest do
 
     test "can customize error response" do
       # TestPolicy uses detailed errors (error: :detailed)
-      assert {:error, %UnauthorizedError{}} =
+      assert {:error, %UnauthorizedError{expression: %LetMe.Literal{}}} =
                TestPolicy.authorize(:simple_allow_false, %{})
 
       # PolicyShort uses default error
@@ -1257,9 +1257,14 @@ defmodule LetMe.PolicyTest do
                  error: :unauthorized
                )
 
-      assert {:error, %UnauthorizedError{}} =
+      assert {:error, %UnauthorizedError{expression: %LetMe.AnyOf{}}} =
                MyApp.PolicyShort.authorize(:article_create, %{}, %{},
                  error: :detailed
+               )
+
+      assert {:error, %UnauthorizedError{expression: nil}} =
+               MyApp.PolicyShort.authorize(:article_create, %{}, %{},
+                 error: :simple
                )
     end
   end

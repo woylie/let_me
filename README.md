@@ -246,11 +246,14 @@ iex> MyApp.Policy.authorize(:article_read, scope)
 
 You can obtain a `LetMe.UnauthorizedError` struct with the details about the
 evaluated checks instead by setting the `error` option on `LetMe.Policy` to
-`:detailed`:
+`:detailed`.
 
 ```elixir
 use LetMe.Policy, error: :detailed
 ```
+
+Alternatively, you can set `error: :simple` to obtain a
+`LetMe.UnauthorizedError` struct without details.
 
 You can also override the default value at runtime:
 
@@ -274,6 +277,12 @@ iex> MyApp.Policy.authorize(:article_update, scope, object, error: :detailed)
       }
     ]
   }
+}
+
+iex> MyApp.Policy.authorize(:article_update, scope, object, error: :simple)
+%LetMe.UnauthorizedError{
+  message: "unauthorized",
+  expression: nil
 }
 
 iex> MyApp.Policy.authorize(:article_update, scope, object, error: :forbidden)
