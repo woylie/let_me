@@ -47,24 +47,32 @@ defmodule LetMe.Optimizer do
     optimize(child)
   end
 
-  def optimize(%AllOf{children: [_ | _] = children} = all_of) do
+  def optimize(%AllOf{children: [_ | _] = children}) do
     {children, _} =
       Enum.reduce_while(children, {[], MapSet.new()}, fn child, {acc, seen} ->
         child = optimize(child)
 
         cond do
+          # allof(A, false) = false
           literal_false?(child) -> {:halt, {false, nil}}
+          # allof(A, B, true) = allof(A, B)
           literal_true?(child) -> {:cont, {acc, seen}}
+          # allof(A, B, A) = allof(A, B) => skip duplicates
           MapSet.member?(seen, child) -> {:cont, {acc, seen}}
+          # otherwise, add child to accumulator
           true -> {:cont, {[child | acc], MapSet.put(seen, child)}}
         end
       end)
 
     case children do
+      # wrap false from first condition in reducer
       false -> %Literal{passed?: false}
+      # allof(A) = A
       [child] -> child
+      # allof() = true
       [] -> %Literal{passed?: true}
-      children -> %{all_of | children: Enum.reverse(children)}
+      # return new allof
+      children -> %AllOf{children: Enum.reverse(children)}
     end
   end
 
@@ -86,7 +94,7 @@ defmodule LetMe.Optimizer do
     end
   end
 
-  defp do_optimize_any_of(%AnyOf{children: children} = any_of) do
+  defp do_optimize_any_of(%AnyOf{children: children}) do
     {children, _} =
       Enum.reduce_while(
         children,
@@ -95,19 +103,27 @@ defmodule LetMe.Optimizer do
           child = optimize(child)
 
           cond do
+            # anyof(A, true) = true
             literal_true?(child) -> {:halt, {true, nil}}
+            # anyof(A, B, false) = anyof(A, B)
             literal_false?(child) -> {:cont, {acc, seen}}
+            # anyOf(A, B, A) = anyof(A, B) => skip duplicates
             MapSet.member?(seen, child) -> {:cont, {acc, seen}}
+            # otherwise, add child to accumulator
             true -> {:cont, {[child | acc], MapSet.put(seen, child)}}
           end
         end
       )
 
     case children do
+      # wrap true from first condition in reducer
       true -> %Literal{passed?: true}
+      # anyof(A) = A
       [child] -> child
+      # anyof() = false
       [] -> %Literal{passed?: false}
-      children -> %{any_of | children: Enum.reverse(children)}
+      # return new anyof
+      children -> %AnyOf{children: Enum.reverse(children)}
     end
   end
 
@@ -118,6 +134,7 @@ defmodule LetMe.Optimizer do
   defp literal_false?(_), do: false
 
   defp factorize(%AnyOf{children: children} = any_of) do
+    # find all AllOf children; only factorize if there is more than one
     {all_ofs, other} = Enum.split_with(children, &match?(%AllOf{}, &1))
 
     case all_ofs do
@@ -128,11 +145,13 @@ defmodule LetMe.Optimizer do
         any_of
 
       _ ->
+        # find all children that are common among the AllOfs
         common_expressions = find_common_expressions(all_ofs)
 
         if MapSet.size(common_expressions) == 0 do
           any_of
         else
+          # if there are common children, we can factorize
           do_factorize(all_ofs, other, common_expressions)
         end
     end
@@ -149,21 +168,31 @@ defmodule LetMe.Optimizer do
   defp do_factorize(all_ofs, other, common_expressions) do
     common_expressions = MapSet.to_list(common_expressions)
 
+    # remove the common child expressions from all AllOfs
     factored_branches =
       Enum.map(all_ofs, fn %AllOf{children: children} ->
         case children -- common_expressions do
+          # allof() = true
           [] -> %Literal{passed?: true}
+          # allof(A) = A
           [child] -> child
+          # if there is more than one child, build a new AllOf
           children -> %AllOf{children: children}
         end
       end)
 
+    # (A and B) or (A and C) = A and (B or C)
     new_all_of = %AllOf{
       children: common_expressions ++ [%AnyOf{children: factored_branches}]
     }
 
     case other do
+      # if there were no none-AllOf expressions in the original AnyOf, just
+      # return the factorized AllOf expression
       [] -> new_all_of
+      # if there were none-Allof expressions in the original AnyOf, wrap the
+      # factorized AllOf expression and the remaining expressions in an AnyOf
+      # (A and B) or (A and C) or D = (A and (B or C)) or D
       _ -> %AnyOf{children: [new_all_of | other]}
     end
   end
