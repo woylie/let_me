@@ -26,8 +26,11 @@ defmodule LetMe do
 
   - `:object` - Matches an object exactly.
   - `:action` - Matches an action exactly.
-  - `:check` - Either a check name as an atom or a 2-tuple with the check name
-    and the `arg`.
+  - `:check` - Can be:
+    - A check name as an atom
+    - A 2-tuple with the check name and the `arg`
+    - A 1-arity matcher function that takes a `LetMe.Check` struct as an
+      argument and returns a boolean.
   - `:metadata` - Either a metadata name as an atom or a 2-tuple with the
     metadata name and the metadata value.
 
@@ -106,6 +109,11 @@ defmodule LetMe do
   defp has_check?(%Literal{}, _), do: false
   defp has_check?(%Check{name: name}, name) when is_atom(name), do: true
   defp has_check?(%Check{name: name, arg: arg}, {name, arg}), do: true
+
+  defp has_check?(%Check{} = check, fun) when is_function(fun, 1) do
+    fun.(check)
+  end
+
   defp has_check?(%Check{}, _), do: false
 
   defp has_check?(%AllOf{children: children}, name) do
