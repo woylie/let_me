@@ -23,7 +23,7 @@ Add LetMe to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:let_me, "~> 1.2.5"}
+    {:let_me, "~> 2.0.0"}
   ]
 end
 ```
@@ -103,8 +103,8 @@ would be `MyApp.Policy.Checks`). Each function in your check module should
 accept the subject, the object, and optionally an extra argument. If no options
 are passed to `allow` or `deny` (e.g. `deny :banned`), the check function must
 be a 2-arity function. If an option is passed (e.g. `allow role: :writer`), the
-function must be a 3-arity function. All check functions must return a boolean
-value indicating the result of the check.
+function must be a 3-arity function. All check functions must return a boolean,
+an `:ok` or `:error` tuple, `:ok`, or `:error` (see `t:LetMe.Check.result/0`).
 
 For the policy example provided earlier, a corresponding check module could look
 like this:

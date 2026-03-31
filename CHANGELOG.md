@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [2.0.0] - 2026-03-31
+
 ### Added
 
 - Add `LetMe.AllOf`, `LetMe.AnyOf`, `LetMe.Check`, `LetMe.Literal`, and
