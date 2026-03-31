@@ -1,12 +1,14 @@
 defmodule LetMe.AllOf do
   @moduledoc """
-  Struct that represents a combination of checks that all must be true.
+  Struct that represents a combination of expressions that all must be true.
+
+  An `AllOf` without children evaluates to `true`.
   """
 
-  alias LetMe.Check
-  alias LetMe.Literal
+  @type t :: %__MODULE__{
+          children: [LetMe.expression()],
+          passed?: boolean | nil
+        }
 
-  @type t :: %__MODULE__{children: [Check.t() | Literal.t()]}
-
-  defstruct children: []
+  defstruct [:passed?, children: []]
 end

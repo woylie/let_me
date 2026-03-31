@@ -43,10 +43,37 @@ defmodule LetMe.Policy do
 
   ### Options
 
-  These options can be passed when using this module:
+  `use LetMe.Policy` accepts two options, both of which are optional.
 
-  - `check_module` - The module where the check functions are defined. Defaults
-    to `__MODULE__.Checks`.
+  #### check_module
+
+  The module where the check functions are defined. Defaults to
+  `__MODULE__.Checks`.
+
+  #### error
+
+  If set to `:detailed`, `c:LetMe.Policy.authorize/4` collects the
+  evaluated policy expressions and returns an
+  `{:error, LetMe.UnauthorizedError.t()}` tuple if the policy check fails.
+
+  If set to `:simple`, `c:LetMe.Policy.authorize/4` returns an
+  `{:error, LetMe.UnauthorizedError.t()}` tuple without expression.
+
+  Any other value will be used unchanged in the error tuple.
+
+  While `c:LetMePolicy.authorize!/4` always raises a `LetMe.UnauthorizedError`
+  on error, the exception struct only contains the expression if `error` is
+  `:detailed`.
+
+  To prevent unnecessary work, it is recommended to only set the option to
+  `:detailed` if you do something with the collected expressions, e.g. for
+  logging policy decisions or to inform the user about why a policy check
+  failed.
+
+  It is also possible to override the default by passing the option directly to
+  the authorize functions.
+
+  The default value is `:unauthorized`.
 
   ## Check module
 
@@ -181,16 +208,19 @@ defmodule LetMe.Policy do
       [
         %LetMe.Rule{
           action: :create,
-          allow: [[role: :admin], [role: :writer]],
-          deny: [],
+          expression: %LetMe.AnyOf{
+            children: [
+              %LetMe.Check{name: :role, arg: :admin},
+              %LetMe.Check{name: :role, arg: :writer}
+            ]
+          },
           name: :article_create,
           object: :article,
           pre_hooks: []
         },
         %LetMe.Rule{
           action: :update,
-          allow: [:own_resource],
-          deny: [],
+          expression: %LetMe.Check{name: :own_resource},
           name: :article_update,
           object: :article,
           pre_hooks: [:preload_groups]
@@ -225,8 +255,7 @@ defmodule LetMe.Policy do
       [
         %LetMe.Rule{
           action: :view,
-          allow: [true],
-          deny: [],
+          expression: %LetMe.Literal{passed?: true},
           description: "allows to view an article and the list of articles",
           name: :article_view,
           object: :article,
@@ -246,8 +275,7 @@ defmodule LetMe.Policy do
       [
         %LetMe.Rule{
           action: :view,
-          allow: [true],
-          deny: [],
+          expression: %LetMe.Literal{passed?: true},
           description: "allows to view an article and the list of articles",
           name: :article_view,
           object: :article,
@@ -270,8 +298,12 @@ defmodule LetMe.Policy do
       {:ok,
        %LetMe.Rule{
          action: :create,
-         allow: [[role: :admin], [role: :writer]],
-         deny: [],
+         expression: %LetMe.AnyOf{
+           children: [
+             %LetMe.Check{name: :role, arg: :admin},
+             %LetMe.Check{name: :role, arg: :writer}
+           ],
+         },
          name: :article_create,
          object: :article,
          pre_hooks: []
@@ -292,8 +324,10 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.fetch_rule!(:article_create)
       %LetMe.Rule{
         action: :create,
-        allow: [[role: :admin], [role: :writer]],
-        deny: [],
+        expression: %LetMe.AnyOf{children: [
+          %LetMe.Check{name: :role, arg: :admin},
+          %LetMe.Check{name: :role, arg: :writer}
+        ]},
         name: :article_create,
         object: :article,
         pre_hooks: []
@@ -354,6 +388,9 @@ defmodule LetMe.Policy do
   `:article_create`. To authorize the action, we need to pass the rule name, the
   subject (current user) and the object (the article to be updated).
 
+  This example assumes that the `error` option is set to `:detailed`
+  (see below).
+
       iex> article = %{id: 80, user_id: 1}
       iex> user_1 = %{id: 1}
       iex> user_2 = %{id: 2}
@@ -362,10 +399,11 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.authorize(:article_update, user_2, article)
       {:error, %LetMe.UnauthorizedError{
         message: "unauthorized",
-        allow_checks: %LetMe.Check{
+        expression: %LetMe.Check{
           arg: nil,
           name: :own_resource,
-          result: false
+          result: false,
+          passed?: false
         }
       }}
 
@@ -386,31 +424,85 @@ defmodule LetMe.Policy do
       {
         :error,
         %LetMe.UnauthorizedError{
-          allow_checks: %LetMe.AnyOf{
+          expression: %LetMe.AnyOf{
             children: [
               %LetMe.Check{
                 name: :role,
                 arg: :admin,
-                result: false
+                result: false,
+                passed?: false
               },
               %LetMe.Check{
                 name: :role,
                 arg: :client,
-                result: false
+                result: false,
+                passed?: false
               }
-            ]
+            ],
+            passed?: false
           },
-          deny_checks: nil,
           message: "unauthorized"
         }
       }
 
-  The error reason can be customized by setting the `:error_reason` option when
-  using the module. If set to `:struct`, the return value is
-  `{:error, LetMe.UnauthorizedError.t()}`.
+  ## Error format
 
-  The last parameter is a set of arguments that can be defined dynamically
-  which will be passed into any `pre_hook`s defined on the resource's policy.
+  By default, `{:error, :unauthorized}` is returned if the policy check fails.
+  You can customize the error by passing the `error` option to the function.
+
+  ```elixir
+  MyApp.Policy.authorize(:article_update, scope, object, error: :forbidden)
+
+  {:error, :forbidden}
+  ```
+
+  You can also set a default as an option for `use LetMe.Policy` (see module
+  documentation).
+
+  To obtain a `LetMe.UnauthorizedError` struct with detailed evaluation
+  information, set `error: :detailed`.
+
+  ```elixir
+  MyApp.Policy.authorize(:article_update, scope, object, error: :detailed)
+
+  %LetMe.UnauthorizedError{
+    message: "unauthorized",
+    expression: %LetMe.AnyOf{
+      children: [
+        %LetMe.Check{
+          name: :role,
+          arg: :editor,
+          result: false,
+          passed?: false
+        },
+        %LetMe.Check{
+          name: :role,
+          arg: :writer,
+          result: false,
+          passed?: false
+        }
+      ]
+    }
+  }
+  ```
+
+  To obtain a `LetMe.UnauthorizedError` struct without the expression, set
+  `error: :simple`.
+
+  ```elixir
+  MyApp.Policy.authorize(:article_update, scope, object, error: :simple)
+
+  %LetMe.UnauthorizedError{
+    message: "unauthorized",
+    expression: nil
+  }
+  ```
+
+  ## Additional options
+
+  All options except `:error` are passed into any `pre_hook`s defined on the
+  resource's policy. This can be used to dynamically pass additional
+  information.
   """
   @callback authorize(atom, any, any, keyword) :: :ok | {:error, any}
 
@@ -429,6 +521,19 @@ defmodule LetMe.Policy do
       :ok
       iex> MyApp.Policy.authorize!(:article_update, user_2, article)
       ** (LetMe.UnauthorizedError) unauthorized
+
+  ## Error details
+
+  If you require detailed information about the performed checks under the
+  `expression` field in the `LetMe.UnauthorizedError` exception struct, you can
+  set the `error` option to `:detailed`.
+
+      MyApp.Policy.authorize!(:article_update, scope, object, error: :detailed)
+
+  With any other option values, the `expression` field will be `nil`.
+
+  You can also set the default error option on `use LetMe.Policy` (see module
+  documentation).
   """
   @callback authorize!(atom, any, any, keyword) :: :ok
 
@@ -461,8 +566,12 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.get_rule(:article_create)
       %LetMe.Rule{
         action: :create,
-        allow: [[role: :admin], [role: :writer]],
-        deny: [],
+        expression: %LetMe.AnyOf{
+          children: [
+            %LetMe.Check{name: :role, arg: :admin},
+            %LetMe.Check{name: :role, arg: :writer}
+          ]
+        },
         name: :article_create,
         object: :article,
         pre_hooks: []
@@ -476,7 +585,8 @@ defmodule LetMe.Policy do
   defmacro __using__(opts \\ []) do
     opts =
       Keyword.validate!(opts,
-        check_module: Module.concat(__CALLER__.module, Checks)
+        check_module: Module.concat(__CALLER__.module, Checks),
+        error: :unauthorized
       )
 
     quote do
@@ -524,7 +634,6 @@ defmodule LetMe.Policy do
   defmacro __after_compile__(env, _) do
     rules = Module.get_attribute(env.module, :rules)
     validate_no_duplicate_rules!(rules, env.module)
-    validate_no_duplicate_checks!(rules, env.module)
   end
 
   defp validate_no_duplicate_rules!(rules, module) do
@@ -554,45 +663,6 @@ defmodule LetMe.Policy do
     # coveralls-ignore-stop
 
     :ok
-  end
-
-  defp validate_no_duplicate_checks!(rules, module) do
-    Enum.each(rules, fn rule ->
-      do_validate_no_duplicate_checks!(rule, :allow, module)
-      do_validate_no_duplicate_checks!(rule, :deny, module)
-    end)
-  end
-
-  defp do_validate_no_duplicate_checks!(rule, field, module) do
-    rule
-    |> Map.fetch!(field)
-    |> Enum.each(fn
-      checks when is_list(checks) ->
-        duplicate_checks =
-          checks
-          |> Enum.frequencies()
-          |> Enum.filter(fn {_, count} -> count > 1 end)
-          # coveralls-ignore-start
-          |> Enum.map(&elem(&1, 0))
-
-        if duplicate_checks != [] do
-          raise """
-          duplicate authorization checks
-
-          The policy module #{module} has duplicate authorization checks.
-
-              object: #{rule.object}
-              action: #{rule.action}
-              macro: #{field}/1
-              #{inspect(duplicate_checks)}
-          """
-        end
-
-      # coveralls-ignore-stop
-
-      _ ->
-        :ok
-    end)
   end
 
   @doc """
@@ -864,8 +934,7 @@ defmodule LetMe.Policy do
 
       %LetMe.Rule{
         action: :create,
-        allow: [[role: :writer]],
-        deny: [],
+        expression: %LetMe.Check{name: :role, arg: :writer},
         description: "Allows a user to create a new article.",
         name: :article_create,
         object: :article,
@@ -891,8 +960,7 @@ defmodule LetMe.Policy do
 
       %LetMe.Rule{
         action: :create,
-        allow: [[role: :writer]],
-        deny: [],
+        expression: %LetMe.Check{name: :role, arg: :writer},
         description: "Allows a user to create a new article.",
         name: :article_create,
         object: :article,
@@ -974,18 +1042,64 @@ defmodule LetMe.Policy do
       unquote(block)
 
       for action <- Module.get_attribute(__MODULE__, :actions, []) do
-        Module.put_attribute(__MODULE__, :rules, %Rule{
-          action: action.name,
-          allow: action.allow,
-          deny: action.deny,
-          description: action.description,
-          name: :"#{unquote(name)}_#{action.name}",
-          object: unquote(name),
-          pre_hooks: action.pre_hooks,
-          metadata: action.metadata
-        })
+        Module.put_attribute(
+          __MODULE__,
+          :rules,
+          LetMe.Policy.put_expression(
+            %Rule{
+              action: action.name,
+              description: action.description,
+              name: :"#{unquote(name)}_#{action.name}",
+              object: unquote(name),
+              pre_hooks: action.pre_hooks,
+              metadata: action.metadata
+            },
+            action.allow,
+            action.deny
+          )
+        )
       end
     end
+  end
+
+  @doc false
+  def put_expression(%Rule{} = rule, allow, deny) do
+    expression = %LetMe.AllOf{
+      children: [
+        %LetMe.Not{expression: nested_list_to_expression(deny)},
+        nested_list_to_expression(allow)
+      ]
+    }
+
+    %{rule | expression: LetMe.Optimizer.optimize(expression)}
+  end
+
+  defp nested_list_to_expression(conditions) when is_list(conditions) do
+    children =
+      Enum.map(conditions, fn
+        [_ | _] = checks ->
+          %LetMe.AllOf{children: Enum.map(checks, &to_check_or_literal/1)}
+
+        [] ->
+          %LetMe.Literal{passed?: false}
+
+        check ->
+          to_check_or_literal(check)
+      end)
+
+    %LetMe.AnyOf{children: children}
+  end
+
+  defp to_check_or_literal(bool) when is_boolean(bool) do
+    %LetMe.Literal{passed?: bool}
+  end
+
+  defp to_check_or_literal({name, arg}) when is_atom(name) do
+    %LetMe.Check{name: name, arg: arg}
+  end
+
+  defp to_check_or_literal(name) when is_atom(name) do
+    %LetMe.Check{name: name}
   end
 
   @doc """

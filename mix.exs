@@ -56,7 +56,8 @@ defmodule LetMe.MixProject do
       {:credo, "== 1.7.17", only: [:dev, :test], runtime: false},
       {:dialyxir, "1.4.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "0.40.1", only: :dev, runtime: false},
-      {:excoveralls, "0.18.5", only: :test}
+      {:excoveralls, "0.18.5", only: :test},
+      {:makeup_diff, "0.1.1", only: :dev, runtime: false}
     ]
   end
 
@@ -91,6 +92,7 @@ defmodule LetMe.MixProject do
           LetMe.AnyOf,
           LetMe.Check,
           LetMe.Literal,
+          LetMe.Not,
           LetMe.Rule
         ]
       ]

@@ -2,30 +2,54 @@
 
 ## Unreleased
 
+### Added
+
+- Add `LetMe.AllOf`, `LetMe.AnyOf`, `LetMe.Check`, `LetMe.Literal`, and
+  `LetMe.Not` structs and `t:LetMe.expression/0` type to represent policy
+  expressions.
+- Add `error` option to `use LetMe.Policy`, `c:LetMe.Policy.authorize/4` to
+  switch between error structs without evaluation details, error structs with
+  evaluation details, and arbitrary custom error values.
+
 ### Changed
 
 - Evaluate authorization checks lazily.
-- Change `c:LetMe.Policy.authorize/4` to return an
+- Change `c:LetMe.Policy.authorize/4` to always return an
   `{:error, LetMe.UnauthorizedError.t()}` tuple when authorization checks
   fail.
-- Add information about the performed checks and check results to
-  `LetMe.UnauthorizedError.t()`.
+- Add `expression` field to `LetMe.UnauthorizedError.t()`, which contains the
+  policy expression and evaluation results until a decision was made.
+- Replace `allow` and `deny` fields on `LetMe.Rule` struct with a single
+  `expression` field that contains a combined logical expression.
+- Optimize the combined logical expression at compile time.
 - Support check functions that return `:ok`, `:error`, `{:ok, term}`, or
-  `{:error, term}`.
+  `{:error, term}`. These return values can be read from the expression in the
+  `LetMe.UnauthorizedError` struct.
+- Replace the `allow` and `deny` options in `LetMe.filter_rules/2` and
+  `c:LetMe.Policy.list_rules/1` with a single `check` option.
+
+### Removed
+
 - Remove `error_reason` and `error_message` options from `LetMe.Policy`.
 
 ### How to upgrade
 
-Remove `error_reason` and `error_message` options from `use LetMe.Policy`:
+Replace the `error_reason` and `error_message` options with the `error` option:
 
 ```diff
-use LetMe.Policy,
--   error_reason: :forbidden,
--   error_message: "Forbidden"
+- use LetMe.Policy, error_reason: :forbidden, error_message: "Forbidden"
++ use LetMe.Policy, error: :forbidden
 ```
 
-Update all pattern matches on `{:error, :unauthorized}` or your custom error
-reason. Update your type specifications accordingly.
+You can opt-in to detailed error structs by setting the value to `:detailed`
+or simple error structs by setting the value to `:simple`.
+
+```elixir
+use LetMe.Policy, error: :detailed
+```
+
+If you do that, change all pattern matches on `{:error, :unauthorized}` or your
+custom error reason and update your type specifications accordingly.
 
 ```diff
 @spec update_article(Scope.t(), Article.t(), map) ::
@@ -46,6 +70,21 @@ case update_article(scope, article, params) do
     # ...
 end
 ```
+
+Replace the `allow` and `deny` option in `LetMe.filter_rules/2` and
+`c:LetMe.Policy.list_rules/1` with the `check` option. The value is unchanged.
+
+```diff
+- MyApp.Policy.filter_rules(allow: {:role, :admin})
++ MyApp.Policy.filter_rules(check: {:role, :admin})
+
+- MyApp.Policy.filter_rules(deny: :suspended)
++ MyApp.Policy.filter_rules(check: :suspended)
+```
+
+If you were working directly with the `allow` and `deny` fields of the
+`LetMe.Rule` struct, update your code to work with the `expression` field and
+`t:LetMe.expression/0` type instead.
 
 ## [1.2.5] - 2025-03-26
 

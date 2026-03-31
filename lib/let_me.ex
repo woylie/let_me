@@ -1,13 +1,20 @@
 defmodule LetMe do
   @moduledoc """
-  LetMe is library for defining and evaluating authorization rules and handling
-  query scopes and field redactions.
+  LetMe is a library for defining and evaluating authorization rules and
+  handling query scopes and field redactions.
 
   This module only defines auxiliary functions. The main functionality lies in
   the `LetMe.Policy` module.
   """
 
+  alias LetMe.AllOf
+  alias LetMe.AnyOf
+  alias LetMe.Check
+  alias LetMe.Literal
+  alias LetMe.Not
   alias LetMe.Rule
+
+  @type expression :: AllOf.t() | AnyOf.t() | Check.t() | Literal.t() | Not.t()
 
   @doc """
   Takes a list of rules and a list of filter options and returns a filtered
@@ -19,12 +26,10 @@ defmodule LetMe do
 
   - `:object` - Matches an object exactly.
   - `:action` - Matches an action exactly.
-  - `:allow` - Either a check name as an atom or a 2-tuple with the check name
-    and the options.
+  - `:check` - Either a check name as an atom or a 2-tuple with the check name
+    and the `arg`.
   - `:metadata` - Either a metadata name as an atom or a 2-tuple with the
     metadata name and the metadata value.
-  - `:deny` - Either a check name as an atom or a 2-tuple with the check name
-    and the options.
 
   If an atom is passed as `allow` or `deny`, the atom is interpreted as a check
   name and all rules using the given check name are returned, regardless of
@@ -48,27 +53,32 @@ defmodule LetMe do
       ...>     action: :create,
       ...>     name: :article_create,
       ...>     object: :article,
-      ...>     allow: [[role: :editor]]
+      ...>     expression: %LetMe.Check{name: :role, arg: :editor}
       ...>   },
       ...>   %LetMe.Rule{
       ...>     action: :update,
       ...>     name: :article_update,
       ...>     object: :article,
-      ...>     allow: [:own_resource, [role: :writer]]
+      ...>     expression: %LetMe.AnyOf{
+      ...>       children: [
+      ...>         %LetMe.Check{name: :own_resource},
+      ...>         %LetMe.Check{name: :role, arg: :writer}
+      ...>       ]
+      ...>     }
       ...>   }
       ...> ]
-      iex> filter_rules(rules, allow: :own_resource)
-      [%LetMe.Rule{action: :update, name: :article_update, object: :article, allow: [:own_resource, [role: :writer]]}]
-      iex> match?([_, _], filter_rules(rules, allow: :role))
+      iex> filter_rules(rules, check: :own_resource)
+      [%LetMe.Rule{action: :update, name: :article_update, object: :article, expression: %LetMe.AnyOf{children: [%LetMe.Check{name: :own_resource}, %LetMe.Check{name: :role, arg: :writer}]}}]
+      iex> match?([_, _], filter_rules(rules, check: :role))
       true
-      iex> filter_rules(rules, allow: {:role, :editor})
-      [%LetMe.Rule{action: :create, name: :article_create, object: :article, allow: [[role: :editor]]}]
-      iex> filter_rules(rules, allow: {:role, :writer})
-      [%LetMe.Rule{action: :update, name: :article_update, object: :article, allow: [:own_resource, [role: :writer]]}]
+      iex> filter_rules(rules, check: {:role, :editor})
+      [%LetMe.Rule{action: :create, name: :article_create, object: :article, expression: %LetMe.Check{name: :role, arg: :editor}}]
+      iex> filter_rules(rules, check: {:role, :writer})
+      [%LetMe.Rule{action: :update, name: :article_update, object: :article, expression: %LetMe.AnyOf{children: [%LetMe.Check{name: :own_resource}, %LetMe.Check{name: :role, arg: :writer}]}}]
   """
   @spec filter_rules([Rule.t()], keyword) :: [Rule.t()]
   def filter_rules(rules, opts) when is_list(rules) do
-    opts = Keyword.validate!(opts, [:action, :allow, :deny, :metadata, :object])
+    opts = Keyword.validate!(opts, [:action, :check, :metadata, :object])
     Enum.reduce(opts, rules, &do_filter_rules/2)
   end
 
@@ -76,21 +86,15 @@ defmodule LetMe do
     Enum.filter(rules, &(&1.action == action))
   end
 
-  defp do_filter_rules({:allow, check}, rules) do
-    Enum.filter(rules, fn %Rule{allow: allow} ->
-      matches_check?(allow, check)
-    end)
-  end
-
-  defp do_filter_rules({:deny, check}, rules) do
-    Enum.filter(rules, fn
-      %Rule{deny: deny} -> matches_check?(deny, check)
+  defp do_filter_rules({:check, name}, rules) do
+    Enum.filter(rules, fn %Rule{expression: expression} ->
+      has_check?(expression, name)
     end)
   end
 
   defp do_filter_rules({:metadata, metadata_filter}, rules) do
     Enum.filter(rules, fn
-      %Rule{metadata: metadata} -> matches_check?(metadata, metadata_filter)
+      %Rule{metadata: metadata} -> matches_metadata?(metadata, metadata_filter)
     end)
   end
 
@@ -98,20 +102,27 @@ defmodule LetMe do
     Enum.filter(rules, &(&1.object == object))
   end
 
-  defp matches_check?(checks, check) when is_list(checks) do
-    Enum.any?(checks, &matches_check?(&1, check))
+  defp has_check?(%Not{expression: expr}, name), do: has_check?(expr, name)
+  defp has_check?(%Literal{}, _), do: false
+  defp has_check?(%Check{name: name}, name) when is_atom(name), do: true
+  defp has_check?(%Check{name: name, arg: arg}, {name, arg}), do: true
+  defp has_check?(%Check{}, _), do: false
+
+  defp has_check?(%AllOf{children: children}, name) do
+    Enum.any?(children, &has_check?(&1, name))
   end
 
-  defp matches_check?(check, check) when is_atom(check), do: true
-  defp matches_check?({check, _}, check) when is_atom(check), do: true
-  defp matches_check?({_, _}, check) when is_atom(check), do: false
-  defp matches_check?(_, check) when is_atom(check), do: false
+  defp has_check?(%AnyOf{children: children}, name) do
+    Enum.any?(children, &has_check?(&1, name))
+  end
 
-  defp matches_check?(check_with_opts, {name, _} = check_with_opts)
-       when is_atom(name),
-       do: true
+  defp matches_metadata?(metadata, query) when is_list(metadata) do
+    Enum.any?(metadata, &matches_metadata?(&1, query))
+  end
 
-  defp matches_check?(_, {name, _}) when is_atom(name), do: false
+  defp matches_metadata?({k, _}, k), do: true
+  defp matches_metadata?(kv, kv), do: true
+  defp matches_metadata?(_, _), do: false
 
   @doc """
   Takes a list of rules and only returns the rules that would evaluate to `true`
