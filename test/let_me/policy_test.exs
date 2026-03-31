@@ -402,8 +402,20 @@ defmodule LetMe.PolicyTest do
       assert [
                %Rule{action: :delete, object: :user},
                %Rule{action: :view, object: :user}
+             ] = Policy.list_rules(check: :same_user)
+    end
+
+    test "finds check with matcher function" do
+      assert [
+               %Rule{action: :delete, object: :user},
+               %Rule{action: :view, object: :user}
              ] =
-               Policy.list_rules(check: :same_user)
+               Policy.list_rules(
+                 check: fn
+                   %Check{name: :same_user} -> true
+                   %Check{} -> false
+                 end
+               )
     end
 
     test "filters by metadata key" do

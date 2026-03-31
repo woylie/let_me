@@ -10,6 +10,8 @@
 - Add `error` option to `use LetMe.Policy`, `c:LetMe.Policy.authorize/4` to
   switch between error structs without evaluation details, error structs with
   evaluation details, and arbitrary custom error values.
+- Support check matcher function as argument for `LetMe.filter_rules/2` and
+  `c:LetMe.Policy.list_rules/1`.
 
 ### Changed
 
