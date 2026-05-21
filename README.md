@@ -261,7 +261,7 @@ You can also override the default value at runtime:
 iex> MyApp.Policy.authorize(:article_update, scope, object, error: :detailed)
 %LetMe.UnauthorizedError{
   message: "unauthorized",
-  expression: %LetMe.AnyOf{
+  expression: %Spek.AnyOf{
     children: [
       %LetMe.Check{
         name: :role,
@@ -306,7 +306,7 @@ iex> MyApp.Policy.list_rules()
 [
   %LetMe.Rule{
     action: :create,
-    expression: %LetMe.AnyOf{
+    expression: %Spek.AnyOf{
       children: [
         %LetMe.Check{name: :role, arg: :admin},
         %LetMe.Check{name: :role, arg: :writer}
@@ -328,7 +328,7 @@ To find a specific rule by its name:
 iex> MyApp.Policy.get_rule(:article_create)
 %LetMe.Rule{
   action: :create,
-  expression: %LetMe.AnyOf{
+  expression: %Spek.AnyOf{
     children: [
       %LetMe.Check{name: :role, arg: :admin},
       %LetMe.Check{name: :role, arg: :writer}

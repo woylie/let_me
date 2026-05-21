@@ -4,7 +4,6 @@ defmodule LetMe.PolicyTest do
 
   import ExUnit.CaptureLog
 
-  alias LetMe.AnyOf
   alias LetMe.Check
   alias LetMe.Literal
   alias LetMe.Rule
@@ -13,6 +12,7 @@ defmodule LetMe.PolicyTest do
   alias MyApp.Policy
   alias MyApp.TestPolicy
   alias Spek.AllOf
+  alias Spek.AnyOf
   alias Spek.Not
 
   defmodule TestPolicy do
@@ -489,7 +489,7 @@ defmodule LetMe.PolicyTest do
     test "returns rule" do
       assert Policy.get_rule(:article_create) == %Rule{
                action: :create,
-               expression: %LetMe.AnyOf{
+               expression: %Spek.AnyOf{
                  children: [
                    %Check{name: :role, arg: :admin},
                    %Check{name: :role, arg: :writer}
@@ -1269,7 +1269,7 @@ defmodule LetMe.PolicyTest do
                  error: :unauthorized
                )
 
-      assert {:error, %UnauthorizedError{expression: %LetMe.AnyOf{}}} =
+      assert {:error, %UnauthorizedError{expression: %Spek.AnyOf{}}} =
                MyApp.PolicyShort.authorize(:article_create, %{}, %{},
                  error: :detailed
                )
@@ -1332,7 +1332,7 @@ defmodule LetMe.PolicyTest do
                  end
                )
 
-      assert %LetMe.UnauthorizedError{expression: %LetMe.AnyOf{}} =
+      assert %LetMe.UnauthorizedError{expression: %Spek.AnyOf{}} =
                assert_raise(
                  LetMe.UnauthorizedError,
                  "unauthorized",

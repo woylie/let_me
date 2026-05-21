@@ -2,11 +2,11 @@ defmodule LetMe.EvaluatorTest do
   use ExUnit.Case, async: true
 
   alias __MODULE__.Checks
-  alias LetMe.AnyOf
   alias LetMe.Check
   alias LetMe.Evaluator
   alias LetMe.Literal
   alias Spek.AllOf
+  alias Spek.AnyOf
   alias Spek.Not
 
   defmodule Checks do

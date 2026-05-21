@@ -7,11 +7,11 @@ defmodule LetMe do
   the `LetMe.Policy` module.
   """
 
-  alias LetMe.AnyOf
   alias LetMe.Check
   alias LetMe.Literal
   alias LetMe.Rule
   alias Spek.AllOf
+  alias Spek.AnyOf
   alias Spek.Not
 
   @type expression :: AllOf.t() | AnyOf.t() | Check.t() | Literal.t() | Not.t()
@@ -62,7 +62,7 @@ defmodule LetMe do
       ...>     action: :update,
       ...>     name: :article_update,
       ...>     object: :article,
-      ...>     expression: %LetMe.AnyOf{
+      ...>     expression: %Spek.AnyOf{
       ...>       children: [
       ...>         %LetMe.Check{name: :own_resource},
       ...>         %LetMe.Check{name: :role, arg: :writer}
@@ -71,13 +71,13 @@ defmodule LetMe do
       ...>   }
       ...> ]
       iex> filter_rules(rules, check: :own_resource)
-      [%LetMe.Rule{action: :update, name: :article_update, object: :article, expression: %LetMe.AnyOf{children: [%LetMe.Check{name: :own_resource}, %LetMe.Check{name: :role, arg: :writer}]}}]
+      [%LetMe.Rule{action: :update, name: :article_update, object: :article, expression: %Spek.AnyOf{children: [%LetMe.Check{name: :own_resource}, %LetMe.Check{name: :role, arg: :writer}]}}]
       iex> match?([_, _], filter_rules(rules, check: :role))
       true
       iex> filter_rules(rules, check: {:role, :editor})
       [%LetMe.Rule{action: :create, name: :article_create, object: :article, expression: %LetMe.Check{name: :role, arg: :editor}}]
       iex> filter_rules(rules, check: {:role, :writer})
-      [%LetMe.Rule{action: :update, name: :article_update, object: :article, expression: %LetMe.AnyOf{children: [%LetMe.Check{name: :own_resource}, %LetMe.Check{name: :role, arg: :writer}]}}]
+      [%LetMe.Rule{action: :update, name: :article_update, object: :article, expression: %Spek.AnyOf{children: [%LetMe.Check{name: :own_resource}, %LetMe.Check{name: :role, arg: :writer}]}}]
   """
   @spec filter_rules([Rule.t()], keyword) :: [Rule.t()]
   def filter_rules(rules, opts) when is_list(rules) do

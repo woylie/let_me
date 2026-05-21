@@ -208,7 +208,7 @@ defmodule LetMe.Policy do
       [
         %LetMe.Rule{
           action: :create,
-          expression: %LetMe.AnyOf{
+          expression: %Spek.AnyOf{
             children: [
               %LetMe.Check{name: :role, arg: :admin},
               %LetMe.Check{name: :role, arg: :writer}
@@ -298,7 +298,7 @@ defmodule LetMe.Policy do
       {:ok,
        %LetMe.Rule{
          action: :create,
-         expression: %LetMe.AnyOf{
+         expression: %Spek.AnyOf{
            children: [
              %LetMe.Check{name: :role, arg: :admin},
              %LetMe.Check{name: :role, arg: :writer}
@@ -324,7 +324,7 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.fetch_rule!(:article_create)
       %LetMe.Rule{
         action: :create,
-        expression: %LetMe.AnyOf{children: [
+        expression: %Spek.AnyOf{children: [
           %LetMe.Check{name: :role, arg: :admin},
           %LetMe.Check{name: :role, arg: :writer}
         ]},
@@ -424,7 +424,7 @@ defmodule LetMe.Policy do
       {
         :error,
         %LetMe.UnauthorizedError{
-          expression: %LetMe.AnyOf{
+          expression: %Spek.AnyOf{
             children: [
               %LetMe.Check{
                 name: :role,
@@ -467,7 +467,7 @@ defmodule LetMe.Policy do
 
   %LetMe.UnauthorizedError{
     message: "unauthorized",
-    expression: %LetMe.AnyOf{
+    expression: %Spek.AnyOf{
       children: [
         %LetMe.Check{
           name: :role,
@@ -566,7 +566,7 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.get_rule(:article_create)
       %LetMe.Rule{
         action: :create,
-        expression: %LetMe.AnyOf{
+        expression: %Spek.AnyOf{
           children: [
             %LetMe.Check{name: :role, arg: :admin},
             %LetMe.Check{name: :role, arg: :writer}
@@ -1087,7 +1087,7 @@ defmodule LetMe.Policy do
           to_check_or_literal(check)
       end)
 
-    %LetMe.AnyOf{children: children}
+    %Spek.AnyOf{children: children}
   end
 
   defp to_check_or_literal(bool) when is_boolean(bool) do
