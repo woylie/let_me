@@ -4,9 +4,9 @@ defmodule LetMe.EvaluatorTest do
   alias __MODULE__.Checks
   alias LetMe.Check
   alias LetMe.Evaluator
-  alias LetMe.Literal
   alias Spek.AllOf
   alias Spek.AnyOf
+  alias Spek.Literal
   alias Spek.Not
 
   defmodule Checks do
@@ -35,13 +35,13 @@ defmodule LetMe.EvaluatorTest do
   describe "evaluate_expression/4" do
     test "evaluates literal" do
       assert Evaluator.evaluate_expression(
-               %Literal{satisfied?: true},
+               %Literal{result: true, satisfied?: true},
                Checks,
                subject()
              ) == true
 
       assert Evaluator.evaluate_expression(
-               %Literal{satisfied?: false},
+               %Literal{result: false, satisfied?: false},
                Checks,
                subject()
              ) == false
@@ -118,13 +118,13 @@ defmodule LetMe.EvaluatorTest do
 
     test "evaluates not" do
       assert Evaluator.evaluate_expression(
-               %Not{expression: %Literal{satisfied?: true}},
+               %Not{expression: %Literal{result: true, satisfied?: true}},
                Checks,
                subject()
              ) == false
 
       assert Evaluator.evaluate_expression(
-               %Not{expression: %Literal{satisfied?: false}},
+               %Not{expression: %Literal{result: false, satisfied?: false}},
                Checks,
                subject()
              ) == true
@@ -140,13 +140,13 @@ defmodule LetMe.EvaluatorTest do
 
     test "evaluates AllOf with one child" do
       assert Evaluator.evaluate_expression(
-               %AllOf{children: [%Literal{satisfied?: true}]},
+               %AllOf{children: [%Literal{result: true, satisfied?: true}]},
                Checks,
                subject()
              ) == true
 
       assert Evaluator.evaluate_expression(
-               %AllOf{children: [%Literal{satisfied?: false}]},
+               %AllOf{children: [%Literal{result: false, satisfied?: false}]},
                Checks,
                subject()
              ) == false
@@ -165,8 +165,8 @@ defmodule LetMe.EvaluatorTest do
         assert Evaluator.evaluate_expression(
                  %AllOf{
                    children: [
-                     %Literal{satisfied?: v1},
-                     %Literal{satisfied?: v2}
+                     %Literal{result: v1, satisfied?: v1},
+                     %Literal{result: v2, satisfied?: v2}
                    ]
                  },
                  Checks,
@@ -185,13 +185,13 @@ defmodule LetMe.EvaluatorTest do
 
     test "evaluates AnyOf with one child" do
       assert Evaluator.evaluate_expression(
-               %AnyOf{children: [%Literal{satisfied?: true}]},
+               %AnyOf{children: [%Literal{result: true, satisfied?: true}]},
                Checks,
                subject()
              ) == true
 
       assert Evaluator.evaluate_expression(
-               %AnyOf{children: [%Literal{satisfied?: false}]},
+               %AnyOf{children: [%Literal{result: false, satisfied?: false}]},
                Checks,
                subject()
              ) == false
@@ -210,8 +210,8 @@ defmodule LetMe.EvaluatorTest do
         assert Evaluator.evaluate_expression(
                  %AnyOf{
                    children: [
-                     %Literal{satisfied?: v1},
-                     %Literal{satisfied?: v2}
+                     %Literal{result: v1, satisfied?: v1},
+                     %Literal{result: v2, satisfied?: v2}
                    ]
                  },
                  Checks,
@@ -224,16 +224,16 @@ defmodule LetMe.EvaluatorTest do
   describe "evaluate_expression_acc/4" do
     test "evaluates literal" do
       assert Evaluator.evaluate_expression_acc(
-               %Literal{satisfied?: true},
+               %Literal{result: true, satisfied?: true},
                Checks,
                subject()
-             ) == %Literal{satisfied?: true}
+             ) == %Literal{result: true, satisfied?: true}
 
       assert Evaluator.evaluate_expression_acc(
-               %Literal{satisfied?: false},
+               %Literal{result: false, satisfied?: false},
                Checks,
                subject()
-             ) == %Literal{satisfied?: false}
+             ) == %Literal{result: false, satisfied?: false}
     end
 
     test "evaluates check without arg" do
@@ -326,20 +326,20 @@ defmodule LetMe.EvaluatorTest do
 
     test "evaluates not with literal" do
       assert Evaluator.evaluate_expression_acc(
-               %Not{expression: %Literal{satisfied?: true}},
+               %Not{expression: %Literal{result: true, satisfied?: true}},
                Checks,
                subject()
              ) == %Not{
-               expression: %Literal{satisfied?: true},
+               expression: %Literal{result: true, satisfied?: true},
                satisfied?: false
              }
 
       assert Evaluator.evaluate_expression_acc(
-               %Not{expression: %Literal{satisfied?: false}},
+               %Not{expression: %Literal{result: false, satisfied?: false}},
                Checks,
                subject()
              ) == %Not{
-               expression: %Literal{satisfied?: false},
+               expression: %Literal{result: false, satisfied?: false},
                satisfied?: true
              }
     end

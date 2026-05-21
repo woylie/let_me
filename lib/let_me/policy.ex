@@ -255,7 +255,7 @@ defmodule LetMe.Policy do
       [
         %LetMe.Rule{
           action: :view,
-          expression: %LetMe.Literal{satisfied?: true},
+          expression: %Spek.Literal{result: true, satisfied?: true},
           description: "allows to view an article and the list of articles",
           name: :article_view,
           object: :article,
@@ -275,7 +275,7 @@ defmodule LetMe.Policy do
       [
         %LetMe.Rule{
           action: :view,
-          expression: %LetMe.Literal{satisfied?: true},
+          expression: %Spek.Literal{result: true, satisfied?: true},
           description: "allows to view an article and the list of articles",
           name: :article_view,
           object: :article,
@@ -1081,7 +1081,7 @@ defmodule LetMe.Policy do
           %Spek.AllOf{children: Enum.map(checks, &to_check_or_literal/1)}
 
         [] ->
-          %LetMe.Literal{satisfied?: false}
+          %Spek.Literal{result: false, satisfied?: false}
 
         check ->
           to_check_or_literal(check)
@@ -1091,7 +1091,7 @@ defmodule LetMe.Policy do
   end
 
   defp to_check_or_literal(bool) when is_boolean(bool) do
-    %LetMe.Literal{satisfied?: bool}
+    %Spek.Literal{result: bool, satisfied?: bool}
   end
 
   defp to_check_or_literal({name, arg}) when is_atom(name) do

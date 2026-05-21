@@ -2,9 +2,9 @@ defmodule LetMe.Optimizer do
   @moduledoc false
 
   alias LetMe.Check
-  alias LetMe.Literal
   alias Spek.AllOf
   alias Spek.AnyOf
+  alias Spek.Literal
   alias Spek.Not
 
   def optimize(%Literal{} = literal) do
@@ -23,7 +23,7 @@ defmodule LetMe.Optimizer do
 
       # not(true) == false, not(false) == true
       %Literal{satisfied?: bool} ->
-        %Literal{satisfied?: not bool}
+        %Literal{result: not bool, satisfied?: not bool}
 
       # not (A and B) = (not A) or (not B)
       %AllOf{children: children} ->
@@ -40,7 +40,7 @@ defmodule LetMe.Optimizer do
   end
 
   def optimize(%AllOf{children: []}) do
-    %Literal{satisfied?: true}
+    %Literal{result: true, satisfied?: true}
   end
 
   def optimize(%AllOf{children: [child]}) do
@@ -66,18 +66,18 @@ defmodule LetMe.Optimizer do
 
     case children do
       # wrap false from first condition in reducer
-      false -> %Literal{satisfied?: false}
+      false -> %Literal{result: false, satisfied?: false}
       # allof(A) = A
       [child] -> child
       # allof() = true
-      [] -> %Literal{satisfied?: true}
+      [] -> %Literal{result: true, satisfied?: true}
       # return new allof
       children -> %AllOf{children: Enum.reverse(children)}
     end
   end
 
   def optimize(%AnyOf{children: []}) do
-    %Literal{satisfied?: false}
+    %Literal{result: false, satisfied?: false}
   end
 
   def optimize(%AnyOf{children: [child]}) do
@@ -117,11 +117,11 @@ defmodule LetMe.Optimizer do
 
     case children do
       # wrap true from first condition in reducer
-      true -> %Literal{satisfied?: true}
+      true -> %Literal{result: true, satisfied?: true}
       # anyof(A) = A
       [child] -> child
       # anyof() = false
-      [] -> %Literal{satisfied?: false}
+      [] -> %Literal{result: false, satisfied?: false}
       # return new anyof
       children -> %AnyOf{children: Enum.reverse(children)}
     end
@@ -173,7 +173,7 @@ defmodule LetMe.Optimizer do
       Enum.map(all_ofs, fn %AllOf{children: children} ->
         case children -- common_expressions do
           # allof() = true
-          [] -> %Literal{satisfied?: true}
+          [] -> %Literal{result: true, satisfied?: true}
           # allof(A) = A
           [child] -> child
           # if there is more than one child, build a new AllOf

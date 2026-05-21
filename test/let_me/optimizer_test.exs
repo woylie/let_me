@@ -2,14 +2,14 @@ defmodule LetMe.OptimizerTest do
   use ExUnit.Case, async: true
 
   alias LetMe.Check
-  alias LetMe.Literal
   alias LetMe.Optimizer
   alias Spek.AllOf
   alias Spek.AnyOf
+  alias Spek.Literal
   alias Spek.Not
 
   test "returns Literal unchanged" do
-    literal = %Literal{satisfied?: true}
+    literal = %Literal{result: true, satisfied?: true}
     assert Optimizer.optimize(literal) == literal
   end
 
@@ -25,8 +25,9 @@ defmodule LetMe.OptimizerTest do
   end
 
   test "resolves not on literals" do
-    assert Optimizer.optimize(%Not{expression: %Literal{satisfied?: true}}) ==
-             %Literal{satisfied?: false}
+    assert Optimizer.optimize(%Not{
+             expression: %Literal{result: true, satisfied?: true}
+           }) == %Literal{result: false, satisfied?: false}
   end
 
   test "pushes down Not in AllOf" do
@@ -59,12 +60,14 @@ defmodule LetMe.OptimizerTest do
 
   test "converts AllOf without children to true Literal" do
     assert Optimizer.optimize(%AllOf{children: []}) == %Literal{
+             result: true,
              satisfied?: true
            }
   end
 
   test "converts AnyOf without children to false Literal" do
     assert Optimizer.optimize(%AnyOf{children: []}) == %Literal{
+             result: false,
              satisfied?: false
            }
   end
@@ -76,7 +79,7 @@ defmodule LetMe.OptimizerTest do
 
   test "applies optimization on unwrapped AllOf child and on result" do
     assert Optimizer.optimize(%AllOf{children: [%AnyOf{children: []}]}) ==
-             %Literal{satisfied?: false}
+             %Literal{result: false, satisfied?: false}
   end
 
   test "unwraps anyOf with a single child" do
@@ -86,7 +89,7 @@ defmodule LetMe.OptimizerTest do
 
   test "applies optimization on unwrapped AnyOf child and on result" do
     assert Optimizer.optimize(%AnyOf{children: [%AllOf{children: []}]}) ==
-             %Literal{satisfied?: true}
+             %Literal{result: true, satisfied?: true}
   end
 
   test "deduplicates AllOf" do
@@ -121,16 +124,16 @@ defmodule LetMe.OptimizerTest do
   test "optimizes after deduplicating AllOf" do
     assert Optimizer.optimize(%AllOf{
              children: [
-               %Literal{satisfied?: true},
-               %Literal{satisfied?: true}
+               %Literal{result: true, satisfied?: true},
+               %Literal{result: true, satisfied?: true}
              ]
-           }) == %Literal{satisfied?: true}
+           }) == %Literal{result: true, satisfied?: true}
   end
 
   test "unwraps AllOf if one child remains after optimization" do
     assert Optimizer.optimize(%AllOf{
              children: [
-               %Literal{satisfied?: true},
+               %Literal{result: true, satisfied?: true},
                %Check{name: :two_factor}
              ]
            }) == %Check{name: :two_factor}
@@ -168,23 +171,23 @@ defmodule LetMe.OptimizerTest do
   test "optimizes after deduplicating AnyOf" do
     assert Optimizer.optimize(%AnyOf{
              children: [
-               %Literal{satisfied?: true},
-               %Literal{satisfied?: true}
+               %Literal{result: true, satisfied?: true},
+               %Literal{result: true, satisfied?: true}
              ]
-           }) == %Literal{satisfied?: true}
+           }) == %Literal{result: true, satisfied?: true}
 
     assert Optimizer.optimize(%AnyOf{
              children: [
-               %Literal{satisfied?: false},
-               %Literal{satisfied?: false}
+               %Literal{result: false, satisfied?: false},
+               %Literal{result: false, satisfied?: false}
              ]
-           }) == %Literal{satisfied?: false}
+           }) == %Literal{result: false, satisfied?: false}
   end
 
   test "unwraps AnyOf if one child remains after optimization" do
     assert Optimizer.optimize(%AnyOf{
              children: [
-               %Literal{satisfied?: false},
+               %Literal{result: false, satisfied?: false},
                %Check{name: :two_factor}
              ]
            }) == %Check{name: :two_factor}
@@ -194,18 +197,18 @@ defmodule LetMe.OptimizerTest do
     assert Optimizer.optimize(%AllOf{
              children: [
                %Check{name: :role, arg: :admin},
-               %Literal{satisfied?: false}
+               %Literal{result: false, satisfied?: false}
              ]
-           }) == %Literal{satisfied?: false}
+           }) == %Literal{result: false, satisfied?: false}
   end
 
   test "converts AnyOf with true literal to literal" do
     assert Optimizer.optimize(%AnyOf{
              children: [
                %Check{name: :role, arg: :admin},
-               %Literal{satisfied?: true}
+               %Literal{result: true, satisfied?: true}
              ]
-           }) == %Literal{satisfied?: true}
+           }) == %Literal{result: true, satisfied?: true}
   end
 
   test "removes true literal from AllOf" do
@@ -213,7 +216,7 @@ defmodule LetMe.OptimizerTest do
              children: [
                %Check{name: :role, arg: :admin},
                %Check{name: :two_fa},
-               %Literal{satisfied?: true}
+               %Literal{result: true, satisfied?: true}
              ]
            }) == %AllOf{
              children: [
@@ -228,7 +231,7 @@ defmodule LetMe.OptimizerTest do
              children: [
                %Check{name: :role, arg: :admin},
                %Check{name: :two_fa},
-               %Literal{satisfied?: false}
+               %Literal{result: false, satisfied?: false}
              ]
            }) == %AnyOf{
              children: [

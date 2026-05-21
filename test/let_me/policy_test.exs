@@ -5,7 +5,6 @@ defmodule LetMe.PolicyTest do
   import ExUnit.CaptureLog
 
   alias LetMe.Check
-  alias LetMe.Literal
   alias LetMe.Rule
   alias LetMe.UnauthorizedError
   alias MyApp.Blog.Article
@@ -13,6 +12,7 @@ defmodule LetMe.PolicyTest do
   alias MyApp.TestPolicy
   alias Spek.AllOf
   alias Spek.AnyOf
+  alias Spek.Literal
   alias Spek.Not
 
   defmodule TestPolicy do
@@ -311,7 +311,7 @@ defmodule LetMe.PolicyTest do
                  },
                  %Rule{
                    action: :view,
-                   expression: %Literal{satisfied?: true},
+                   expression: %Literal{result: true, satisfied?: true},
                    description:
                      "allows to view an article and the list of articles",
                    name: :article_view,
@@ -608,7 +608,7 @@ defmodule LetMe.PolicyTest do
       assert unauthorized_error(TestPolicy, :simple_allow_false, %{}) ==
                %UnauthorizedError{
                  message: "unauthorized",
-                 expression: %Literal{satisfied?: false}
+                 expression: %Literal{result: false, satisfied?: false}
                }
 
       assert unauthorized_error(
@@ -617,7 +617,7 @@ defmodule LetMe.PolicyTest do
                %{}
              ) == %UnauthorizedError{
                message: "unauthorized",
-               expression: %Literal{satisfied?: false}
+               expression: %Literal{result: false, satisfied?: false}
              }
     end
 
@@ -649,7 +649,7 @@ defmodule LetMe.PolicyTest do
                :simple_allow_false_combined,
                %{role: :admin}
              ) == %UnauthorizedError{
-               expression: %Literal{satisfied?: false},
+               expression: %Literal{result: false, satisfied?: false},
                message: "unauthorized"
              }
     end
@@ -706,7 +706,7 @@ defmodule LetMe.PolicyTest do
       assert unauthorized_error(TestPolicy, :simple_deny_true, %{}) ==
                %UnauthorizedError{
                  message: "unauthorized",
-                 expression: %Literal{satisfied?: false}
+                 expression: %Literal{result: false, satisfied?: false}
                }
 
       assert_authorized TestPolicy, :simple_deny_false, %{}
@@ -720,7 +720,7 @@ defmodule LetMe.PolicyTest do
                %{id: 1}
              ) == %UnauthorizedError{
                message: "unauthorized",
-               expression: %Literal{satisfied?: false}
+               expression: %Literal{result: false, satisfied?: false}
              }
 
       assert unauthorized_error(
@@ -730,7 +730,7 @@ defmodule LetMe.PolicyTest do
                %{id: 2}
              ) == %UnauthorizedError{
                message: "unauthorized",
-               expression: %Literal{satisfied?: false}
+               expression: %Literal{result: false, satisfied?: false}
              }
     end
 
@@ -738,13 +738,13 @@ defmodule LetMe.PolicyTest do
       assert unauthorized_error(TestPolicy, :simple_no_checks, %{}) ==
                %UnauthorizedError{
                  message: "unauthorized",
-                 expression: %Literal{satisfied?: false}
+                 expression: %Literal{result: false, satisfied?: false}
                }
 
       assert unauthorized_error(TestPolicy, :simple_empty_list_check, %{}) ==
                %UnauthorizedError{
                  message: "unauthorized",
-                 expression: %Literal{satisfied?: false}
+                 expression: %Literal{result: false, satisfied?: false}
                }
     end
 
@@ -819,7 +819,10 @@ defmodule LetMe.PolicyTest do
                assert TestPolicy.authorize(:does_not_exist, %{}) ==
                         {:error,
                          %UnauthorizedError{
-                           expression: %LetMe.Literal{satisfied?: false},
+                           expression: %Spek.Literal{
+                             result: false,
+                             satisfied?: false
+                           },
                            message: "unauthorized"
                          }}
              end) =~ "Permission checked for rule that does not exist"
@@ -1255,7 +1258,7 @@ defmodule LetMe.PolicyTest do
 
     test "can customize error response" do
       # TestPolicy uses detailed errors (error: :detailed)
-      assert {:error, %UnauthorizedError{expression: %LetMe.Literal{}}} =
+      assert {:error, %UnauthorizedError{expression: %Spek.Literal{}}} =
                TestPolicy.authorize(:simple_allow_false, %{})
 
       # PolicyShort uses default error
@@ -1300,7 +1303,7 @@ defmodule LetMe.PolicyTest do
 
     test "can opt-in to / out of detailed errors" do
       # TestPolicy uses detailed errors (error: :detailed)
-      assert %LetMe.UnauthorizedError{expression: %LetMe.Literal{}} =
+      assert %LetMe.UnauthorizedError{expression: %Spek.Literal{}} =
                assert_raise(
                  LetMe.UnauthorizedError,
                  "unauthorized",

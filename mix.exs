@@ -90,7 +90,6 @@ defmodule LetMe.MixProject do
       groups_for_modules: [
         Structs: [
           LetMe.Check,
-          LetMe.Literal,
           LetMe.Rule
         ]
       ]

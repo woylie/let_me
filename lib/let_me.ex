@@ -8,10 +8,10 @@ defmodule LetMe do
   """
 
   alias LetMe.Check
-  alias LetMe.Literal
   alias LetMe.Rule
   alias Spek.AllOf
   alias Spek.AnyOf
+  alias Spek.Literal
   alias Spek.Not
 
   @type expression :: AllOf.t() | AnyOf.t() | Check.t() | Literal.t() | Not.t()

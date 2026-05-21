@@ -2,9 +2,9 @@ defmodule LetMe.Evaluator do
   @moduledoc false
 
   alias LetMe.Check
-  alias LetMe.Literal
   alias Spek.AllOf
   alias Spek.AnyOf
+  alias Spek.Literal
   alias Spek.Not
 
   ## non-accumulating

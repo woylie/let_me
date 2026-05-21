@@ -163,7 +163,7 @@ defmodule LetMe.Builder do
           policy_module: unquote(check_module)
         )
 
-        %LetMe.Literal{satisfied?: false}
+        %Spek.Literal{result: false, satisfied?: false}
       end
     end
   end
@@ -173,7 +173,7 @@ defmodule LetMe.Builder do
          check_module
        ) do
     case expression do
-      %LetMe.Literal{satisfied?: satisfied?} ->
+      %Spek.Literal{satisfied?: satisfied?} ->
         quote do
           def authorize?(unquote(rule_name), _, _, _) do
             unquote(satisfied?)
@@ -203,7 +203,7 @@ defmodule LetMe.Builder do
          check_module
        ) do
     case expression do
-      %LetMe.Literal{} = literal ->
+      %Spek.Literal{} = literal ->
         quote do
           defp do_authorize(unquote(rule_name), _, _, _) do
             unquote(Macro.escape(literal))
