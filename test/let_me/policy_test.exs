@@ -4,7 +4,6 @@ defmodule LetMe.PolicyTest do
 
   import ExUnit.CaptureLog
 
-  alias LetMe.AllOf
   alias LetMe.AnyOf
   alias LetMe.Check
   alias LetMe.Literal
@@ -13,6 +12,7 @@ defmodule LetMe.PolicyTest do
   alias MyApp.Blog.Article
   alias MyApp.Policy
   alias MyApp.TestPolicy
+  alias Spek.AllOf
   alias Spek.Not
 
   defmodule TestPolicy do
@@ -883,7 +883,7 @@ defmodule LetMe.PolicyTest do
                %{id: 1, role: :writer},
                %{user_id: 2}
              ) == %UnauthorizedError{
-               expression: %LetMe.AllOf{
+               expression: %Spek.AllOf{
                  satisfied?: false,
                  children: [
                    %LetMe.Check{

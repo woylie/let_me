@@ -1064,7 +1064,7 @@ defmodule LetMe.Policy do
 
   @doc false
   def put_expression(%Rule{} = rule, allow, deny) do
-    expression = %LetMe.AllOf{
+    expression = %Spek.AllOf{
       children: [
         %Spek.Not{expression: nested_list_to_expression(deny)},
         nested_list_to_expression(allow)
@@ -1078,7 +1078,7 @@ defmodule LetMe.Policy do
     children =
       Enum.map(conditions, fn
         [_ | _] = checks ->
-          %LetMe.AllOf{children: Enum.map(checks, &to_check_or_literal/1)}
+          %Spek.AllOf{children: Enum.map(checks, &to_check_or_literal/1)}
 
         [] ->
           %LetMe.Literal{satisfied?: false}

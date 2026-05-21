@@ -1,11 +1,11 @@
 defmodule LetMe.OptimizerTest do
   use ExUnit.Case, async: true
 
-  alias LetMe.AllOf
   alias LetMe.AnyOf
   alias LetMe.Check
   alias LetMe.Literal
   alias LetMe.Optimizer
+  alias Spek.AllOf
   alias Spek.Not
 
   test "returns Literal unchanged" do

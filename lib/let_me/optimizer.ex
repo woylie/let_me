@@ -1,10 +1,10 @@
 defmodule LetMe.Optimizer do
   @moduledoc false
 
-  alias LetMe.AllOf
   alias LetMe.AnyOf
   alias LetMe.Check
   alias LetMe.Literal
+  alias Spek.AllOf
   alias Spek.Not
 
   def optimize(%Literal{} = literal) do

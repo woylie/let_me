@@ -89,7 +89,6 @@ defmodule LetMe.MixProject do
       ],
       groups_for_modules: [
         Structs: [
-          LetMe.AllOf,
           LetMe.AnyOf,
           LetMe.Check,
           LetMe.Literal,
