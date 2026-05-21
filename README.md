@@ -267,13 +267,13 @@ iex> MyApp.Policy.authorize(:article_update, scope, object, error: :detailed)
         name: :role,
         arg: :editor,
         result: false,
-        passed?: false
+        satisfied?: false
       },
       %LetMe.Check{
         name: :role,
         arg: :writer,
         result: false,
-        passed?: false
+        satisfied?: false
       }
     ]
   }

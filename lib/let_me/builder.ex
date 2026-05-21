@@ -109,10 +109,10 @@ defmodule LetMe.Builder do
         case Keyword.pop(opts, :error, unquote(error)) do
           {:detailed, opts} ->
             case do_authorize(action, subject, object, opts) do
-              %{passed?: true} ->
+              %{satisfied?: true} ->
                 :ok
 
-              %{passed?: false} = expr ->
+              %{satisfied?: false} = expr ->
                 {:error, LetMe.UnauthorizedError.with_expression(expr)}
             end
 
@@ -138,10 +138,10 @@ defmodule LetMe.Builder do
         case Keyword.pop(opts, :error, unquote(error)) do
           {:detailed, opts} ->
             case do_authorize(action, subject, object, opts) do
-              %{passed?: true} ->
+              %{satisfied?: true} ->
                 :ok
 
-              %{passed?: false} = expr ->
+              %{satisfied?: false} = expr ->
                 raise LetMe.UnauthorizedError.with_expression(expr)
             end
 
@@ -163,7 +163,7 @@ defmodule LetMe.Builder do
           policy_module: unquote(check_module)
         )
 
-        %LetMe.Literal{passed?: false}
+        %LetMe.Literal{satisfied?: false}
       end
     end
   end
@@ -173,10 +173,10 @@ defmodule LetMe.Builder do
          check_module
        ) do
     case expression do
-      %LetMe.Literal{passed?: passed?} ->
+      %LetMe.Literal{satisfied?: satisfied?} ->
         quote do
           def authorize?(unquote(rule_name), _, _, _) do
-            unquote(passed?)
+            unquote(satisfied?)
           end
         end
 

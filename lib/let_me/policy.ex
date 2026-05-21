@@ -255,7 +255,7 @@ defmodule LetMe.Policy do
       [
         %LetMe.Rule{
           action: :view,
-          expression: %LetMe.Literal{passed?: true},
+          expression: %LetMe.Literal{satisfied?: true},
           description: "allows to view an article and the list of articles",
           name: :article_view,
           object: :article,
@@ -275,7 +275,7 @@ defmodule LetMe.Policy do
       [
         %LetMe.Rule{
           action: :view,
-          expression: %LetMe.Literal{passed?: true},
+          expression: %LetMe.Literal{satisfied?: true},
           description: "allows to view an article and the list of articles",
           name: :article_view,
           object: :article,
@@ -403,7 +403,7 @@ defmodule LetMe.Policy do
           arg: nil,
           name: :own_resource,
           result: false,
-          passed?: false
+          satisfied?: false
         }
       }}
 
@@ -430,16 +430,16 @@ defmodule LetMe.Policy do
                 name: :role,
                 arg: :admin,
                 result: false,
-                passed?: false
+                satisfied?: false
               },
               %LetMe.Check{
                 name: :role,
                 arg: :client,
                 result: false,
-                passed?: false
+                satisfied?: false
               }
             ],
-            passed?: false
+            satisfied?: false
           },
           message: "unauthorized"
         }
@@ -473,13 +473,13 @@ defmodule LetMe.Policy do
           name: :role,
           arg: :editor,
           result: false,
-          passed?: false
+          satisfied?: false
         },
         %LetMe.Check{
           name: :role,
           arg: :writer,
           result: false,
-          passed?: false
+          satisfied?: false
         }
       ]
     }
@@ -1066,7 +1066,7 @@ defmodule LetMe.Policy do
   def put_expression(%Rule{} = rule, allow, deny) do
     expression = %LetMe.AllOf{
       children: [
-        %LetMe.Not{expression: nested_list_to_expression(deny)},
+        %Spek.Not{expression: nested_list_to_expression(deny)},
         nested_list_to_expression(allow)
       ]
     }
@@ -1081,7 +1081,7 @@ defmodule LetMe.Policy do
           %LetMe.AllOf{children: Enum.map(checks, &to_check_or_literal/1)}
 
         [] ->
-          %LetMe.Literal{passed?: false}
+          %LetMe.Literal{satisfied?: false}
 
         check ->
           to_check_or_literal(check)
@@ -1091,7 +1091,7 @@ defmodule LetMe.Policy do
   end
 
   defp to_check_or_literal(bool) when is_boolean(bool) do
-    %LetMe.Literal{passed?: bool}
+    %LetMe.Literal{satisfied?: bool}
   end
 
   defp to_check_or_literal({name, arg}) when is_atom(name) do

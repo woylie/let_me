@@ -11,8 +11,8 @@ defmodule LetMe do
   alias LetMe.AnyOf
   alias LetMe.Check
   alias LetMe.Literal
-  alias LetMe.Not
   alias LetMe.Rule
+  alias Spek.Not
 
   @type expression :: AllOf.t() | AnyOf.t() | Check.t() | Literal.t() | Not.t()
 

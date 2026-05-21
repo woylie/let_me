@@ -8,12 +8,12 @@ defmodule LetMe.PolicyTest do
   alias LetMe.AnyOf
   alias LetMe.Check
   alias LetMe.Literal
-  alias LetMe.Not
   alias LetMe.Rule
   alias LetMe.UnauthorizedError
   alias MyApp.Blog.Article
   alias MyApp.Policy
   alias MyApp.TestPolicy
+  alias Spek.Not
 
   defmodule TestPolicy do
     use LetMe.Policy, check_module: MyApp.Checks, error: :detailed
@@ -311,7 +311,7 @@ defmodule LetMe.PolicyTest do
                  },
                  %Rule{
                    action: :view,
-                   expression: %Literal{passed?: true},
+                   expression: %Literal{satisfied?: true},
                    description:
                      "allows to view an article and the list of articles",
                    name: :article_view,
@@ -517,7 +517,7 @@ defmodule LetMe.PolicyTest do
                       %Check{name: :role, arg: :admin},
                       %Check{name: :role, arg: :writer}
                     ],
-                    passed?: nil
+                    satisfied?: nil
                   },
                   name: :article_create,
                   object: :article,
@@ -569,7 +569,7 @@ defmodule LetMe.PolicyTest do
                expression: %Check{
                  arg: nil,
                  name: :own_resource,
-                 passed?: false,
+                 satisfied?: false,
                  result: false
                },
                message: "unauthorized"
@@ -596,7 +596,7 @@ defmodule LetMe.PolicyTest do
                  name: :role,
                  arg: :editor,
                  result: false,
-                 passed?: false
+                 satisfied?: false
                }
              }
     end
@@ -608,7 +608,7 @@ defmodule LetMe.PolicyTest do
       assert unauthorized_error(TestPolicy, :simple_allow_false, %{}) ==
                %UnauthorizedError{
                  message: "unauthorized",
-                 expression: %Literal{passed?: false}
+                 expression: %Literal{satisfied?: false}
                }
 
       assert unauthorized_error(
@@ -617,7 +617,7 @@ defmodule LetMe.PolicyTest do
                %{}
              ) == %UnauthorizedError{
                message: "unauthorized",
-               expression: %Literal{passed?: false}
+               expression: %Literal{satisfied?: false}
              }
     end
 
@@ -635,7 +635,7 @@ defmodule LetMe.PolicyTest do
                expression: %Check{
                  arg: :admin,
                  name: :role,
-                 passed?: false,
+                 satisfied?: false,
                  result: false
                },
                message: "unauthorized"
@@ -649,7 +649,7 @@ defmodule LetMe.PolicyTest do
                :simple_allow_false_combined,
                %{role: :admin}
              ) == %UnauthorizedError{
-               expression: %Literal{passed?: false},
+               expression: %Literal{satisfied?: false},
                message: "unauthorized"
              }
     end
@@ -667,9 +667,9 @@ defmodule LetMe.PolicyTest do
                    name: :same_user,
                    arg: nil,
                    result: true,
-                   passed?: true
+                   satisfied?: true
                  },
-                 passed?: false
+                 satisfied?: false
                }
              }
 
@@ -694,10 +694,10 @@ defmodule LetMe.PolicyTest do
                  expression: %Check{
                    name: :role,
                    arg: :writer,
-                   passed?: true,
+                   satisfied?: true,
                    result: true
                  },
-                 passed?: false
+                 satisfied?: false
                }
              }
     end
@@ -706,7 +706,7 @@ defmodule LetMe.PolicyTest do
       assert unauthorized_error(TestPolicy, :simple_deny_true, %{}) ==
                %UnauthorizedError{
                  message: "unauthorized",
-                 expression: %Literal{passed?: false}
+                 expression: %Literal{satisfied?: false}
                }
 
       assert_authorized TestPolicy, :simple_deny_false, %{}
@@ -720,7 +720,7 @@ defmodule LetMe.PolicyTest do
                %{id: 1}
              ) == %UnauthorizedError{
                message: "unauthorized",
-               expression: %Literal{passed?: false}
+               expression: %Literal{satisfied?: false}
              }
 
       assert unauthorized_error(
@@ -730,7 +730,7 @@ defmodule LetMe.PolicyTest do
                %{id: 2}
              ) == %UnauthorizedError{
                message: "unauthorized",
-               expression: %Literal{passed?: false}
+               expression: %Literal{satisfied?: false}
              }
     end
 
@@ -738,13 +738,13 @@ defmodule LetMe.PolicyTest do
       assert unauthorized_error(TestPolicy, :simple_no_checks, %{}) ==
                %UnauthorizedError{
                  message: "unauthorized",
-                 expression: %Literal{passed?: false}
+                 expression: %Literal{satisfied?: false}
                }
 
       assert unauthorized_error(TestPolicy, :simple_empty_list_check, %{}) ==
                %UnauthorizedError{
                  message: "unauthorized",
-                 expression: %Literal{passed?: false}
+                 expression: %Literal{satisfied?: false}
                }
     end
 
@@ -763,7 +763,7 @@ defmodule LetMe.PolicyTest do
                  name: :role,
                  arg: :admin,
                  result: false,
-                 passed?: false
+                 satisfied?: false
                }
              }
     end
@@ -787,7 +787,7 @@ defmodule LetMe.PolicyTest do
              ) == %UnauthorizedError{
                expression: %Check{
                  name: :own_resource,
-                 passed?: false,
+                 satisfied?: false,
                  result: false
                },
                message: "unauthorized"
@@ -802,7 +802,7 @@ defmodule LetMe.PolicyTest do
                expression: %Check{
                  name: :own_resource,
                  arg: nil,
-                 passed?: false,
+                 satisfied?: false,
                  result: false
                },
                message: "unauthorized"
@@ -819,7 +819,7 @@ defmodule LetMe.PolicyTest do
                assert TestPolicy.authorize(:does_not_exist, %{}) ==
                         {:error,
                          %UnauthorizedError{
-                           expression: %LetMe.Literal{passed?: false},
+                           expression: %LetMe.Literal{satisfied?: false},
                            message: "unauthorized"
                          }}
              end) =~ "Permission checked for rule that does not exist"
@@ -839,12 +839,12 @@ defmodule LetMe.PolicyTest do
                %{user_id: 2}
              ) == %UnauthorizedError{
                expression: %AllOf{
-                 passed?: false,
+                 satisfied?: false,
                  children: [
                    %LetMe.Check{
                      name: :own_resource,
                      result: false,
-                     passed?: false
+                     satisfied?: false
                    }
                  ]
                },
@@ -863,16 +863,16 @@ defmodule LetMe.PolicyTest do
                      name: :own_resource,
                      arg: nil,
                      result: true,
-                     passed?: true
+                     satisfied?: true
                    },
                    %Check{
                      name: :role,
                      arg: :editor,
                      result: false,
-                     passed?: false
+                     satisfied?: false
                    }
                  ],
-                 passed?: false
+                 satisfied?: false
                },
                message: "unauthorized"
              }
@@ -884,13 +884,13 @@ defmodule LetMe.PolicyTest do
                %{user_id: 2}
              ) == %UnauthorizedError{
                expression: %LetMe.AllOf{
-                 passed?: false,
+                 satisfied?: false,
                  children: [
                    %LetMe.Check{
                      name: :own_resource,
                      arg: nil,
                      result: false,
-                     passed?: false
+                     satisfied?: false
                    }
                  ]
                },
@@ -928,16 +928,16 @@ defmodule LetMe.PolicyTest do
                      name: :role,
                      arg: :editor,
                      result: false,
-                     passed?: false
+                     satisfied?: false
                    },
                    %Check{
                      name: :own_resource,
                      arg: nil,
                      result: false,
-                     passed?: false
+                     satisfied?: false
                    }
                  ],
-                 passed?: false
+                 satisfied?: false
                },
                message: "unauthorized"
              }
@@ -959,21 +959,21 @@ defmodule LetMe.PolicyTest do
                        name: :same_user,
                        arg: nil,
                        result: true,
-                       passed?: true
+                       satisfied?: true
                      },
-                     passed?: false
+                     satisfied?: false
                    },
                    %Not{
                      expression: %Check{
                        name: :role,
                        arg: :writer,
                        result: true,
-                       passed?: true
+                       satisfied?: true
                      },
-                     passed?: false
+                     satisfied?: false
                    }
                  ],
-                 passed?: false
+                 satisfied?: false
                },
                message: "unauthorized"
              }
@@ -1008,13 +1008,13 @@ defmodule LetMe.PolicyTest do
                    %Not{
                      expression: %Check{
                        name: :same_user,
-                       passed?: true,
+                       satisfied?: true,
                        result: true
                      },
-                     passed?: false
+                     satisfied?: false
                    }
                  ],
-                 passed?: false
+                 satisfied?: false
                },
                message: "unauthorized"
              }
@@ -1031,15 +1031,15 @@ defmodule LetMe.PolicyTest do
                %{id: 1}
              ) == %UnauthorizedError{
                expression: %AllOf{
-                 passed?: false,
+                 satisfied?: false,
                  children: [
                    %Not{
                      expression: %Check{
                        name: :same_user,
                        result: true,
-                       passed?: true
+                       satisfied?: true
                      },
-                     passed?: false
+                     satisfied?: false
                    }
                  ]
                },
@@ -1053,25 +1053,25 @@ defmodule LetMe.PolicyTest do
                %{id: 2}
              ) == %UnauthorizedError{
                expression: %AllOf{
-                 passed?: false,
+                 satisfied?: false,
                  children: [
-                   %LetMe.Not{
+                   %Spek.Not{
                      expression: %Check{
                        name: :same_user,
                        arg: nil,
                        result: false,
-                       passed?: false
+                       satisfied?: false
                      },
-                     passed?: true
+                     satisfied?: true
                    },
-                   %LetMe.Not{
+                   %Spek.Not{
                      expression: %Check{
                        name: :role,
                        arg: :writer,
                        result: true,
-                       passed?: true
+                       satisfied?: true
                      },
-                     passed?: false
+                     satisfied?: false
                    }
                  ]
                },
@@ -1210,15 +1210,15 @@ defmodule LetMe.PolicyTest do
                %{role: :admin, state: :suspended}
              ) == %UnauthorizedError{
                expression: %AllOf{
-                 passed?: false,
+                 satisfied?: false,
                  children: [
-                   %LetMe.Not{
+                   %Spek.Not{
                      expression: %LetMe.Check{
                        name: :user_suspended,
                        result: {:ok, "user suspended"},
-                       passed?: true
+                       satisfied?: true
                      },
-                     passed?: false
+                     satisfied?: false
                    }
                  ]
                },
@@ -1236,18 +1236,18 @@ defmodule LetMe.PolicyTest do
                      expression: %Check{
                        name: :user_suspended,
                        result: :error,
-                       passed?: false
+                       satisfied?: false
                      },
-                     passed?: true
+                     satisfied?: true
                    },
                    %Check{
                      arg: :admin,
                      name: :role_with_reason,
                      result: {:error, "writer not allowed"},
-                     passed?: false
+                     satisfied?: false
                    }
                  ],
-                 passed?: false
+                 satisfied?: false
                },
                message: "unauthorized"
              }

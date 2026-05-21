@@ -3,7 +3,7 @@ defmodule LetMe.Literal do
   Struct that represents an authorization rule that evaluates to a fixed value.
   """
 
-  @type t :: %__MODULE__{passed?: boolean}
+  @type t :: %__MODULE__{satisfied?: boolean}
 
-  defstruct [:passed?]
+  defstruct [:satisfied?]
 end

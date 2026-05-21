@@ -12,25 +12,25 @@ defmodule LetMe.Check do
     `arg` as arguments. If set to `nil`, the function is expected to be a
     2-arity function that only takes the subject and the object as arguments.
   - `result` - The original return value of the check function.
-  - `passed?` - A boolean set depending on the return value of the check
+  - `satisfied?` - A boolean set depending on the return value of the check
     function.
 
-  `result` and `passed?` are only set when the policy is evaluated, i.e., when
-  the the `c:LetMe.Policy.authorize/4` or `c:LetMe.Policy.authorize!/4`
+  `result` and `satisfied?` are only set when the policy is evaluated, i.e.,
+  when the the `c:LetMe.Policy.authorize/4` or `c:LetMe.Policy.authorize!/4`
   functions are called.
 
   The `result` values `true`, `:ok`, and `{:ok, term}` are mapped to
-  `passed?: true`. The result values `false`, `:error`, and `{:error, term}`
-  are mapped to `passed?: false`.
+  `satisfied?: true`. The result values `false`, `:error`, and `{:error, term}`
+  are mapped to `satisfied?: false`.
   """
   @type t :: %__MODULE__{
           name: atom,
           arg: term,
           result: result() | nil,
-          passed?: boolean | nil
+          satisfied?: boolean | nil
         }
 
   @type result :: boolean | :ok | :error | {:ok, term} | {:error, term}
 
-  defstruct [:name, :arg, :result, :passed?]
+  defstruct [:name, :arg, :result, :satisfied?]
 end

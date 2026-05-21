@@ -5,14 +5,14 @@ defmodule LetMe.Evaluator do
   alias LetMe.AnyOf
   alias LetMe.Check
   alias LetMe.Literal
-  alias LetMe.Not
+  alias Spek.Not
 
   ## non-accumulating
 
   def evaluate_expression(expr, check_module, subject, object \\ nil)
 
-  def evaluate_expression(%Literal{passed?: passed?}, _, _, _) do
-    passed?
+  def evaluate_expression(%Literal{satisfied?: satisfied?}, _, _, _) do
+    satisfied?
   end
 
   def evaluate_expression(
@@ -79,7 +79,7 @@ defmodule LetMe.Evaluator do
         object
       ) do
     result = apply(check_module, fun, [subject, object])
-    %{check | result: result, passed?: to_boolean(result)}
+    %{check | result: result, satisfied?: to_boolean(result)}
   end
 
   def evaluate_expression_acc(
@@ -89,7 +89,7 @@ defmodule LetMe.Evaluator do
         object
       ) do
     result = apply(check_module, fun, [subject, object, arg])
-    %{check | result: result, passed?: to_boolean(result)}
+    %{check | result: result, satisfied?: to_boolean(result)}
   end
 
   def evaluate_expression_acc(
@@ -104,7 +104,7 @@ defmodule LetMe.Evaluator do
     %{
       not_expr
       | expression: evaluated_expression,
-        passed?: not evaluated_expression.passed?
+        satisfied?: not evaluated_expression.satisfied?
     }
   end
 
@@ -114,14 +114,18 @@ defmodule LetMe.Evaluator do
         subject,
         object
       ) do
-    {passed?, evaluated_children} =
+    {satisfied?, evaluated_children} =
       Enum.reduce_while(
         children,
         {true, []},
         &all_of_reducer(&1, &2, check_module, subject, object)
       )
 
-    %{all_of | passed?: passed?, children: Enum.reverse(evaluated_children)}
+    %{
+      all_of
+      | satisfied?: satisfied?,
+        children: Enum.reverse(evaluated_children)
+    }
   end
 
   def evaluate_expression_acc(
@@ -130,27 +134,31 @@ defmodule LetMe.Evaluator do
         subject,
         object
       ) do
-    {passed?, evaluated_children} =
+    {satisfied?, evaluated_children} =
       Enum.reduce_while(
         children,
         {false, []},
         &any_of_reducer(&1, &2, check_module, subject, object)
       )
 
-    %{any_of | passed?: passed?, children: Enum.reverse(evaluated_children)}
+    %{
+      any_of
+      | satisfied?: satisfied?,
+        children: Enum.reverse(evaluated_children)
+    }
   end
 
   defp all_of_reducer(expression, {_, acc}, check_module, subject, object) do
     case evaluate_expression_acc(expression, check_module, subject, object) do
-      %{passed?: true} = expr -> {:cont, {true, [expr | acc]}}
-      %{passed?: false} = expr -> {:halt, {false, [expr | acc]}}
+      %{satisfied?: true} = expr -> {:cont, {true, [expr | acc]}}
+      %{satisfied?: false} = expr -> {:halt, {false, [expr | acc]}}
     end
   end
 
   defp any_of_reducer(expression, {_, acc}, check_module, subject, object) do
     case evaluate_expression_acc(expression, check_module, subject, object) do
-      %{passed?: true} = expr -> {:halt, {true, [expr | acc]}}
-      %{passed?: false} = expr -> {:cont, {false, [expr | acc]}}
+      %{satisfied?: true} = expr -> {:halt, {true, [expr | acc]}}
+      %{satisfied?: false} = expr -> {:cont, {false, [expr | acc]}}
     end
   end
 

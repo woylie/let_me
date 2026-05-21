@@ -5,7 +5,7 @@ defmodule LetMe.Optimizer do
   alias LetMe.AnyOf
   alias LetMe.Check
   alias LetMe.Literal
-  alias LetMe.Not
+  alias Spek.Not
 
   def optimize(%Literal{} = literal) do
     literal
@@ -22,8 +22,8 @@ defmodule LetMe.Optimizer do
         expr
 
       # not(true) == false, not(false) == true
-      %Literal{passed?: bool} ->
-        %Literal{passed?: not bool}
+      %Literal{satisfied?: bool} ->
+        %Literal{satisfied?: not bool}
 
       # not (A and B) = (not A) or (not B)
       %AllOf{children: children} ->
@@ -40,7 +40,7 @@ defmodule LetMe.Optimizer do
   end
 
   def optimize(%AllOf{children: []}) do
-    %Literal{passed?: true}
+    %Literal{satisfied?: true}
   end
 
   def optimize(%AllOf{children: [child]}) do
@@ -66,18 +66,18 @@ defmodule LetMe.Optimizer do
 
     case children do
       # wrap false from first condition in reducer
-      false -> %Literal{passed?: false}
+      false -> %Literal{satisfied?: false}
       # allof(A) = A
       [child] -> child
       # allof() = true
-      [] -> %Literal{passed?: true}
+      [] -> %Literal{satisfied?: true}
       # return new allof
       children -> %AllOf{children: Enum.reverse(children)}
     end
   end
 
   def optimize(%AnyOf{children: []}) do
-    %Literal{passed?: false}
+    %Literal{satisfied?: false}
   end
 
   def optimize(%AnyOf{children: [child]}) do
@@ -117,20 +117,20 @@ defmodule LetMe.Optimizer do
 
     case children do
       # wrap true from first condition in reducer
-      true -> %Literal{passed?: true}
+      true -> %Literal{satisfied?: true}
       # anyof(A) = A
       [child] -> child
       # anyof() = false
-      [] -> %Literal{passed?: false}
+      [] -> %Literal{satisfied?: false}
       # return new anyof
       children -> %AnyOf{children: Enum.reverse(children)}
     end
   end
 
-  defp literal_true?(%Literal{passed?: true}), do: true
+  defp literal_true?(%Literal{satisfied?: true}), do: true
   defp literal_true?(_), do: false
 
-  defp literal_false?(%Literal{passed?: false}), do: true
+  defp literal_false?(%Literal{satisfied?: false}), do: true
   defp literal_false?(_), do: false
 
   defp factorize(%AnyOf{children: children} = any_of) do
@@ -173,7 +173,7 @@ defmodule LetMe.Optimizer do
       Enum.map(all_ofs, fn %AllOf{children: children} ->
         case children -- common_expressions do
           # allof() = true
-          [] -> %Literal{passed?: true}
+          [] -> %Literal{satisfied?: true}
           # allof(A) = A
           [child] -> child
           # if there is more than one child, build a new AllOf

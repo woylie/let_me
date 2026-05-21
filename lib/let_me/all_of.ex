@@ -7,8 +7,8 @@ defmodule LetMe.AllOf do
 
   @type t :: %__MODULE__{
           children: [LetMe.expression()],
-          passed?: boolean | nil
+          satisfied?: boolean | nil
         }
 
-  defstruct [:passed?, children: []]
+  defstruct [:satisfied?, children: []]
 end

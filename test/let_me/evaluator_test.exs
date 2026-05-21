@@ -7,7 +7,7 @@ defmodule LetMe.EvaluatorTest do
   alias LetMe.Check
   alias LetMe.Evaluator
   alias LetMe.Literal
-  alias LetMe.Not
+  alias Spek.Not
 
   defmodule Checks do
     def own_resource(%{id: user_id}, %{user_id: user_id}), do: true
@@ -35,13 +35,13 @@ defmodule LetMe.EvaluatorTest do
   describe "evaluate_expression/4" do
     test "evaluates literal" do
       assert Evaluator.evaluate_expression(
-               %Literal{passed?: true},
+               %Literal{satisfied?: true},
                Checks,
                subject()
              ) == true
 
       assert Evaluator.evaluate_expression(
-               %Literal{passed?: false},
+               %Literal{satisfied?: false},
                Checks,
                subject()
              ) == false
@@ -118,13 +118,13 @@ defmodule LetMe.EvaluatorTest do
 
     test "evaluates not" do
       assert Evaluator.evaluate_expression(
-               %Not{expression: %Literal{passed?: true}},
+               %Not{expression: %Literal{satisfied?: true}},
                Checks,
                subject()
              ) == false
 
       assert Evaluator.evaluate_expression(
-               %Not{expression: %Literal{passed?: false}},
+               %Not{expression: %Literal{satisfied?: false}},
                Checks,
                subject()
              ) == true
@@ -140,13 +140,13 @@ defmodule LetMe.EvaluatorTest do
 
     test "evaluates AllOf with one child" do
       assert Evaluator.evaluate_expression(
-               %AllOf{children: [%Literal{passed?: true}]},
+               %AllOf{children: [%Literal{satisfied?: true}]},
                Checks,
                subject()
              ) == true
 
       assert Evaluator.evaluate_expression(
-               %AllOf{children: [%Literal{passed?: false}]},
+               %AllOf{children: [%Literal{satisfied?: false}]},
                Checks,
                subject()
              ) == false
@@ -165,8 +165,8 @@ defmodule LetMe.EvaluatorTest do
         assert Evaluator.evaluate_expression(
                  %AllOf{
                    children: [
-                     %Literal{passed?: v1},
-                     %Literal{passed?: v2}
+                     %Literal{satisfied?: v1},
+                     %Literal{satisfied?: v2}
                    ]
                  },
                  Checks,
@@ -185,13 +185,13 @@ defmodule LetMe.EvaluatorTest do
 
     test "evaluates AnyOf with one child" do
       assert Evaluator.evaluate_expression(
-               %AnyOf{children: [%Literal{passed?: true}]},
+               %AnyOf{children: [%Literal{satisfied?: true}]},
                Checks,
                subject()
              ) == true
 
       assert Evaluator.evaluate_expression(
-               %AnyOf{children: [%Literal{passed?: false}]},
+               %AnyOf{children: [%Literal{satisfied?: false}]},
                Checks,
                subject()
              ) == false
@@ -210,8 +210,8 @@ defmodule LetMe.EvaluatorTest do
         assert Evaluator.evaluate_expression(
                  %AnyOf{
                    children: [
-                     %Literal{passed?: v1},
-                     %Literal{passed?: v2}
+                     %Literal{satisfied?: v1},
+                     %Literal{satisfied?: v2}
                    ]
                  },
                  Checks,
@@ -224,16 +224,16 @@ defmodule LetMe.EvaluatorTest do
   describe "evaluate_expression_acc/4" do
     test "evaluates literal" do
       assert Evaluator.evaluate_expression_acc(
-               %Literal{passed?: true},
+               %Literal{satisfied?: true},
                Checks,
                subject()
-             ) == %Literal{passed?: true}
+             ) == %Literal{satisfied?: true}
 
       assert Evaluator.evaluate_expression_acc(
-               %Literal{passed?: false},
+               %Literal{satisfied?: false},
                Checks,
                subject()
-             ) == %Literal{passed?: false}
+             ) == %Literal{satisfied?: false}
     end
 
     test "evaluates check without arg" do
@@ -242,14 +242,14 @@ defmodule LetMe.EvaluatorTest do
                Checks,
                subject(),
                object(user_id: "sid")
-             ) == %Check{name: :own_resource, passed?: true, result: true}
+             ) == %Check{name: :own_resource, satisfied?: true, result: true}
 
       assert Evaluator.evaluate_expression_acc(
                %Check{name: :own_resource},
                Checks,
                subject(),
                object(user_id: "dis")
-             ) == %Check{name: :own_resource, passed?: false, result: false}
+             ) == %Check{name: :own_resource, satisfied?: false, result: false}
     end
 
     test "evaluates check without arg that returns no boolean" do
@@ -270,7 +270,7 @@ defmodule LetMe.EvaluatorTest do
                  value
                ) == %Check{
                  name: :return_object,
-                 passed?: expected_result,
+                 satisfied?: expected_result,
                  result: value
                }
       end
@@ -281,7 +281,12 @@ defmodule LetMe.EvaluatorTest do
                %Check{name: :role, arg: :admin},
                Checks,
                subject(role: :admin)
-             ) == %Check{name: :role, arg: :admin, passed?: true, result: true}
+             ) == %Check{
+               name: :role,
+               arg: :admin,
+               satisfied?: true,
+               result: true
+             }
 
       assert Evaluator.evaluate_expression_acc(
                %Check{name: :role, arg: :admin},
@@ -290,7 +295,7 @@ defmodule LetMe.EvaluatorTest do
              ) == %Check{
                name: :role,
                arg: :admin,
-               passed?: false,
+               satisfied?: false,
                result: false
              }
     end
@@ -313,7 +318,7 @@ defmodule LetMe.EvaluatorTest do
                ) == %Check{
                  name: :return_arg,
                  arg: value,
-                 passed?: expected_result,
+                 satisfied?: expected_result,
                  result: value
                }
       end
@@ -321,16 +326,22 @@ defmodule LetMe.EvaluatorTest do
 
     test "evaluates not with literal" do
       assert Evaluator.evaluate_expression_acc(
-               %Not{expression: %Literal{passed?: true}},
+               %Not{expression: %Literal{satisfied?: true}},
                Checks,
                subject()
-             ) == %Not{expression: %Literal{passed?: true}, passed?: false}
+             ) == %Not{
+               expression: %Literal{satisfied?: true},
+               satisfied?: false
+             }
 
       assert Evaluator.evaluate_expression_acc(
-               %Not{expression: %Literal{passed?: false}},
+               %Not{expression: %Literal{satisfied?: false}},
                Checks,
                subject()
-             ) == %Not{expression: %Literal{passed?: false}, passed?: true}
+             ) == %Not{
+               expression: %Literal{satisfied?: false},
+               satisfied?: true
+             }
     end
 
     test "evaluates not with check" do
@@ -340,12 +351,12 @@ defmodule LetMe.EvaluatorTest do
                subject(role: :admin)
              ) == %Not{
                expression: %Check{
-                 passed?: true,
+                 satisfied?: true,
                  arg: :admin,
                  name: :role,
                  result: true
                },
-               passed?: false
+               satisfied?: false
              }
 
       assert Evaluator.evaluate_expression_acc(
@@ -354,12 +365,12 @@ defmodule LetMe.EvaluatorTest do
                subject(role: :editor)
              ) == %Not{
                expression: %Check{
-                 passed?: false,
+                 satisfied?: false,
                  arg: :admin,
                  name: :role,
                  result: false
                },
-               passed?: true
+               satisfied?: true
              }
     end
 
@@ -368,7 +379,7 @@ defmodule LetMe.EvaluatorTest do
                %AllOf{children: []},
                Checks,
                subject()
-             ) == %AllOf{children: [], passed?: true}
+             ) == %AllOf{children: [], satisfied?: true}
     end
 
     test "evaluates AllOf with one child" do
@@ -382,10 +393,10 @@ defmodule LetMe.EvaluatorTest do
                    name: :role,
                    arg: :admin,
                    result: true,
-                   passed?: true
+                   satisfied?: true
                  }
                ],
-               passed?: true
+               satisfied?: true
              }
 
       assert Evaluator.evaluate_expression_acc(
@@ -398,10 +409,10 @@ defmodule LetMe.EvaluatorTest do
                    name: :role,
                    arg: :admin,
                    result: false,
-                   passed?: false
+                   satisfied?: false
                  }
                ],
-               passed?: false
+               satisfied?: false
              }
     end
 
@@ -423,15 +434,15 @@ defmodule LetMe.EvaluatorTest do
                    name: :role,
                    arg: :admin,
                    result: true,
-                   passed?: true
+                   satisfied?: true
                  },
                  %Check{
                    name: :own_resource,
                    result: true,
-                   passed?: true
+                   satisfied?: true
                  }
                ],
-               passed?: true
+               satisfied?: true
              }
 
       # first check true, second check false
@@ -451,15 +462,15 @@ defmodule LetMe.EvaluatorTest do
                    name: :role,
                    arg: :admin,
                    result: true,
-                   passed?: true
+                   satisfied?: true
                  },
                  %Check{
                    name: :own_resource,
                    result: false,
-                   passed?: false
+                   satisfied?: false
                  }
                ],
-               passed?: false
+               satisfied?: false
              }
 
       # first checks false; second check shouldn't have been evaluated
@@ -479,10 +490,10 @@ defmodule LetMe.EvaluatorTest do
                    name: :role,
                    arg: :admin,
                    result: false,
-                   passed?: false
+                   satisfied?: false
                  }
                ],
-               passed?: false
+               satisfied?: false
              }
     end
 
@@ -491,7 +502,7 @@ defmodule LetMe.EvaluatorTest do
                %AnyOf{children: []},
                Checks,
                subject()
-             ) == %AnyOf{children: [], passed?: false}
+             ) == %AnyOf{children: [], satisfied?: false}
     end
 
     test "evaluates AnyOf with one child" do
@@ -505,10 +516,10 @@ defmodule LetMe.EvaluatorTest do
                    name: :role,
                    arg: :admin,
                    result: true,
-                   passed?: true
+                   satisfied?: true
                  }
                ],
-               passed?: true
+               satisfied?: true
              }
 
       assert Evaluator.evaluate_expression_acc(
@@ -521,10 +532,10 @@ defmodule LetMe.EvaluatorTest do
                    name: :role,
                    arg: :admin,
                    result: false,
-                   passed?: false
+                   satisfied?: false
                  }
                ],
-               passed?: false
+               satisfied?: false
              }
     end
 
@@ -546,10 +557,10 @@ defmodule LetMe.EvaluatorTest do
                    name: :role,
                    arg: :admin,
                    result: true,
-                   passed?: true
+                   satisfied?: true
                  }
                ],
-               passed?: true
+               satisfied?: true
              }
 
       # first check false, second check true
@@ -569,15 +580,15 @@ defmodule LetMe.EvaluatorTest do
                    name: :role,
                    arg: :admin,
                    result: false,
-                   passed?: false
+                   satisfied?: false
                  },
                  %Check{
                    name: :own_resource,
                    result: true,
-                   passed?: true
+                   satisfied?: true
                  }
                ],
-               passed?: true
+               satisfied?: true
              }
 
       # all checks false
@@ -597,15 +608,15 @@ defmodule LetMe.EvaluatorTest do
                    name: :role,
                    arg: :admin,
                    result: false,
-                   passed?: false
+                   satisfied?: false
                  },
                  %Check{
                    name: :own_resource,
                    result: false,
-                   passed?: false
+                   satisfied?: false
                  }
                ],
-               passed?: false
+               satisfied?: false
              }
     end
   end
