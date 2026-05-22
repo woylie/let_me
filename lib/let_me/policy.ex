@@ -210,8 +210,8 @@ defmodule LetMe.Policy do
           action: :create,
           expression: %Spek.AnyOf{
             children: [
-              %LetMe.Check{name: :role, arg: :admin},
-              %LetMe.Check{name: :role, arg: :writer}
+              %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :admin]},
+              %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :writer]}
             ]
           },
           name: :article_create,
@@ -220,7 +220,7 @@ defmodule LetMe.Policy do
         },
         %LetMe.Rule{
           action: :update,
-          expression: %LetMe.Check{name: :own_resource},
+          expression: %Spek.Check{module: MyApp.Checks, fun: :own_resource, args: [{:ctx, :subject}, {:ctx, :object}]},
           name: :article_update,
           object: :article,
           pre_hooks: [:preload_groups]
@@ -300,8 +300,8 @@ defmodule LetMe.Policy do
          action: :create,
          expression: %Spek.AnyOf{
            children: [
-             %LetMe.Check{name: :role, arg: :admin},
-             %LetMe.Check{name: :role, arg: :writer}
+             %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :admin]},
+             %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :writer]}
            ],
          },
          name: :article_create,
@@ -325,8 +325,8 @@ defmodule LetMe.Policy do
       %LetMe.Rule{
         action: :create,
         expression: %Spek.AnyOf{children: [
-          %LetMe.Check{name: :role, arg: :admin},
-          %LetMe.Check{name: :role, arg: :writer}
+          %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :admin]},
+          %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :writer]}
         ]},
         name: :article_create,
         object: :article,
@@ -399,9 +399,10 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.authorize(:article_update, user_2, article)
       {:error, %LetMe.UnauthorizedError{
         message: "unauthorized",
-        expression: %LetMe.Check{
-          arg: nil,
-          name: :own_resource,
+        expression: %Spek.Check{
+          args: [{:ctx, :subject}, {:ctx, :object}],
+          module: MyApp.Checks,
+          fun: :own_resource,
           result: false,
           satisfied?: false
         }
@@ -426,15 +427,17 @@ defmodule LetMe.Policy do
         %LetMe.UnauthorizedError{
           expression: %Spek.AnyOf{
             children: [
-              %LetMe.Check{
-                name: :role,
-                arg: :admin,
+              %Spek.Check{
+              module: MyApp.Checks,
+                fun: :role,
+                args: [{:ctx, :subject}, {:ctx, :object}, :admin],
                 result: false,
                 satisfied?: false
               },
-              %LetMe.Check{
-                name: :role,
-                arg: :client,
+              %Spek.Check{
+              module: MyApp.Checks,
+                fun: :role,
+                args: [{:ctx, :subject}, {:ctx, :object}, :client],
                 result: false,
                 satisfied?: false
               }
@@ -469,15 +472,17 @@ defmodule LetMe.Policy do
     message: "unauthorized",
     expression: %Spek.AnyOf{
       children: [
-        %LetMe.Check{
-          name: :role,
-          arg: :editor,
+        %Spek.Check{
+          module: MyApp.Policy.Checks,
+          fun: :role,
+          args: [{:ctx, :subject}, {:ctx, :object}, :editor],
           result: false,
           satisfied?: false
         },
-        %LetMe.Check{
-          name: :role,
-          arg: :writer,
+        %Spek.Check{
+          module: MyApp.Policy.Checks,
+          fun: :role,
+          args: [{:ctx, :subject}, {:ctx, :object}, :writer],
           result: false,
           satisfied?: false
         }
@@ -568,8 +573,8 @@ defmodule LetMe.Policy do
         action: :create,
         expression: %Spek.AnyOf{
           children: [
-            %LetMe.Check{name: :role, arg: :admin},
-            %LetMe.Check{name: :role, arg: :writer}
+            %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :admin]},
+            %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :writer]}
           ]
         },
         name: :article_create,
@@ -934,7 +939,11 @@ defmodule LetMe.Policy do
 
       %LetMe.Rule{
         action: :create,
-        expression: %LetMe.Check{name: :role, arg: :writer},
+        expression: %Spek.Check{
+          module: MyApp.Policy.Checks,
+          fun: :role,
+          args: [{:ctx, :subject}, {:ctx, :object}, :writer]
+        },
         description: "Allows a user to create a new article.",
         name: :article_create,
         object: :article,
@@ -960,7 +969,11 @@ defmodule LetMe.Policy do
 
       %LetMe.Rule{
         action: :create,
-        expression: %LetMe.Check{name: :role, arg: :writer},
+        expression: %Spek.Check{
+          module: MyApp.Policy.Checks,
+          fun: :role,
+          args: [{:ctx, :subject}, {:ctx, :object}, :writer]
+        },
         description: "Allows a user to create a new article.",
         name: :article_create,
         object: :article,
@@ -1055,7 +1068,10 @@ defmodule LetMe.Policy do
               metadata: action.metadata
             },
             action.allow,
-            action.deny
+            action.deny,
+            __MODULE__
+            |> Module.get_attribute(:opts)
+            |> Keyword.fetch!(:check_module)
           )
         )
       end
@@ -1063,43 +1079,54 @@ defmodule LetMe.Policy do
   end
 
   @doc false
-  def put_expression(%Rule{} = rule, allow, deny) do
+  def put_expression(%Rule{} = rule, allow, deny, check_module) do
     expression = %Spek.AllOf{
       children: [
-        %Spek.Not{expression: nested_list_to_expression(deny)},
-        nested_list_to_expression(allow)
+        %Spek.Not{expression: nested_list_to_expression(deny, check_module)},
+        nested_list_to_expression(allow, check_module)
       ]
     }
 
-    %{rule | expression: LetMe.Optimizer.optimize(expression)}
+    %{rule | expression: Spek.optimize(expression)}
   end
 
-  defp nested_list_to_expression(conditions) when is_list(conditions) do
+  defp nested_list_to_expression(conditions, check_module)
+       when is_list(conditions) do
     children =
       Enum.map(conditions, fn
         [_ | _] = checks ->
-          %Spek.AllOf{children: Enum.map(checks, &to_check_or_literal/1)}
+          %Spek.AllOf{
+            children: Enum.map(checks, &to_check_or_literal(check_module, &1))
+          }
 
         [] ->
           %Spek.Literal{result: false, satisfied?: false}
 
         check ->
-          to_check_or_literal(check)
+          to_check_or_literal(check_module, check)
       end)
 
     %Spek.AnyOf{children: children}
   end
 
-  defp to_check_or_literal(bool) when is_boolean(bool) do
+  defp to_check_or_literal(_, bool) when is_boolean(bool) do
     %Spek.Literal{result: bool, satisfied?: bool}
   end
 
-  defp to_check_or_literal({name, arg}) when is_atom(name) do
-    %LetMe.Check{name: name, arg: arg}
+  defp to_check_or_literal(check_module, {name, arg}) when is_atom(name) do
+    %Spek.Check{
+      module: check_module,
+      fun: name,
+      args: [{:ctx, :subject}, {:ctx, :object}, arg]
+    }
   end
 
-  defp to_check_or_literal(name) when is_atom(name) do
-    %LetMe.Check{name: name}
+  defp to_check_or_literal(check_module, name) when is_atom(name) do
+    %Spek.Check{
+      module: check_module,
+      fun: name,
+      args: [{:ctx, :subject}, {:ctx, :object}]
+    }
   end
 
   @doc """

@@ -17,7 +17,7 @@ defmodule LetMe.UnauthorizedError do
   """
   @type t :: %__MODULE__{
           message: String.t(),
-          expression: LetMe.expression() | nil
+          expression: Spek.expression() | nil
         }
 
   defexception [:message, :expression]

@@ -104,7 +104,7 @@ accept the subject, the object, and optionally an extra argument. If no options
 are passed to `allow` or `deny` (e.g. `deny :banned`), the check function must
 be a 2-arity function. If an option is passed (e.g. `allow role: :writer`), the
 function must be a 3-arity function. All check functions must return a boolean,
-an `:ok` or `:error` tuple, `:ok`, or `:error` (see `t:LetMe.Check.result/0`).
+an `:ok` or `:error` tuple, `:ok`, or `:error` (see `t:Spek.Check.result/0`).
 
 For the policy example provided earlier, a corresponding check module could look
 like this:
@@ -263,15 +263,17 @@ iex> MyApp.Policy.authorize(:article_update, scope, object, error: :detailed)
   message: "unauthorized",
   expression: %Spek.AnyOf{
     children: [
-      %LetMe.Check{
-        name: :role,
-        arg: :editor,
+      %Spek.Check{
+        module: MyApp.Policy.Checks,
+        fun: :role,
+        args: [{:ctx, :subject}, {:ctx, :object}, :editor],
         result: false,
         satisfied?: false
       },
-      %LetMe.Check{
-        name: :role,
-        arg: :writer,
+      %Spek.Check{
+        module: MyApp.Policy.Checks,
+        fun: :role,
+        args: [{:ctx, :subject}, {:ctx, :object}, :writer],
         result: false,
         satisfied?: false
       }
@@ -308,8 +310,16 @@ iex> MyApp.Policy.list_rules()
     action: :create,
     expression: %Spek.AnyOf{
       children: [
-        %LetMe.Check{name: :role, arg: :admin},
-        %LetMe.Check{name: :role, arg: :writer}
+        %Spek.Check{
+          module: MyApp.Policy.Checks,
+          fun: :role,
+          args: [{:ctx, :subject}, {:ctx, :object}, :admin]
+        },
+        %Spek.Check{
+          module: MyApp.Policy.Checks,
+          fun: :role,
+          args: [{:ctx, :subject}, {:ctx, :object}, :writer]
+        }
       ]
     },
     description: "Create a new article",
@@ -330,8 +340,16 @@ iex> MyApp.Policy.get_rule(:article_create)
   action: :create,
   expression: %Spek.AnyOf{
     children: [
-      %LetMe.Check{name: :role, arg: :admin},
-      %LetMe.Check{name: :role, arg: :writer}
+      %Spek.Check{
+        module: MyApp.Policy.Checks,
+        fun: :role,
+        args: [{:ctx, :subject}, {:ctx, :object}, :admin]
+      },
+      %Spek.Check{
+        module: MyApp.Policy.Checks,
+        fun: :role,
+        args: [{:ctx, :subject}, {:ctx, :object}, :writer]
+      }
     ]
   },
   name: :article_create,
@@ -382,7 +400,11 @@ end
 iex> MyApp.Policy.get_rule(:user_disable)
 %LetMe.Rule{
   action: :disable,
-  expression: %LetMe.Check{name: :role, arg: :admin},
+  expression: %Spek.Check{
+    module: GraphqlPolicy.Checks,
+    fun: :role,
+    args: [{:ctx, :subject}, {:ctx, :object}, :admin]
+  },
   description: nil,
   name: :user_disable,
   object: :user,

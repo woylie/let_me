@@ -4,7 +4,6 @@ defmodule LetMe.PolicyTest do
 
   import ExUnit.CaptureLog
 
-  alias LetMe.Check
   alias LetMe.Rule
   alias LetMe.UnauthorizedError
   alias MyApp.Blog.Article
@@ -12,6 +11,7 @@ defmodule LetMe.PolicyTest do
   alias MyApp.TestPolicy
   alias Spek.AllOf
   alias Spek.AnyOf
+  alias Spek.Check
   alias Spek.Literal
   alias Spek.Not
 
@@ -294,8 +294,16 @@ defmodule LetMe.PolicyTest do
                    action: :create,
                    expression: %AnyOf{
                      children: [
-                       %Check{name: :role, arg: :admin},
-                       %Check{name: :role, arg: :writer}
+                       %Check{
+                         module: MyApp.Checks,
+                         fun: :role,
+                         args: [{:ctx, :subject}, {:ctx, :object}, :admin]
+                       },
+                       %Check{
+                         module: MyApp.Checks,
+                         fun: :role,
+                         args: [{:ctx, :subject}, {:ctx, :object}, :writer]
+                       }
                      ]
                    },
                    name: :article_create,
@@ -304,7 +312,11 @@ defmodule LetMe.PolicyTest do
                  },
                  %Rule{
                    action: :update,
-                   expression: %Check{name: :own_resource},
+                   expression: %Check{
+                     module: MyApp.Checks,
+                     fun: :own_resource,
+                     args: [{:ctx, :subject}, {:ctx, :object}]
+                   },
                    name: :article_update,
                    object: :article,
                    pre_hooks: [:preload_groups]
@@ -322,8 +334,18 @@ defmodule LetMe.PolicyTest do
                    action: :delete,
                    expression: %AllOf{
                      children: [
-                       %Not{expression: %Check{name: :same_user}},
-                       %Check{name: :role, arg: :admin}
+                       %Not{
+                         expression: %Check{
+                           module: MyApp.Checks,
+                           fun: :same_user,
+                           args: [{:ctx, :subject}, {:ctx, :object}]
+                         }
+                       },
+                       %Check{
+                         module: MyApp.Checks,
+                         fun: :role,
+                         args: [{:ctx, :subject}, {:ctx, :object}, :admin]
+                       }
                      ]
                    },
                    name: :user_delete,
@@ -338,8 +360,16 @@ defmodule LetMe.PolicyTest do
                    action: :list,
                    expression: %AnyOf{
                      children: [
-                       %Check{name: :role, arg: :admin},
-                       %Check{name: :role, arg: :client}
+                       %Check{
+                         module: MyApp.Checks,
+                         fun: :role,
+                         args: [{:ctx, :subject}, {:ctx, :object}, :admin]
+                       },
+                       %Check{
+                         module: MyApp.Checks,
+                         fun: :role,
+                         args: [{:ctx, :subject}, {:ctx, :object}, :client]
+                       }
                      ]
                    },
                    name: :user_list,
@@ -348,7 +378,11 @@ defmodule LetMe.PolicyTest do
                  },
                  %Rule{
                    action: :remove,
-                   expression: %Check{name: :role, arg: :super_admin},
+                   expression: %Check{
+                     module: MyApp.Checks,
+                     fun: :role,
+                     args: [{:ctx, :subject}, {:ctx, :object}, :super_admin]
+                   },
                    name: :user_remove,
                    object: :user,
                    pre_hooks: [],
@@ -358,14 +392,30 @@ defmodule LetMe.PolicyTest do
                    action: :view,
                    expression: %AnyOf{
                      children: [
-                       %Check{name: :role, arg: :admin},
+                       %Check{
+                         module: MyApp.Checks,
+                         fun: :role,
+                         args: [{:ctx, :subject}, {:ctx, :object}, :admin]
+                       },
                        %AllOf{
                          children: [
-                           %Check{name: :role, arg: :client},
-                           %Check{name: :same_company}
+                           %Check{
+                             module: MyApp.Checks,
+                             fun: :role,
+                             args: [{:ctx, :subject}, {:ctx, :object}, :client]
+                           },
+                           %Check{
+                             module: MyApp.Checks,
+                             fun: :same_company,
+                             args: [{:ctx, :subject}, {:ctx, :object}]
+                           }
                          ]
                        },
-                       %Check{name: :same_user}
+                       %Check{
+                         module: MyApp.Checks,
+                         fun: :same_user,
+                         args: [{:ctx, :subject}, {:ctx, :object}]
+                       }
                      ]
                    },
                    name: :user_view,
@@ -412,7 +462,7 @@ defmodule LetMe.PolicyTest do
              ] =
                Policy.list_rules(
                  check: fn
-                   %Check{name: :same_user} -> true
+                   %Check{module: MyApp.Checks, fun: :same_user} -> true
                    %Check{} -> false
                  end
                )
@@ -491,8 +541,16 @@ defmodule LetMe.PolicyTest do
                action: :create,
                expression: %Spek.AnyOf{
                  children: [
-                   %Check{name: :role, arg: :admin},
-                   %Check{name: :role, arg: :writer}
+                   %Check{
+                     module: MyApp.Checks,
+                     fun: :role,
+                     args: [{:ctx, :subject}, {:ctx, :object}, :admin]
+                   },
+                   %Check{
+                     module: MyApp.Checks,
+                     fun: :role,
+                     args: [{:ctx, :subject}, {:ctx, :object}, :writer]
+                   }
                  ]
                },
                name: :article_create,
@@ -514,8 +572,16 @@ defmodule LetMe.PolicyTest do
                   action: :create,
                   expression: %AnyOf{
                     children: [
-                      %Check{name: :role, arg: :admin},
-                      %Check{name: :role, arg: :writer}
+                      %Check{
+                        module: MyApp.Checks,
+                        fun: :role,
+                        args: [{:ctx, :subject}, {:ctx, :object}, :admin]
+                      },
+                      %Check{
+                        module: MyApp.Checks,
+                        fun: :role,
+                        args: [{:ctx, :subject}, {:ctx, :object}, :writer]
+                      }
                     ],
                     satisfied?: nil
                   },
@@ -536,8 +602,16 @@ defmodule LetMe.PolicyTest do
                action: :create,
                expression: %AnyOf{
                  children: [
-                   %Check{name: :role, arg: :admin},
-                   %Check{name: :role, arg: :writer}
+                   %Check{
+                     module: MyApp.Checks,
+                     fun: :role,
+                     args: [{:ctx, :subject}, {:ctx, :object}, :admin]
+                   },
+                   %Check{
+                     module: MyApp.Checks,
+                     fun: :role,
+                     args: [{:ctx, :subject}, {:ctx, :object}, :writer]
+                   }
                  ]
                },
                name: :article_create,
@@ -567,8 +641,9 @@ defmodule LetMe.PolicyTest do
                %{user_id: 2}
              ) == %UnauthorizedError{
                expression: %Check{
-                 arg: nil,
-                 name: :own_resource,
+                 module: MyApp.Checks,
+                 fun: :own_resource,
+                 args: [{:ctx, :subject}, {:ctx, :object}],
                  satisfied?: false,
                  result: false
                },
@@ -593,8 +668,9 @@ defmodule LetMe.PolicyTest do
              ) == %UnauthorizedError{
                message: "unauthorized",
                expression: %Check{
-                 name: :role,
-                 arg: :editor,
+                 module: MyApp.Checks,
+                 fun: :role,
+                 args: [{:ctx, :subject}, {:ctx, :object}, :editor],
                  result: false,
                  satisfied?: false
                }
@@ -633,8 +709,9 @@ defmodule LetMe.PolicyTest do
                %{role: :writer}
              ) == %UnauthorizedError{
                expression: %Check{
-                 arg: :admin,
-                 name: :role,
+                 module: MyApp.Checks,
+                 fun: :role,
+                 args: [{:ctx, :subject}, {:ctx, :object}, :admin],
                  satisfied?: false,
                  result: false
                },
@@ -664,8 +741,9 @@ defmodule LetMe.PolicyTest do
                message: "unauthorized",
                expression: %Not{
                  expression: %Check{
-                   name: :same_user,
-                   arg: nil,
+                   module: MyApp.Checks,
+                   fun: :same_user,
+                   args: [{:ctx, :subject}, {:ctx, :object}],
                    result: true,
                    satisfied?: true
                  },
@@ -692,8 +770,9 @@ defmodule LetMe.PolicyTest do
                message: "unauthorized",
                expression: %Not{
                  expression: %Check{
-                   name: :role,
-                   arg: :writer,
+                   module: MyApp.Checks,
+                   fun: :role,
+                   args: [{:ctx, :subject}, {:ctx, :object}, :writer],
                    satisfied?: true,
                    result: true
                  },
@@ -760,8 +839,9 @@ defmodule LetMe.PolicyTest do
              ) == %UnauthorizedError{
                message: "unauthorized",
                expression: %Check{
-                 name: :role,
-                 arg: :admin,
+                 module: MyApp.Checks,
+                 fun: :role,
+                 args: [{:ctx, :subject}, {:ctx, :object}, :admin],
                  result: false,
                  satisfied?: false
                }
@@ -786,7 +866,9 @@ defmodule LetMe.PolicyTest do
                %{user_id: 2}
              ) == %UnauthorizedError{
                expression: %Check{
-                 name: :own_resource,
+                 module: MyApp.Checks,
+                 fun: :own_resource,
+                 args: [{:ctx, :subject}, {:ctx, :object}],
                  satisfied?: false,
                  result: false
                },
@@ -800,8 +882,9 @@ defmodule LetMe.PolicyTest do
                %{user_id: 2}
              ) == %UnauthorizedError{
                expression: %Check{
-                 name: :own_resource,
-                 arg: nil,
+                 module: MyApp.Checks,
+                 fun: :own_resource,
+                 args: [{:ctx, :subject}, {:ctx, :object}],
                  satisfied?: false,
                  result: false
                },
@@ -820,7 +903,7 @@ defmodule LetMe.PolicyTest do
                         {:error,
                          %UnauthorizedError{
                            expression: %Spek.Literal{
-                             result: false,
+                             result: {:error, :unknown_policy},
                              satisfied?: false
                            },
                            message: "unauthorized"
@@ -844,8 +927,10 @@ defmodule LetMe.PolicyTest do
                expression: %AllOf{
                  satisfied?: false,
                  children: [
-                   %LetMe.Check{
-                     name: :own_resource,
+                   %Spek.Check{
+                     module: MyApp.Checks,
+                     fun: :own_resource,
+                     args: [{:ctx, :subject}, {:ctx, :object}],
                      result: false,
                      satisfied?: false
                    }
@@ -863,14 +948,16 @@ defmodule LetMe.PolicyTest do
                expression: %AllOf{
                  children: [
                    %Check{
-                     name: :own_resource,
-                     arg: nil,
+                     module: MyApp.Checks,
+                     fun: :own_resource,
+                     args: [{:ctx, :subject}, {:ctx, :object}],
                      result: true,
                      satisfied?: true
                    },
                    %Check{
-                     name: :role,
-                     arg: :editor,
+                     module: MyApp.Checks,
+                     fun: :role,
+                     args: [{:ctx, :subject}, {:ctx, :object}, :editor],
                      result: false,
                      satisfied?: false
                    }
@@ -889,9 +976,10 @@ defmodule LetMe.PolicyTest do
                expression: %Spek.AllOf{
                  satisfied?: false,
                  children: [
-                   %LetMe.Check{
-                     name: :own_resource,
-                     arg: nil,
+                   %Spek.Check{
+                     module: MyApp.Checks,
+                     fun: :own_resource,
+                     args: [{:ctx, :subject}, {:ctx, :object}],
                      result: false,
                      satisfied?: false
                    }
@@ -928,14 +1016,16 @@ defmodule LetMe.PolicyTest do
                expression: %AnyOf{
                  children: [
                    %Check{
-                     name: :role,
-                     arg: :editor,
+                     module: MyApp.Checks,
+                     fun: :role,
+                     args: [{:ctx, :subject}, {:ctx, :object}, :editor],
                      result: false,
                      satisfied?: false
                    },
                    %Check{
-                     name: :own_resource,
-                     arg: nil,
+                     module: MyApp.Checks,
+                     fun: :own_resource,
+                     args: [{:ctx, :subject}, {:ctx, :object}],
                      result: false,
                      satisfied?: false
                    }
@@ -959,8 +1049,9 @@ defmodule LetMe.PolicyTest do
                  children: [
                    %Not{
                      expression: %Check{
-                       name: :same_user,
-                       arg: nil,
+                       module: MyApp.Checks,
+                       fun: :same_user,
+                       args: [{:ctx, :subject}, {:ctx, :object}],
                        result: true,
                        satisfied?: true
                      },
@@ -968,8 +1059,9 @@ defmodule LetMe.PolicyTest do
                    },
                    %Not{
                      expression: %Check{
-                       name: :role,
-                       arg: :writer,
+                       module: MyApp.Checks,
+                       fun: :role,
+                       args: [{:ctx, :subject}, {:ctx, :object}, :writer],
                        result: true,
                        satisfied?: true
                      },
@@ -1010,7 +1102,9 @@ defmodule LetMe.PolicyTest do
                  children: [
                    %Not{
                      expression: %Check{
-                       name: :same_user,
+                       module: MyApp.Checks,
+                       fun: :same_user,
+                       args: [{:ctx, :subject}, {:ctx, :object}],
                        satisfied?: true,
                        result: true
                      },
@@ -1038,7 +1132,9 @@ defmodule LetMe.PolicyTest do
                  children: [
                    %Not{
                      expression: %Check{
-                       name: :same_user,
+                       module: MyApp.Checks,
+                       fun: :same_user,
+                       args: [{:ctx, :subject}, {:ctx, :object}],
                        result: true,
                        satisfied?: true
                      },
@@ -1060,8 +1156,9 @@ defmodule LetMe.PolicyTest do
                  children: [
                    %Spek.Not{
                      expression: %Check{
-                       name: :same_user,
-                       arg: nil,
+                       module: MyApp.Checks,
+                       fun: :same_user,
+                       args: [{:ctx, :subject}, {:ctx, :object}],
                        result: false,
                        satisfied?: false
                      },
@@ -1069,8 +1166,9 @@ defmodule LetMe.PolicyTest do
                    },
                    %Spek.Not{
                      expression: %Check{
-                       name: :role,
-                       arg: :writer,
+                       module: MyApp.Checks,
+                       fun: :role,
+                       args: [{:ctx, :subject}, {:ctx, :object}, :writer],
                        result: true,
                        satisfied?: true
                      },
@@ -1216,8 +1314,10 @@ defmodule LetMe.PolicyTest do
                  satisfied?: false,
                  children: [
                    %Spek.Not{
-                     expression: %LetMe.Check{
-                       name: :user_suspended,
+                     expression: %Spek.Check{
+                       module: MyApp.Checks,
+                       fun: :user_suspended,
+                       args: [{:ctx, :subject}, {:ctx, :object}],
                        result: {:ok, "user suspended"},
                        satisfied?: true
                      },
@@ -1237,15 +1337,18 @@ defmodule LetMe.PolicyTest do
                  children: [
                    %Not{
                      expression: %Check{
-                       name: :user_suspended,
+                       module: MyApp.Checks,
+                       fun: :user_suspended,
+                       args: [{:ctx, :subject}, {:ctx, :object}],
                        result: :error,
                        satisfied?: false
                      },
                      satisfied?: true
                    },
                    %Check{
-                     arg: :admin,
-                     name: :role_with_reason,
+                     module: MyApp.Checks,
+                     fun: :role_with_reason,
+                     args: [{:ctx, :subject}, {:ctx, :object}, :admin],
                      result: {:error, "writer not allowed"},
                      satisfied?: false
                    }

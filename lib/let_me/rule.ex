@@ -18,7 +18,7 @@ defmodule LetMe.Rule do
   """
   @type t :: %__MODULE__{
           action: atom,
-          expression: LetMe.expression(),
+          expression: Spek.expression(),
           description: String.t() | nil,
           name: atom,
           object: atom,
