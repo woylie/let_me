@@ -104,7 +104,7 @@ accept the subject, the object, and optionally an extra argument. If no options
 are passed to `allow` or `deny` (e.g. `deny :banned`), the check function must
 be a 2-arity function. If an option is passed (e.g. `allow role: :writer`), the
 function must be a 3-arity function. All check functions must return a boolean,
-an `:ok` or `:error` tuple, `:ok`, or `:error` (see `t:Spek.Check.result/0`).
+an `:ok` or `:error` tuple, `:ok`, or `:error` (see `t:Spek.result/0`).
 
 For the policy example provided earlier, a corresponding check module could look
 like this:
