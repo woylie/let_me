@@ -7,6 +7,7 @@ defmodule LetMe.Builder do
     |> Enum.reverse()
   end
 
+  # credo:disable-for-next-line
   def introspection_functions(%{} = rules) do
     quote do
       defp __rules__, do: unquote(Macro.escape(rules))
@@ -33,6 +34,25 @@ defmodule LetMe.Builder do
       @impl LetMe.Policy
       def get_rule(action) when is_atom(action),
         do: Map.get(__rules__(), action)
+
+      @impl LetMe.Policy
+      def fetch_expression(action) when is_atom(action) do
+        with {:ok, rule} <- Map.fetch(__rules__(), action) do
+          {:ok, rule.expression}
+        end
+      end
+
+      @impl LetMe.Policy
+      def fetch_expression!(action) when is_atom(action) do
+        Map.fetch!(__rules__(), action).expression
+      end
+
+      @impl LetMe.Policy
+      def get_expression(action) when is_atom(action) do
+        if rule = Map.get(__rules__(), action) do
+          rule.expression
+        end
+      end
     end
   end
 

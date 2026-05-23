@@ -336,6 +336,44 @@ defmodule LetMe.Policy do
   @callback fetch_rule!(atom) :: LetMe.Rule.t()
 
   @doc """
+  Returns the expression of the rule with the given name. Returns an `:ok` tuple
+  or `:error`.
+
+  The rule name is an atom with the format `{object}_{action}`.
+
+  ## Example
+
+      iex> MyApp.Policy.fetch_expression(:article_create)
+      {:ok,
+       %Spek.AnyOf{
+         children: [
+           %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :admin]},
+           %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :writer]}
+         ],
+       }}
+
+       iex> MyApp.Policy.fetch_expression(:cookie_eat)
+       :error
+  """
+  @callback fetch_expression(atom) :: {:ok, Spek.expression()} | :error
+
+  @doc """
+  Returns the expression of the rule with the given name. Raises if the rule is
+  not found.
+
+  The rule name is an atom with the format `{object}_{action}`.
+
+  ## Example
+
+      iex> MyApp.Policy.fetch_expression!(:article_create)
+      %Spek.AnyOf{children: [
+        %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :admin]},
+        %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :writer]}
+      ]}
+  """
+  @callback fetch_expression!(atom) :: Spek.expression()
+
+  @doc """
   Returns the schema module for the given object name, if it was registered
   using `object/3`.
 
@@ -586,6 +624,26 @@ defmodule LetMe.Policy do
       nil
   """
   @callback get_rule(atom) :: LetMe.Rule.t() | nil
+  @doc """
+  Returns the expression of the rule with the given name. Returns `nil` if the
+  rule is not found.
+
+  The rule name is an atom with the format `{object}_{action}`.
+
+  ## Example
+
+      iex> MyApp.Policy.get_expression(:article_create)
+      %Spek.AnyOf{
+        children: [
+          %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :admin]},
+          %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :writer]}
+        ]
+      }
+
+      iex> MyApp.Policy.get_expression(:cookie_eat)
+      nil
+  """
+  @callback get_expression(atom) :: Spek.expression() | nil
 
   defmacro __using__(opts \\ []) do
     opts =
