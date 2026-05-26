@@ -2,19 +2,20 @@
 
 [![CI](https://github.com/woylie/let_me/workflows/CI/badge.svg)](https://github.com/woylie/let_me/actions) [![Hex](https://img.shields.io/hexpm/v/let_me)](https://hex.pm/packages/let_me) [![Hex Docs](https://img.shields.io/badge/hex-docs-green)](https://hexdocs.pm/let_me/readme.html) [![Coverage Status](https://coveralls.io/repos/github/woylie/let_me/badge.svg)](https://coveralls.io/github/woylie/let_me)
 
-LetMe is an authorization library for Elixir that allows you to define your
-authorization rules with a Domain Specific Language (DSL).
+LetMe is an authorization library for Elixir that defines a Domain Specific
+Language (DSL) for authorization rules.
 
-All policy expressions are optimized at compile time and evaluated lazily. You
-can opt-in to receive detailed information about the checks that were evaluated
-in case an authorization check fails.
+Policy expressions are optimized at compile time and evaluated lazily using
+[Spek](https://github.com/woylie/spek). It is possible to get the evaluated
+part of the policy expression in the error case, which can be useful for
+debugging, detailed error messages, or authorization decision logs.
 
-It also provides introspection function that enable you to answer questions
-such as:
+The library also provides introspection functions that allow you to:
 
-- Which actions are defined in my application?
-- What are the conditions for a particular action?
-- Which actions are permissible for a user assigned a specific role?
+- List all authorization rules including their boolean expression tree for a
+  documentation page.
+- Fetch an authorization rule by name.
+- Filter authorization rules by subject, object, or checks that are applied.
 
 ## Installation
 
@@ -36,16 +37,17 @@ Include LetMe in your `.formatter.exs` file:
 ]
 ```
 
-This ensures that your LetMe authorization rules are formatted correctly when
-you run `mix format`.
+This ensures that `mix format` doeos not add unnecessary parentheses to the
+LetMe macro calls for policy definitions.
 
 ## Policy module
 
 You define your authorization rules in a policy module using the LetMe macros.
-These rules are then compiled into policy expressions and functions for both
-authorization checks and introspection.
+These rules are compiled into [Spek](https://github.com/woylie/spek)
+expressions, and functions for both authorization checks and introspection are
+defined.
 
-For instance, here's how you might define a policy for a simple article CRUD
+For instance, this is how you could define a policy for a simple article CRUD
 interface:
 
 ```elixir
@@ -87,19 +89,19 @@ end
 You can work with a single policy module, or you can define one policy module
 for each of your contexts.
 
-While this example uses Role-Based Access Control (RBAC), LetMe doesn't make any
-assumptions about your access control model. You are completely free to define
-your authorization rules in any way you see fit.
+While this example uses Role-Based Access Control (RBAC), LetMe does not make
+any assumptions about your access control model. You can define your
+authorization rules in any way you see fit.
 
 ## Check module
 
 Authorization rules are based on the subject (usually the current user), the
 object on which the action is performed, and the action itself (the verb). LetMe
-doesn't enforce a particular authorization model or check implementation.
+does not enforce a particular authorization model or check implementation.
 
 The checks passed to `LetMe.Policy.allow/1` reference functions in your own
-check module (by default `__MODULE__.Checks`, so in the given example, this
-would be `MyApp.Policy.Checks`). Each function in your check module should
+check module (by default `__MODULE__.Checks`; in this example,
+`MyApp.Policy.Checks`). Each function in your check module should
 accept the subject, the object, and optionally an extra argument. If no options
 are passed to `allow` or `deny` (e.g. `deny :banned`), the check function must
 be a 2-arity function. If an option is passed (e.g. `allow role: :writer`), the
@@ -147,14 +149,14 @@ end
 ```
 
 Note the usage of the `Scope` struct. This is a struct defined in your
-application that at the very least contains the current user, but it might also
-include other relevant information, like the remote IP address or the
+application that contains the current user and any additional information
+needed for policy decisions, like the remote IP address or the
 authenticator assurance level (AAL).
 
 The usage of the `Scope` struct is in line with a new feature of the Phoenix
 generators introduced in Phoenix 1.8. You could also use the `User` struct
 directly, but basing authorization rules on a `Scope` struct will make it
-easier to update your application later on if your authorization requirements
+easier to update your application later if your authorization requirements
 become more complex.
 
 ## Callbacks
@@ -176,7 +178,7 @@ applied independently from the interface that is used. For example, even if you
 have a LiveView application, a REST API, and a GraphQL API, the authorization
 checks will only have to be added once to the context modules.
 
-For example, we might have a Blog context like this:
+A Blog context could like this:
 
 ```elixir
 defmodule MyApp.Blog do
@@ -244,16 +246,15 @@ iex> MyApp.Policy.authorize(:article_read, scope)
 {:error, :unauthorized}
 ```
 
-You can obtain a `LetMe.UnauthorizedError` struct with the details about the
-evaluated checks instead by setting the `error` option on `LetMe.Policy` to
-`:detailed`.
+To obtain a `LetMe.UnauthorizedError` struct with the evaluated expression,
+set the `error` option on `LetMe.Policy` to `:detailed`.
 
 ```elixir
 use LetMe.Policy, error: :detailed
 ```
 
-Alternatively, you can set `error: :simple` to obtain a
-`LetMe.UnauthorizedError` struct without details.
+To obtain a `LetMe.UnauthorizedError` struct without the evaluated expression,
+set `error` option to `:simple`.
 
 You can also override the default value at runtime:
 
@@ -592,7 +593,8 @@ Consider using this library if:
 - You need to filter your authorization rules, e.g., to identify which actions a
   certain user role can perform.
 - You're in need of a library that aids with query scopes and field redactions.
-- You prefer a library with zero dependencies.
+- You prefer a library with limited dependencies (LetMe depends on a single
+  library by the same author).
 
 ## When not to use this library?
 
@@ -609,9 +611,9 @@ This library might not be the best fit if:
 
 ## Status
 
-This library is actively maintained, but given its zero dependencies and
-narrow feature set, you may not see frequent updates. If you ever find something
-missing or encounter an issue, don't hesitate to open an issue.
+This library is actively maintained, but given its narrow feature set, you may
+not see frequent updates. If you miss a feature or encounter an issue, don't
+hesitate to open an issue.
 
 ## Alternatives
 
