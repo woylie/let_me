@@ -7,6 +7,7 @@ defmodule LetMe.Builder do
     |> Enum.reverse()
   end
 
+  # credo:disable-for-next-line
   def introspection_functions(%{} = rules) do
     quote do
       defp __rules__, do: unquote(Macro.escape(rules))
@@ -33,6 +34,25 @@ defmodule LetMe.Builder do
       @impl LetMe.Policy
       def get_rule(action) when is_atom(action),
         do: Map.get(__rules__(), action)
+
+      @impl LetMe.Policy
+      def fetch_expression(action) when is_atom(action) do
+        with {:ok, rule} <- Map.fetch(__rules__(), action) do
+          {:ok, rule.expression}
+        end
+      end
+
+      @impl LetMe.Policy
+      def fetch_expression!(action) when is_atom(action) do
+        Map.fetch!(__rules__(), action).expression
+      end
+
+      @impl LetMe.Policy
+      def get_expression(action) when is_atom(action) do
+        if rule = Map.get(__rules__(), action) do
+          rule.expression
+        end
+      end
     end
   end
 
@@ -109,11 +129,14 @@ defmodule LetMe.Builder do
         case Keyword.pop(opts, :error, unquote(error)) do
           {:detailed, opts} ->
             case do_authorize(action, subject, object, opts) do
-              %{passed?: true} ->
+              {:ok, %{satisfied?: true}} ->
                 :ok
 
-              %{passed?: false} = expr ->
-                {:error, LetMe.UnauthorizedError.with_expression(expr)}
+              {:error, %Spek.EvaluationError{expression: expression}} ->
+                {:error, LetMe.UnauthorizedError.with_expression(expression)}
+
+              {:error, %Spek.Literal{} = expression} ->
+                {:error, LetMe.UnauthorizedError.with_expression(expression)}
             end
 
           {:simple, opts} ->
@@ -138,11 +161,14 @@ defmodule LetMe.Builder do
         case Keyword.pop(opts, :error, unquote(error)) do
           {:detailed, opts} ->
             case do_authorize(action, subject, object, opts) do
-              %{passed?: true} ->
+              {:ok, %{satisfied?: true}} ->
                 :ok
 
-              %{passed?: false} = expr ->
-                raise LetMe.UnauthorizedError.with_expression(expr)
+              {:error, %Spek.EvaluationError{expression: expression}} ->
+                raise LetMe.UnauthorizedError.with_expression(expression)
+
+              {:error, %Spek.Literal{} = expression} ->
+                raise LetMe.UnauthorizedError.with_expression(expression)
             end
 
           {_, opts} ->
@@ -163,7 +189,8 @@ defmodule LetMe.Builder do
           policy_module: unquote(check_module)
         )
 
-        %LetMe.Literal{passed?: false}
+        {:error,
+         %Spek.Literal{result: {:error, :unknown_policy}, satisfied?: false}}
       end
     end
   end
@@ -173,10 +200,10 @@ defmodule LetMe.Builder do
          check_module
        ) do
     case expression do
-      %LetMe.Literal{passed?: passed?} ->
+      %Spek.Literal{satisfied?: satisfied?} ->
         quote do
           def authorize?(unquote(rule_name), _, _, _) do
-            unquote(passed?)
+            unquote(satisfied?)
           end
         end
 
@@ -187,11 +214,9 @@ defmodule LetMe.Builder do
           def authorize?(unquote(rule_name), subject, object, opts) do
             unquote(pre_hook_calls)
 
-            LetMe.Evaluator.evaluate_expression(
+            Spek.eval?(
               unquote(Macro.escape(expression)),
-              unquote(check_module),
-              subject,
-              object
+              %{subject: subject, object: object}
             )
           end
         end
@@ -203,10 +228,17 @@ defmodule LetMe.Builder do
          check_module
        ) do
     case expression do
-      %LetMe.Literal{} = literal ->
+      %Spek.Literal{satisfied?: true} = literal ->
         quote do
           defp do_authorize(unquote(rule_name), _, _, _) do
-            unquote(Macro.escape(literal))
+            {:ok, unquote(Macro.escape(literal))}
+          end
+        end
+
+      %Spek.Literal{satisfied?: false} = literal ->
+        quote do
+          defp do_authorize(unquote(rule_name), _, _, _) do
+            {:error, unquote(Macro.escape(literal))}
           end
         end
 
@@ -217,11 +249,9 @@ defmodule LetMe.Builder do
           defp do_authorize(unquote(rule_name), subject, object, opts) do
             unquote(pre_hook_calls)
 
-            LetMe.Evaluator.evaluate_expression_acc(
+            Spek.eval_tree(
               unquote(Macro.escape(expression)),
-              unquote(check_module),
-              subject,
-              object
+              %{subject: subject, object: object}
             )
           end
         end

@@ -57,7 +57,8 @@ defmodule LetMe.MixProject do
       {:dialyxir, "1.4.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "== 0.40.2", only: :dev, runtime: false},
       {:excoveralls, "0.18.5", only: :test},
-      {:makeup_diff, "0.1.1", only: :dev, runtime: false}
+      {:makeup_diff, "0.1.1", only: :dev, runtime: false},
+      {:spek, "~> 0.2.0"}
     ]
   end
 
@@ -88,11 +89,6 @@ defmodule LetMe.MixProject do
       ],
       groups_for_modules: [
         Structs: [
-          LetMe.AllOf,
-          LetMe.AnyOf,
-          LetMe.Check,
-          LetMe.Literal,
-          LetMe.Not,
           LetMe.Rule
         ]
       ]

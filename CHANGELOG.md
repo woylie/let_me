@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+### Added
+
+- `c:LetMe.Policy.fetch_expression/1`
+- `c:LetMe.Policy.fetch_expression!/1`
+- `c:LetMe.Policy.get_expression/1`
+
+### Changed
+
+- The expressions, evaluation logic, and optimization logic introduced in
+  LetMe 2.0.0 were extracted into a separate library called `Spek`. This version
+  replaces the expression structs and logic with the new library.
+
+### How to upgrade
+
+The DSL and callback functions are unchanged compared to version 2.0.0. Only
+the representation of expressions under the `expression` key in the
+`LetMe.Rule` and `LetMe.UnauthorizedError` structs was changed to use the
+`Spek` structs.
+
+- `LetMe.AllOf` -> `Spek.AllOf`
+- `LetMe.AnyOf` -> `Spek.AnyOf`
+- `LetMe.Check` -> `Spek.Check`
+- `LetMe.Literal` -> `Spek.Literal`
+- `LetMe.Not` -> `Spek.Not`
+
+The structs have mostly the same structure, except for these differences:
+
+- All structs: `passed?` -> `satisfied?`
+- `Spek.Literal`: additional `result` key
+- `Spek.Check`:
+  - `name` -> `fun`
+  - additional `module` key, which contains the name of the check module.
+  - `arg` -> `args`
+  - Because of the way Spek maps the evaluation context to function arguments,
+    the `args` key holds a list in the format
+    `[{:ctx, :subject}, {:ctx, :object}, arg]`, where `arg` is the value that
+    was previously under the `arg` key.
+
 ## [2.0.0] - 2026-03-31
 
 ### Added

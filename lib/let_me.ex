@@ -7,14 +7,12 @@ defmodule LetMe do
   the `LetMe.Policy` module.
   """
 
-  alias LetMe.AllOf
-  alias LetMe.AnyOf
-  alias LetMe.Check
-  alias LetMe.Literal
-  alias LetMe.Not
   alias LetMe.Rule
-
-  @type expression :: AllOf.t() | AnyOf.t() | Check.t() | Literal.t() | Not.t()
+  alias Spek.AllOf
+  alias Spek.AnyOf
+  alias Spek.Check
+  alias Spek.Literal
+  alias Spek.Not
 
   @doc """
   Takes a list of rules and a list of filter options and returns a filtered
@@ -29,7 +27,7 @@ defmodule LetMe do
   - `:check` - Can be:
     - A check name as an atom
     - A 2-tuple with the check name and the `arg`
-    - A 1-arity matcher function that takes a `LetMe.Check` struct as an
+    - A 1-arity matcher function that takes a `Spek.Check` struct as an
       argument and returns a boolean.
   - `:metadata` - Either a metadata name as an atom or a 2-tuple with the
     metadata name and the metadata value.
@@ -56,28 +54,89 @@ defmodule LetMe do
       ...>     action: :create,
       ...>     name: :article_create,
       ...>     object: :article,
-      ...>     expression: %LetMe.Check{name: :role, arg: :editor}
+      ...>     expression: %Spek.Check{
+      ...>       module: MyApp.Policy.Checks,
+      ...>       fun: :role,
+      ...>       args: [{:ctx, :subject}, {:ctx, :object}, :editor]
+      ...>     }
       ...>   },
       ...>   %LetMe.Rule{
       ...>     action: :update,
       ...>     name: :article_update,
       ...>     object: :article,
-      ...>     expression: %LetMe.AnyOf{
+      ...>     expression: %Spek.AnyOf{
       ...>       children: [
-      ...>         %LetMe.Check{name: :own_resource},
-      ...>         %LetMe.Check{name: :role, arg: :writer}
+      ...>         %Spek.Check{
+      ...>           module: MyApp.Policy.Checks,
+      ...>           fun: :own_resource,
+      ...>           args: [{:ctx, :subject}, {:ctx, :object}]
+      ...>         },
+      ...>         %Spek.Check{
+      ...>           module: MyApp.Policy.Checks,
+      ...>           fun: :role,
+      ...>           args: [{:ctx, :subject}, {:ctx, :object}, :writer]
+      ...>         }
       ...>       ]
       ...>     }
       ...>   }
       ...> ]
       iex> filter_rules(rules, check: :own_resource)
-      [%LetMe.Rule{action: :update, name: :article_update, object: :article, expression: %LetMe.AnyOf{children: [%LetMe.Check{name: :own_resource}, %LetMe.Check{name: :role, arg: :writer}]}}]
+      [
+        %LetMe.Rule{
+          action: :update,
+          name: :article_update,
+          object: :article,
+          expression: %Spek.AnyOf{children: [
+            %Spek.Check{
+              module: MyApp.Policy.Checks,
+              fun: :own_resource,
+              args: [{:ctx, :subject}, {:ctx, :object}]
+            },
+            %Spek.Check{
+              module: MyApp.Policy.Checks,
+              fun: :role,
+              args: [{:ctx, :subject}, {:ctx, :object}, :writer]
+            }
+          ]}
+        }
+      ]
       iex> match?([_, _], filter_rules(rules, check: :role))
       true
       iex> filter_rules(rules, check: {:role, :editor})
-      [%LetMe.Rule{action: :create, name: :article_create, object: :article, expression: %LetMe.Check{name: :role, arg: :editor}}]
+      [
+        %LetMe.Rule{
+          action: :create,
+          name: :article_create,
+          object: :article,
+          expression: %Spek.Check{
+            module: MyApp.Policy.Checks,
+            fun: :role,
+            args: [{:ctx, :subject}, {:ctx, :object}, :editor]
+          }
+        }
+      ]
       iex> filter_rules(rules, check: {:role, :writer})
-      [%LetMe.Rule{action: :update, name: :article_update, object: :article, expression: %LetMe.AnyOf{children: [%LetMe.Check{name: :own_resource}, %LetMe.Check{name: :role, arg: :writer}]}}]
+      [
+        %LetMe.Rule{
+          action: :update,
+          name: :article_update,
+          object: :article,
+          expression: %Spek.AnyOf{
+            children: [
+              %Spek.Check{
+                module: MyApp.Policy.Checks,
+                fun: :own_resource,
+                args: [{:ctx, :subject}, {:ctx, :object}]
+              },
+              %Spek.Check{
+                module: MyApp.Policy.Checks,
+                fun: :role,
+                args: [{:ctx, :subject}, {:ctx, :object}, :writer]
+              }
+            ]
+          }
+        }
+      ]
   """
   @spec filter_rules([Rule.t()], keyword) :: [Rule.t()]
   def filter_rules(rules, opts) when is_list(rules) do
@@ -107,8 +166,8 @@ defmodule LetMe do
 
   defp has_check?(%Not{expression: expr}, name), do: has_check?(expr, name)
   defp has_check?(%Literal{}, _), do: false
-  defp has_check?(%Check{name: name}, name) when is_atom(name), do: true
-  defp has_check?(%Check{name: name, arg: arg}, {name, arg}), do: true
+  defp has_check?(%Check{fun: name}, name) when is_atom(name), do: true
+  defp has_check?(%Check{fun: name, args: [_, _, arg]}, {name, arg}), do: true
 
   defp has_check?(%Check{} = check, fun) when is_function(fun, 1) do
     fun.(check)
