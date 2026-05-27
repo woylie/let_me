@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [3.0.0] - 2026-05-27
+
 ### Added
 
 - `c:LetMe.Policy.fetch_expression/1`
