@@ -2,7 +2,7 @@ defmodule LetMe.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/woylie/let_me"
-  @version "3.0.0"
+  @version "3.0.1"
 
   def project do
     [
@@ -58,7 +58,7 @@ defmodule LetMe.MixProject do
       {:ex_doc, "== 0.40.3", only: :dev, runtime: false},
       {:excoveralls, "0.18.5", only: :test},
       {:makeup_diff, "0.1.1", only: :dev, runtime: false},
-      {:spek, "~> 0.2.0"}
+      {:spek, "~> 0.3.0"}
     ]
   end
 
