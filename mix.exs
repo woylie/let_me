@@ -52,7 +52,7 @@ defmodule LetMe.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:castore, "== 1.0.19", only: :test},
+      {:castore, "== 1.0.20", only: :test},
       {:credo, "== 1.7.19", only: [:dev, :test], runtime: false},
       {:dialyxir, "1.4.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "== 0.40.3", only: :dev, runtime: false},
