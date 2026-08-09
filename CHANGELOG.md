@@ -5,6 +5,14 @@
 ### Changed
 
 - Require spek ~> 0.4.0.
+- Add the check module under the `check_module` key to the metadata of the
+  warning that is logged when a permission is checked for a rule that does not
+  exist.
+
+### Fixed
+
+- The warning for a rule that does not exist logged the check module under the
+  `policy_module` metadata key. It logs the policy module now.
 
 ## [3.0.1] - 2026-06-05
 

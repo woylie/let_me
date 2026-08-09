@@ -114,9 +114,10 @@ defmodule LetMe.Builder do
 
       def authorize?(action, _, _, _) when is_atom(action) do
         Logger.warning(
-          "Permission checked for rule that does not exist: #{action}",
+          "Permission checked for a rule that does not exist: #{action}",
           action: action,
-          policy_module: unquote(check_module)
+          policy_module: __MODULE__,
+          check_module: unquote(check_module)
         )
 
         false
@@ -184,9 +185,10 @@ defmodule LetMe.Builder do
 
       defp do_authorize(action, _, _, _) when is_atom(action) do
         Logger.warning(
-          "Permission checked for rule that does not exist: #{action}",
+          "Permission checked for a rule that does not exist: #{action}",
           action: action,
-          policy_module: unquote(check_module)
+          policy_module: __MODULE__,
+          check_module: unquote(check_module)
         )
 
         {:error,
