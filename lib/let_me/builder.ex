@@ -79,7 +79,7 @@ defmodule LetMe.Builder do
       @impl LetMe.Policy
       unquote(object_function_clauses)
       def get_object_name(%schema{}), do: get_object_name(schema)
-      def get_object_name(schema), do: nil
+      def get_object_name(_), do: nil
     end
   end
 
