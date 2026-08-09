@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Require spek ~> 0.4.0.
+
 ## [3.0.1] - 2026-06-05
 
 ### Changed
