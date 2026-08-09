@@ -8,7 +8,6 @@ defmodule LetMe.PolicyTest do
   alias LetMe.UnauthorizedError
   alias MyApp.Blog.Article
   alias MyApp.Policy
-  alias MyApp.TestPolicy
   alias Spek.AllOf
   alias Spek.AnyOf
   alias Spek.Check
