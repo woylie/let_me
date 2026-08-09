@@ -1283,7 +1283,7 @@ defmodule LetMe.Policy do
 
       object :article do
         action :view do
-          pre_hooks [{Checks, :set_age, 25}, :double_age]
+          pre_hooks [{Checks, :set_age, age: 25}, :double_age]
           allow min_age: 50
         end
       end

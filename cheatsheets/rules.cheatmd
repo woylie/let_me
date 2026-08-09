@@ -63,9 +63,11 @@ end
 #### Check implementation
 
 ```elixir
-def writer(%MyApp.User{role: :writer}, _object, _opts), do: true
-def writer(_, _, _), do: false
+def writer(%MyApp.User{role: :writer}, _object), do: true
+def writer(_, _), do: false
 ```
+
+A check written as a bare atom is called with two arguments.
 
 ### Check with options
 
@@ -89,6 +91,8 @@ def trust_level(%MyApp.User{trust_level: actual_level}, _, required_level)
 def trust_level(_, _, _), do: false
 ```
 
+A check written as a `{name, option}` tuple is called with three arguments.
+
 ### Check that depends on the object
 
 #### Policy module
@@ -104,8 +108,8 @@ end
 #### Check implementation
 
 ```elixir
-def own_resource(%MyApp.User{id: user_id}, %{user_id: user_id}, _), do: true
-def own_resource(_, _, _), do: false
+def own_resource(%MyApp.User{id: user_id}, %{user_id: user_id}), do: true
+def own_resource(_, _), do: false
 ```
 
 ## Rule examples
@@ -214,14 +218,21 @@ def preload_roles(subject, object) do
 end
 ```
 
+Every option except `:error` that you pass to an authorize function is appended
+to the hook arguments. A hook registered without options is called with three
+arguments as soon as the caller passes any option.
+
 ### With options
+
+Options are only accepted in the three-element form. The module has to be
+named even when the hook is in the check module.
 
 #### Policy module
 
 ```elixir
 object :article do
   action :create do
-    pre_hooks {:preload_roles, force: true}
+    pre_hooks {MyApp.Policy.Checks, :preload_roles, force: true}
 
     allow role: :admin
     allow role: :editor
@@ -249,7 +260,7 @@ end
 ```elixir
 object :article do
   action :create do
-    pre_hooks {MyApp.Policy.Prehooks, :preload_roles, force: true}
+    pre_hooks {MyApp.Policy.Prehooks, :preload_roles}
 
     allow role: :admin
     allow role: :editor
