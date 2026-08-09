@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+All notable changes to this project are documented in this file.
+
+The format is based on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
+adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [3.0.2] - 2026-08-09
 
 ### Changed
 
@@ -24,15 +32,15 @@
 
 ### Added
 
-- `c:LetMe.Policy.fetch_expression/1`
-- `c:LetMe.Policy.fetch_expression!/1`
-- `c:LetMe.Policy.get_expression/1`
+- Add `c:LetMe.Policy.fetch_expression/1`.
+- Add `c:LetMe.Policy.fetch_expression!/1`.
+- Add `c:LetMe.Policy.get_expression/1`.
 
 ### Changed
 
-- The expressions, evaluation logic, and optimization logic introduced in
-  LetMe 2.0.0 were extracted into a separate library called `Spek`. This version
-  replaces the expression structs and logic with the new library.
+- Extract the expression structs, the evaluation logic and the optimization
+  logic introduced in LetMe 2.0.0 into a separate library called `Spek`, and use
+  that library instead.
 
 ### How to upgrade
 
@@ -158,25 +166,25 @@ If you were working directly with the `allow` and `deny` fields of the
 
 ### Fixed
 
-- Nested lists within structs resulted in a `CaseClauseError` during redaction.
+- Redacting nested lists within structs resulted in a `CaseClauseError`.
 
 ## [1.2.3] - 2023-11-11
 
 ### Changed
 
-- Updated documentation.
+- Update documentation.
 
 ## [1.2.2] - 2023-06-28
 
-### Changed
+### Added
 
-- You can now override the exception message used by
-  `c:LetMe.Policy.authorize!/4` (e.g.
-  `use LetMe.Policy, error_message: "Not today, chap."`).
+- Add `error_message` option to `use LetMe.Policy` to override the exception
+  message used by `c:LetMe.Policy.authorize!/4`, e.g.
+  `use LetMe.Policy, error_message: "Not today, chap."`.
 
 ## [1.2.1] - 2023-06-28
 
-### Changed
+### Added
 
 - Define `action` type when you `use LetMe.Policy`.
 - Add type specifications for generated `authorize` functions.
@@ -185,13 +193,13 @@ If you were working directly with the `allow` and `deny` fields of the
 
 ### Added
 
-- Added an optional `opts` argument to the authorize functions, so that
-  additional options can be passed to pre-hooks.
-- Updated `LetMe.filter_rules/2` to allow filtering by meta data.
+- Add an optional `opts` argument to the authorize functions, so that additional
+  options can be passed to pre-hooks.
+- Support filtering by metadata in `LetMe.filter_rules/2`.
 
 ### Changed
 
-- Pre-hook options are now expected to be passed as a keyword list.
+- Expect pre-hook options to be passed as a keyword list.
 
 ### Fixed
 
@@ -201,7 +209,7 @@ If you were working directly with the `allow` and `deny` fields of the
 
 ### Added
 
-- Added a `metadata` macro to add metadata to actions. The metadata can be read
+- Add a `metadata` macro to add metadata to actions. The metadata can be read
   from the `LetMe.Rule` struct.
 
 ## [1.0.3] - 2023-03-21
@@ -214,57 +222,76 @@ If you were working directly with the `allow` and `deny` fields of the
 
 ### Added
 
-- Added a cheat sheet for rules and checks.
+- Add a cheat sheet for rules and checks.
 
 ### Fixed
 
-- Fixed a code example for rule introspection in the readme.
+- A code example for rule introspection in the readme was wrong.
 
 ## [1.0.1] - 2022-11-06
 
-### Changed
+### Fixed
 
-- Use `Keyword.pop/3` with default value instead of `Keyword.pop!/2`, so that
-  you can pass options to `LetMe.redact/3` without passing the `redact_value`
-  option.
+- `LetMe.redact/3` raised a `KeyError` when you passed options without the
+  `redact_value` option.
 
 ## [1.0.0] - 2022-11-06
 
 ### Added
 
-- Added `c:LetMe.Policy.filter_allowed_actions/3` and
+- Add `c:LetMe.Policy.filter_allowed_actions/3` and
   `LetMe.filter_allowed_actions/4`.
-- Added `c:LetMe.Policy.get_object_name/1`.
+- Add `c:LetMe.Policy.get_object_name/1`.
 
 ### Changed
 
-- Renamed `c:LetMe.Policy.authorized?/3` to `c:LetMe.Policy.authorize?/3`,
+- Rename `c:LetMe.Policy.authorized?/3` to `c:LetMe.Policy.authorize?/3`,
   because consistency is more important than grammar, maybe.
-- The `c:LetMe.Schema.scope/2` callback was removed in favour of
-  `c:LetMe.Schema.scope/3`. The `__using__` macro defined default
-  implementations for both functions that returned the given query unchanged, in
-  case you only needed the `redact` callback of the behaviour. In practice, this
-  made it all too easy to call the 2-arity version when only the 3-arity
-  version was defined, and vice versa, which would lead the query to not be
-  scoped. So in order to reduce the room for error at the cost of a minor
-  inconvenience, you will now always need to implement the 3-arity function,
-  even if you don't need the third argument.
-- Changed `c:LetMe.Schema.redacted_fields/2` to
+- Replace the `c:LetMe.Schema.scope/2` callback with `c:LetMe.Schema.scope/3`.
+  The `__using__` macro defined default implementations for both functions that
+  returned the given query unchanged, in case you only needed the `redact`
+  callback of the behaviour. In practice, this made it all too easy to call the
+  2-arity version when only the 3-arity version was defined, and vice versa,
+  which would lead the query to not be scoped. So in order to reduce the room
+  for error at the cost of a minor inconvenience, you will now always need to
+  implement the 3-arity function, even if you don't need the third argument.
+- Replace `c:LetMe.Schema.redacted_fields/2` with
   `c:LetMe.Schema.redacted_fields/3` to allow passing additional options, and to
   be consistent with `c:LetMe.Schema.scope/3`.
 
 ## [0.2.0] - 2022-07-12
 
-### Changed
+### Added
 
-- Added support for nested field redactions, either by explicitly listing the
-  fields or by referencing a module that also implements `LetMe.Schema`.
+- Support nested field redactions, either by explicitly listing the fields or by
+  referencing a module that also implements `LetMe.Schema`.
 
 ### Fixed
 
-- `reject_redacted_fields/3` called `redact/2` callback with the wrong argument
-  order.
+- `reject_redacted_fields/3` called the `redact/2` callback with the wrong
+  argument order.
 
 ## [0.1.0] - 2022-07-11
 
-initial release
+### Added
+
+- Initial release.
+
+[Unreleased]: https://github.com/woylie/let_me/compare/3.0.2...HEAD
+[3.0.2]: https://github.com/woylie/let_me/compare/3.0.1...3.0.2
+[3.0.1]: https://github.com/woylie/let_me/compare/3.0.0...3.0.1
+[3.0.0]: https://github.com/woylie/let_me/compare/2.0.0...3.0.0
+[2.0.0]: https://github.com/woylie/let_me/compare/1.2.5...2.0.0
+[1.2.5]: https://github.com/woylie/let_me/compare/1.2.4...1.2.5
+[1.2.4]: https://github.com/woylie/let_me/compare/1.2.3...1.2.4
+[1.2.3]: https://github.com/woylie/let_me/compare/1.2.2...1.2.3
+[1.2.2]: https://github.com/woylie/let_me/compare/1.2.1...1.2.2
+[1.2.1]: https://github.com/woylie/let_me/compare/1.2.0...1.2.1
+[1.2.0]: https://github.com/woylie/let_me/compare/1.1.0...1.2.0
+[1.1.0]: https://github.com/woylie/let_me/compare/1.0.3...1.1.0
+[1.0.3]: https://github.com/woylie/let_me/compare/1.0.2...1.0.3
+[1.0.2]: https://github.com/woylie/let_me/compare/1.0.1...1.0.2
+[1.0.1]: https://github.com/woylie/let_me/compare/1.0.0...1.0.1
+[1.0.0]: https://github.com/woylie/let_me/compare/0.2.0...1.0.0
+[0.2.0]: https://github.com/woylie/let_me/compare/0.1.0...0.2.0
+[0.1.0]: https://github.com/woylie/let_me/releases/tag/0.1.0
