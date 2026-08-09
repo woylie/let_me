@@ -1,3 +1,4 @@
+# Renovate is used to update dependencies.
 version: 2
 updates:
   - package-ecosystem: mix
