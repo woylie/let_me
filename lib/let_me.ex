@@ -346,6 +346,18 @@ defmodule LetMe do
           ),
           opts
         )
+
+      other ->
+        # only include type in message, not the value, because this is a
+        # redaction function, and the value might be sensitive
+        raise ArgumentError, """
+        unexpected value in redacted field
+
+        The field #{inspect(key)} of #{struct_name(acc)} is declared with \
+        nested redacted fields, but it holds #{type_name(other)}.
+
+        A field declared this way can hold nil, a list, a map, or a struct.
+        """
     end
   end
 
@@ -379,6 +391,19 @@ defmodule LetMe do
           ),
           opts
         )
+
+      other ->
+        # only include type in message, not the value, because this is a
+        # redaction function, and the value might be sensitive
+        raise ArgumentError, """
+        unexpected value in redacted field
+
+        The field #{inspect(key)} of #{struct_name(acc)} is declared as a nested
+        #{inspect(module)} struct, but it holds #{type_name(other)}.
+
+        A field declared this way can hold nil, a list, or a \
+        #{inspect(module)} struct.
+        """
     end
   end
 
@@ -386,6 +411,17 @@ defmodule LetMe do
        when is_atom(key) do
     replace_keys(rest, subject, value, Map.put(acc, key, value), opts)
   end
+
+  defp struct_name(%module{}), do: inspect(module)
+  defp struct_name(_), do: "the redacted object"
+
+  defp type_name(%module{}), do: "a #{inspect(module)} struct"
+  defp type_name(value) when is_map(value), do: "a map"
+  defp type_name(value) when is_binary(value), do: "a string"
+  defp type_name(value) when is_number(value), do: "a number"
+  defp type_name(value) when is_atom(value), do: "an atom"
+  defp type_name(value) when is_tuple(value), do: "a tuple"
+  defp type_name(_), do: "a value of an unexpected type"
 
   @doc """
   Removes redacted fields from a given list of fields.
