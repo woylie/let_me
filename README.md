@@ -37,7 +37,7 @@ Include LetMe in your `.formatter.exs` file:
 ]
 ```
 
-This ensures that `mix format` doeos not add unnecessary parentheses to the
+This ensures that `mix format` does not add unnecessary parentheses to the
 LetMe macro calls for policy definitions.
 
 ## Policy module
@@ -127,7 +127,7 @@ defmodule MyApp.Policy.Checks do
   Assumes that the object has a `:user_id` field.
   """
   def own_resource(
-    %Scope{user: User{id: id}},
+    %Scope{user: %User{id: id}},
     %{user_id: id}
   ) when is_binary(id), do: true
   def own_resource(_, _), do: false
@@ -201,31 +201,24 @@ defmodule MyApp.Blog do
     end
   end
 
-  def create_article(%Scope{user: %User{} = current_user}, params) do
-    with :ok <- Policy.authorize(:article_create, current_user) do
+  def create_article(%Scope{} = scope, params) do
+    with :ok <- Policy.authorize(:article_create, scope) do
       %Article{}
       |> Article.changeset(params)
       |> Repo.insert()
     end
   end
 
-  def update_article(
-    %Scope{user: %User{} = current_user},
-    %Article{} = article,
-    params
-  ) do
-    with :ok <- Policy.authorize(:article_update, current_user, article) do
+  def update_article(%Scope{} = scope, %Article{} = article, params) do
+    with :ok <- Policy.authorize(:article_update, scope, article) do
       article
       |> Article.changeset(params)
       |> Repo.update()
     end
   end
 
-  def delete_article(
-    %Scope{user: %User{} = current_user},
-    %Article{} = article
-  ) do
-    with :ok <- Policy.authorize(:article_delete, current_user, article) do
+  def delete_article(%Scope{} = scope, %Article{} = article) do
+    with :ok <- Policy.authorize(:article_delete, scope, article) do
       Repo.delete(article)
     end
   end
@@ -260,33 +253,31 @@ You can also override the default value at runtime:
 
 ```elixir
 iex> MyApp.Policy.authorize(:article_update, scope, object, error: :detailed)
-%LetMe.UnauthorizedError{
-  message: "unauthorized",
-  expression: %Spek.AnyOf{
-    children: [
-      %Spek.Check{
-        module: MyApp.Policy.Checks,
-        fun: :role,
-        args: [{:ctx, :subject}, {:ctx, :object}, :editor],
-        result: false,
-        satisfied?: false
-      },
-      %Spek.Check{
-        module: MyApp.Policy.Checks,
-        fun: :role,
-        args: [{:ctx, :subject}, {:ctx, :object}, :writer],
-        result: false,
-        satisfied?: false
-      }
-    ]
-  }
-}
+{:error,
+ %LetMe.UnauthorizedError{
+   message: "unauthorized",
+   expression: %Spek.AnyOf{
+     children: [
+       %Spek.Check{
+         module: MyApp.Policy.Checks,
+         fun: :role,
+         args: [{:ctx, :subject}, {:ctx, :object}, :editor],
+         result: false,
+         satisfied?: false
+       },
+       %Spek.Check{
+         module: MyApp.Policy.Checks,
+         fun: :role,
+         args: [{:ctx, :subject}, {:ctx, :object}, :writer],
+         result: false,
+         satisfied?: false
+       }
+     ]
+   }
+ }}
 
 iex> MyApp.Policy.authorize(:article_update, scope, object, error: :simple)
-%LetMe.UnauthorizedError{
-  message: "unauthorized",
-  expression: nil
-}
+{:error, %LetMe.UnauthorizedError{message: "unauthorized", expression: nil}}
 
 iex> MyApp.Policy.authorize(:article_update, scope, object, error: :forbidden)
 {:error, :forbidden}
@@ -464,11 +455,8 @@ def list_articles(%Scope{user: %User{} = current_user} = scope) do
   end
 end
 
-def fetch_article(
-  %Scope{user: %User{} = current_user} = scope,
-  id
-) do
-  with :ok <- Policy.authorize(:article_read, current_user, id) do
+def fetch_article(%Scope{user: %User{} = current_user} = scope, id) do
+  with :ok <- Policy.authorize(:article_read, scope, id) do
     result =
       Article
       |> where(id: ^id)
@@ -519,9 +507,9 @@ defmodule MyApp.Accounts.User do
 end
 ```
 
-The `redacted_fields/2` function takes the object as the first argument, the
-subject as the second argument, and an options argument. The function should
-return a list of fields to redact.
+The `c:LetMe.Schema.redacted_fields/3` function takes the object as the first
+argument, the subject as the second argument, and an options argument. The
+function should return a list of fields to redact.
 
 In the example above, all fields are visible if the user has an 'admin' role, or
 if the user being viewed (the object) is the same as the current user (the
@@ -541,11 +529,11 @@ any redacted fields and add a select clause that includes only the unredacted
 fields.
 
 ```elixir
-def list_users(%Scope{user: %User{} = current_user} = scope) do
+def list_users(%Scope{user: %User{} = current_user}) do
   fields = User.__schema__(:fields)
   filtered_fields = LetMe.reject_redacted_fields(fields, %User{}, current_user)
 
-  Article
+  User
   |> select(^filtered_fields)
   |> Repo.all()
 end
@@ -555,9 +543,9 @@ This method has the advantage of preventing the transfer of redacted fields from
 the database. However, it also comes with several drawbacks:
 
 1. Decisions about which fields to select cannot be made based on data in the
-   struct. For instance, with the `redacted_fields/2` function described
-   earlier, we can ensure that admins can see all fields, but we cannot
-   guarantee that users can view all fields in their own user account.
+   struct. For instance, with the `c:LetMe.Schema.redacted_fields/3` function
+   described earlier, we can ensure that admins can see all fields, but we
+   cannot guarantee that users can view all fields in their own user account.
 2. All redacted fields will appear as `nil`, and you won't be able to
    distinguish between fields that were redacted and fields that are simply
    empty. This distinction might be necessary for display in the frontend.
@@ -567,7 +555,7 @@ the database. However, it also comes with several drawbacks:
 
 To address the limitations of modifying the query, you can redact fields _after_
 retrieving the data from the database. This can be done using the
-`LetMe.redact/2` function.
+`LetMe.redact/3` function.
 
 ```elixir
 def list_articles(%User{} = current_user) do
