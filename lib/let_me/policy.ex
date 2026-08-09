@@ -61,7 +61,7 @@ defmodule LetMe.Policy do
 
   Any other value will be used unchanged in the error tuple.
 
-  While `c:LetMePolicy.authorize!/4` always raises a `LetMe.UnauthorizedError`
+  While `c:LetMe.Policy.authorize!/4` always raises a `LetMe.UnauthorizedError`
   on error, the exception struct only contains the expression if `error` is
   `:detailed`.
 
@@ -355,6 +355,7 @@ defmodule LetMe.Policy do
        iex> MyApp.Policy.fetch_expression(:cookie_eat)
        :error
   """
+  @doc since: "3.0.0"
   @callback fetch_expression(atom) :: {:ok, Spek.expression()} | :error
 
   @doc """
@@ -371,6 +372,7 @@ defmodule LetMe.Policy do
         %Spek.Check{module: MyApp.Checks, fun: :role, args: [{:ctx, :subject}, {:ctx, :object}, :writer]}
       ]}
   """
+  @doc since: "3.0.0"
   @callback fetch_expression!(atom) :: Spek.expression()
 
   @doc """
@@ -643,6 +645,7 @@ defmodule LetMe.Policy do
       iex> MyApp.Policy.get_expression(:cookie_eat)
       nil
   """
+  @doc since: "3.0.0"
   @callback get_expression(atom) :: Spek.expression() | nil
 
   defmacro __using__(opts \\ []) do
@@ -909,7 +912,7 @@ defmodule LetMe.Policy do
   If a list is given as an argument, the checks are combined with a logical
   `AND`.
 
-  If the `allow/1` macro is used multiple times within the same `action/2`
+  If the `deny/1` macro is used multiple times within the same `action/2`
   block, the checks of each macro call are combined with a logical `OR`.
 
   ## Examples
@@ -1092,8 +1095,8 @@ defmodule LetMe.Policy do
   At the moment, this doesn't do much, except that you can find the schema
   module by passing the object name to `c:get_schema/1`, or find the object name
   by passing the schema module or struct to `c:get_object_name/1` now. Also,
-  you can now only pass the struct to`c:MyApp.Policy.filter_allowed_actions/3`,
-  without explicitly passing the object name.
+  you can now only pass the struct to `c:filter_allowed_actions/3`, without
+  explicitly passing the object name.
   """
   @spec object(atom, module | nil, Macro.t()) :: Macro.t()
   defmacro object(name, module \\ nil, do: block) do

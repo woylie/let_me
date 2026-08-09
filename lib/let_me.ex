@@ -32,13 +32,12 @@ defmodule LetMe do
   - `:metadata` - Either a metadata name as an atom or a 2-tuple with the
     metadata name and the metadata value.
 
-  If an atom is passed as `allow` or `deny`, the atom is interpreted as a check
-  name and all rules using the given check name are returned, regardless of
-  whether additional options are passed to the check. If a 2-tuple is passed,
-  the first tuple element must be the check name as an atom and the second
-  tuple element must be the check options. In this case, all rules are returned
-  that use the given check with exactly the same options. In either case, rules
-  that have more checks in addition to the given one will also be returned.
+  If an atom is passed as `:check`, all rules using the given check name are
+  returned, regardless of the argument the check is called with. If a 2-tuple
+  is passed, all rules are returned that use the given check with exactly that
+  argument. In either case, rules that have more checks in addition to the
+  given one will also be returned, and it does not matter whether the check
+  appears in an `allow/1` or a `deny/1` call.
 
   ## Examples
 
