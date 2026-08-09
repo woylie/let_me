@@ -29,6 +29,10 @@ def deps do
 end
 ```
 
+This package is tested against the Elixir and OTP versions that are still
+supported upstream. Older versions down to the requirement in `mix.exs` may
+still work, but they are not covered by CI and not officially supported.
+
 Include LetMe in your `.formatter.exs` file:
 
 ```elixir
