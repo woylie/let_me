@@ -1,5 +1,5 @@
 defmodule LetMeTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   doctest LetMe, import: true
 
   alias MyApp.Blog.Article
@@ -265,6 +265,36 @@ defmodule LetMeTest do
       person = %{person() | spouse: nil, all_pets: nil}
       assert %Person{spouse: nil} = LetMe.redact(person, :nested_fields)
       assert %Person{spouse: nil} = LetMe.redact(person, :nested_schemas)
+    end
+
+    test "raises if a field with nested fields holds a scalar" do
+      person = %{person() | spouse: "Alex"}
+
+      error =
+        assert_raise ArgumentError, fn ->
+          LetMe.redact(person, :nested_fields)
+        end
+
+      message = Exception.message(error)
+      assert message =~ ":spouse"
+      assert message =~ "LetMeTest.Person"
+      assert message =~ "a string"
+      refute message =~ "Alex"
+    end
+
+    test "raises if a field with a nested schema holds another struct" do
+      person = %{person() | pet: %Person{name: "Alex"}}
+
+      error =
+        assert_raise ArgumentError, fn ->
+          LetMe.redact(person, :nested_schemas)
+        end
+
+      message = Exception.message(error)
+      assert message =~ ":pet"
+      assert message =~ "LetMeTest.Pet"
+      assert message =~ "a LetMeTest.Person struct"
+      refute message =~ "Alex"
     end
   end
 

@@ -8,7 +8,6 @@ defmodule LetMe.PolicyTest do
   alias LetMe.UnauthorizedError
   alias MyApp.Blog.Article
   alias MyApp.Policy
-  alias MyApp.TestPolicy
   alias Spek.AllOf
   alias Spek.AnyOf
   alias Spek.Check
@@ -893,22 +892,55 @@ defmodule LetMe.PolicyTest do
     end
 
     test "returns false and logs warning if rule does not exist" do
-      assert capture_log([level: :warning], fn ->
-               assert TestPolicy.authorize?(:does_not_exist, %{}) ==
-                        false
-             end) =~ "Permission checked for rule that does not exist"
+      log =
+        capture_log([level: :warning], fn ->
+          assert TestPolicy.authorize?(:does_not_exist, %{}) == false
+        end)
 
-      assert capture_log([level: :warning], fn ->
-               assert TestPolicy.authorize(:does_not_exist, %{}) ==
-                        {:error,
-                         %UnauthorizedError{
-                           expression: %Spek.Literal{
-                             result: {:error, :unknown_policy},
-                             satisfied?: false
-                           },
-                           message: "unauthorized"
-                         }}
-             end) =~ "Permission checked for rule that does not exist"
+      assert log =~
+               "Permission checked for a rule that does not exist: does_not_exist"
+
+      log =
+        capture_log([level: :warning], fn ->
+          assert TestPolicy.authorize(:does_not_exist, %{}) ==
+                   {:error,
+                    %UnauthorizedError{
+                      expression: %Spek.Literal{
+                        result: {:error, :unknown_policy},
+                        satisfied?: false
+                      },
+                      message: "unauthorized"
+                    }}
+        end)
+
+      assert log =~
+               "Permission checked for a rule that does not exist: does_not_exist"
+    end
+
+    test "logs the policy module and the action as metadata" do
+      opts = [
+        level: :warning,
+        metadata: [:action, :policy_module, :check_module]
+      ]
+
+      log =
+        capture_log(opts, fn ->
+          assert TestPolicy.authorize?(:does_not_exist, %{}) == false
+        end)
+
+      assert log =~ "action=does_not_exist"
+      assert log =~ "policy_module=LetMe.PolicyTest.TestPolicy"
+      assert log =~ "check_module=MyApp.Checks"
+
+      log =
+        capture_log(opts, fn ->
+          assert {:error, %UnauthorizedError{}} =
+                   TestPolicy.authorize(:does_not_exist, %{})
+        end)
+
+      assert log =~ "action=does_not_exist"
+      assert log =~ "policy_module=LetMe.PolicyTest.TestPolicy"
+      assert log =~ "check_module=MyApp.Checks"
     end
 
     test "evaluates a list of allow checks with AND" do

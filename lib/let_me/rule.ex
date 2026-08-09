@@ -53,14 +53,16 @@ defmodule LetMe.Rule do
 
   - The name of a function defined in the configured check module as an atom.
   - A `{module, function}` tuple.
-  - A `{module, function, arguments}` tuple.
+  - A `{module, function, options}` tuple, where the options are a keyword list.
 
   In either case, the function must take the subject as the first argument, the
   object as the second argument, and return a tuple with the updated subject and
-  object. If an MFA tuple is passed, the given arguments are appended to the
-  default arguments.
+  object. If an MFA tuple is passed, the options are appended as a third
+  argument. The same happens when options are passed to the authorize functions,
+  so a hook registered without options is called with three arguments whenever
+  the caller passes any option.
   """
-  @type hook :: atom | {module, atom} | {module, atom, any}
+  @type hook :: atom | {module, atom} | {module, atom, keyword}
 
   @enforce_keys [:action, :name, :object]
 

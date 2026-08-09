@@ -74,7 +74,8 @@ defmodule LetMe.MixProject do
         "Changelog" => @source_url <> "/blob/main/CHANGELOG.md",
         "Sponsor" => "https://github.com/sponsors/woylie"
       },
-      files: ~w(lib .formatter.exs mix.exs README* LICENSE* CHANGELOG*)
+      files:
+        ~w(lib cheatsheets .formatter.exs mix.exs README* LICENSE* CHANGELOG*)
     ]
   end
 

@@ -697,7 +697,7 @@ defmodule LetMe.Policy do
     end
   end
 
-  defmacro __after_compile__(env, _) do
+  def __after_compile__(env, _) do
     rules = Module.get_attribute(env.module, :rules)
     validate_no_duplicate_rules!(rules, env.module)
   end
@@ -1283,7 +1283,7 @@ defmodule LetMe.Policy do
 
       object :article do
         action :view do
-          pre_hooks [{Checks, :set_age, 25}, :double_age]
+          pre_hooks [{Checks, :set_age, age: 25}, :double_age]
           allow min_age: 50
         end
       end
