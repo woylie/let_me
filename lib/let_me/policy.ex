@@ -697,7 +697,7 @@ defmodule LetMe.Policy do
     end
   end
 
-  defmacro __after_compile__(env, _) do
+  def __after_compile__(env, _) do
     rules = Module.get_attribute(env.module, :rules)
     validate_no_duplicate_rules!(rules, env.module)
   end
