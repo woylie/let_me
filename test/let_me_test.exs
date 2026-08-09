@@ -1,5 +1,5 @@
 defmodule LetMeTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   doctest LetMe, import: true
 
   alias MyApp.Blog.Article
