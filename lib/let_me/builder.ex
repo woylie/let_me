@@ -300,7 +300,9 @@ defmodule LetMe.Builder do
       args
       |> List.flatten()
       |> Keyword.merge(opts)
-      |> case do
+
+    args =
+      case args do
         [] -> []
         args -> [args]
       end
