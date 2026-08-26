@@ -8,6 +8,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [3.0.3] - 2026-08-26
+
+### Changed
+
+- Require spek ~> 0.5.0.
+
 ## [3.0.2] - 2026-08-09
 
 ### Changed
@@ -277,7 +283,8 @@ If you were working directly with the `allow` and `deny` fields of the
 
 - Initial release.
 
-[Unreleased]: https://github.com/woylie/let_me/compare/3.0.2...HEAD
+[Unreleased]: https://github.com/woylie/let_me/compare/3.0.3...HEAD
+[3.0.3]: https://github.com/woylie/let_me/compare/3.0.2...3.0.3
 [3.0.2]: https://github.com/woylie/let_me/compare/3.0.1...3.0.2
 [3.0.1]: https://github.com/woylie/let_me/compare/3.0.0...3.0.1
 [3.0.0]: https://github.com/woylie/let_me/compare/2.0.0...3.0.0
