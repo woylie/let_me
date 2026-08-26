@@ -917,30 +917,23 @@ defmodule LetMe.PolicyTest do
                "Permission checked for a rule that does not exist: does_not_exist"
     end
 
-    test "logs the policy module and the action as metadata" do
-      opts = [
-        level: :warning,
-        metadata: [:action, :policy_module, :check_module]
-      ]
+    test "names the policy module and the check module in the warning" do
+      expected = "(policy: LetMe.PolicyTest.TestPolicy, checks: MyApp.Checks)"
 
       log =
-        capture_log(opts, fn ->
+        capture_log([level: :warning], fn ->
           assert TestPolicy.authorize?(:does_not_exist, %{}) == false
         end)
 
-      assert log =~ "action=does_not_exist"
-      assert log =~ "policy_module=LetMe.PolicyTest.TestPolicy"
-      assert log =~ "check_module=MyApp.Checks"
+      assert log =~ expected
 
       log =
-        capture_log(opts, fn ->
+        capture_log([level: :warning], fn ->
           assert {:error, %UnauthorizedError{}} =
                    TestPolicy.authorize(:does_not_exist, %{})
         end)
 
-      assert log =~ "action=does_not_exist"
-      assert log =~ "policy_module=LetMe.PolicyTest.TestPolicy"
-      assert log =~ "check_module=MyApp.Checks"
+      assert log =~ expected
     end
 
     test "evaluates a list of allow checks with AND" do

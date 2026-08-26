@@ -8,6 +8,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Log the policy module and the check module in the message of the warning for a
+  rule that does not exist, instead of as Logger metadata.
+
 ## [3.0.3] - 2026-08-26
 
 ### Changed
