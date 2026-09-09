@@ -128,30 +128,14 @@ defmodule LetMe.Builder do
       def authorize(action, subject, object \\ nil, opts \\ []) do
         case Keyword.pop(opts, :error, unquote(error)) do
           {:detailed, opts} ->
-            case do_authorize(action, subject, object, opts) do
-              {:ok, %{satisfied?: true}} ->
-                :ok
-
-              {:error, %Spek.EvaluationError{expression: expression}} ->
-                {:error, LetMe.UnauthorizedError.with_expression(expression)}
-
-              {:error, %Spek.Literal{} = expression} ->
-                {:error, LetMe.UnauthorizedError.with_expression(expression)}
-            end
-
-          {:simple, opts} ->
-            if authorize?(action, subject, object, opts) do
-              :ok
-            else
-              {:error, LetMe.UnauthorizedError.new()}
-            end
+            action
+            |> do_authorize(subject, object, opts)
+            |> LetMe.Builder.__detailed_result__()
 
           {error_reason, opts} ->
-            if authorize?(action, subject, object, opts) do
-              :ok
-            else
-              {:error, error_reason}
-            end
+            action
+            |> authorize?(subject, object, opts)
+            |> LetMe.Builder.__result__(error_reason)
         end
       end
 
@@ -160,24 +144,17 @@ defmodule LetMe.Builder do
       def authorize!(action, subject, object \\ nil, opts \\ []) do
         case Keyword.pop(opts, :error, unquote(error)) do
           {:detailed, opts} ->
-            case do_authorize(action, subject, object, opts) do
-              {:ok, %{satisfied?: true}} ->
-                :ok
-
-              {:error, %Spek.EvaluationError{expression: expression}} ->
-                raise LetMe.UnauthorizedError.with_expression(expression)
-
-              {:error, %Spek.Literal{} = expression} ->
-                raise LetMe.UnauthorizedError.with_expression(expression)
-            end
+            action
+            |> do_authorize(subject, object, opts)
+            |> LetMe.Builder.__ensure_authorized__()
 
           {_, opts} ->
-            if authorize?(action, subject, object, opts) do
-              :ok
-            else
-              raise LetMe.UnauthorizedError.new()
-            end
+            action
+            |> authorize?(subject, object, opts)
+            |> LetMe.Builder.__ensure_authorized__()
         end
+
+        :ok
       end
 
       unquote(authorize_acc_clauses)
@@ -292,6 +269,29 @@ defmodule LetMe.Builder do
         )
     end
   end
+
+  def __detailed_result__({:ok, %{satisfied?: true}}), do: :ok
+
+  def __detailed_result__({:error, failure}),
+    do: {:error, unauthorized_error(failure)}
+
+  def __result__(true, _error_reason), do: :ok
+  def __result__(false, :simple), do: {:error, LetMe.UnauthorizedError.new()}
+  def __result__(false, error_reason), do: {:error, error_reason}
+
+  def __ensure_authorized__({:ok, %{satisfied?: true}}), do: :ok
+
+  def __ensure_authorized__({:error, failure}),
+    do: raise(unauthorized_error(failure))
+
+  def __ensure_authorized__(true), do: :ok
+  def __ensure_authorized__(false), do: raise(LetMe.UnauthorizedError.new())
+
+  defp unauthorized_error(%Spek.EvaluationError{expression: expression}),
+    do: LetMe.UnauthorizedError.with_expression(expression)
+
+  defp unauthorized_error(%Spek.Literal{} = expression),
+    do: LetMe.UnauthorizedError.with_expression(expression)
 
   def prehook_reducer({module, function, args}, {subject, object}, opts) do
     args =

@@ -1390,6 +1390,9 @@ defmodule LetMe.PolicyTest do
                TestPolicy.authorize(:simple_allow_false, %{})
 
       # PolicyShort uses default error
+      assert MyApp.PolicyShort.authorize(:article_create, %{role: :admin}) ==
+               :ok
+
       assert {:error, :unauthorized} =
                MyApp.PolicyShort.authorize(:article_create, %{})
 
@@ -1441,6 +1444,9 @@ defmodule LetMe.PolicyTest do
                )
 
       # PolicyShort uses default error
+      assert MyApp.PolicyShort.authorize!(:article_create, %{role: :admin}) ==
+               :ok
+
       assert %LetMe.UnauthorizedError{expression: nil} =
                assert_raise(
                  LetMe.UnauthorizedError,
