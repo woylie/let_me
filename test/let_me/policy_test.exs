@@ -32,6 +32,7 @@ defmodule LetMe.PolicyTest do
       end
 
       action :allow_true do
+        desc "allows everything"
         allow true
       end
 
