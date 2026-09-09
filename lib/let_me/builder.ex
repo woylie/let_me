@@ -177,10 +177,14 @@ defmodule LetMe.Builder do
          check_module
        ) do
     case expression do
-      %Spek.Literal{satisfied?: satisfied?} ->
+      %Spek.Literal{} = literal ->
+        # The literal is evaluated here instead of being inlined, or else the
+        # type checker can complain about dead branches on the caller side. In
+        # this context, we want branches around authorize checks to stay in
+        # place.
         quote do
-          def authorize?(unquote(rule_name), _, _, _) do
-            unquote(satisfied?)
+          def authorize?(unquote(rule_name), _subject, _object, _opts) do
+            Spek.eval?(unquote(Macro.escape(literal)), [])
           end
         end
 
@@ -205,17 +209,12 @@ defmodule LetMe.Builder do
          check_module
        ) do
     case expression do
-      %Spek.Literal{satisfied?: true} = literal ->
+      %Spek.Literal{} = literal ->
+        # Evaluated instead of inlined for the same reason as in
+        # authorize_function_clause/2.
         quote do
-          defp do_authorize(unquote(rule_name), _, _, _) do
-            {:ok, unquote(Macro.escape(literal))}
-          end
-        end
-
-      %Spek.Literal{satisfied?: false} = literal ->
-        quote do
-          defp do_authorize(unquote(rule_name), _, _, _) do
-            {:error, unquote(Macro.escape(literal))}
+          defp do_authorize(unquote(rule_name), _subject, _object, _opts) do
+            Spek.eval_tree(unquote(Macro.escape(literal)), [])
           end
         end
 
