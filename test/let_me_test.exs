@@ -296,6 +296,39 @@ defmodule LetMeTest do
       assert message =~ "a LetMeTest.Person struct"
       refute message =~ "Alex"
     end
+
+    test "names the type of an unexpected value" do
+      for {value, type} <- [
+            {%{name: "Alex"}, "a map"},
+            {25, "a number"},
+            {:alex, "an atom"},
+            {{:alex}, "a tuple"},
+            {self(), "a value of an unexpected type"}
+          ] do
+        person = %{person() | pet: value}
+
+        error =
+          assert_raise ArgumentError, fn ->
+            LetMe.redact(person, :nested_schemas)
+          end
+
+        assert Exception.message(error) =~ type
+      end
+    end
+
+    test "names the object holding an unexpected value if it is not a struct" do
+      person = %{person() | spouse: %{email: "alex@person", pet: "Rocky"}}
+
+      error =
+        assert_raise ArgumentError, fn ->
+          LetMe.redact(person, :nested_fields)
+        end
+
+      message = Exception.message(error)
+      assert message =~ ":pet"
+      assert message =~ "the redacted object"
+      refute message =~ "Rocky"
+    end
   end
 
   describe "reject_redacted_fields/4" do

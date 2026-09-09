@@ -8,10 +8,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [3.0.4] - 2026-09-09
+
 ### Changed
 
 - Log the policy module and the check module in the message of the warning for a
-  rule that does not exist, instead of as Logger metadata.
+  rule that does not exist, instead of setting them as Logger metadata.
+
+### Fixed
+
+- A policy module in which every rule evaluates to a literal `true` or `false`
+  produced warnings about clauses that will never match.
+- A rule that evaluates to a literal `true` or `false` made the compiler warn
+  about branches on `authorize?/4` in the calling module.
 
 ## [3.0.3] - 2026-08-26
 
@@ -288,7 +297,8 @@ If you were working directly with the `allow` and `deny` fields of the
 
 - Initial release.
 
-[Unreleased]: https://github.com/woylie/let_me/compare/3.0.3...HEAD
+[Unreleased]: https://github.com/woylie/let_me/compare/3.0.4...HEAD
+[3.0.4]: https://github.com/woylie/let_me/compare/3.0.3...3.0.4
 [3.0.3]: https://github.com/woylie/let_me/compare/3.0.2...3.0.3
 [3.0.2]: https://github.com/woylie/let_me/compare/3.0.1...3.0.2
 [3.0.1]: https://github.com/woylie/let_me/compare/3.0.0...3.0.1
